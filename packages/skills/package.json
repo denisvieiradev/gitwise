@@ -1,0 +1,40 @@
+{
+  "name": "@denisvieiradev/gitwise-skills",
+  "version": "1.6.4",
+  "description": "Claude Code plugin for gitwise — AI commit, review, PR, and release skills.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "plugin.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "node --experimental-vm-modules ../../node_modules/.bin/jest --passWithNoTests",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@denisvieiradev/gitwise-core": "*"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.3"
+  },
+  "keywords": ["gitwise", "claude-code", "plugin", "skills"],
+  "author": "Denis Vieira <denisvieira05@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

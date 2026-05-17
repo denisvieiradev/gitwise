@@ -1,0 +1,24 @@
+{
+  "$schema": "https://claude.ai/code/plugin-schema/v1",
+  "name": "gitwise",
+  "version": "1.6.4",
+  "description": "AI-powered git toolbelt: intelligent commit, code review, PR drafting, and versioned releases.",
+  "skills": [
+    {
+      "name": "gitwise-commit",
+      "path": "skills/commit.md"
+    },
+    {
+      "name": "gitwise-review",
+      "path": "skills/review.md"
+    },
+    {
+      "name": "gitwise-pr",
+      "path": "skills/pr.md"
+    },
+    {
+      "name": "gitwise-release",
+      "path": "skills/release.md"
+    }
+  ]
+}
