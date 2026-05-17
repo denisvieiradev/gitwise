@@ -2,7 +2,7 @@ import { readFile, writeFile, chmod } from "node:fs/promises";
 import { join } from "node:path";
 import { fileExists, ensureDir } from "./filesystem.js";
 
-const ENV_DIR = ".devflow";
+const ENV_DIR = ".gitwise";
 const ENV_FILE = ".env";
 
 function getEnvPath(projectRoot: string): string {
@@ -74,6 +74,22 @@ export async function readEnvVar(
   for (const line of content.split("\n")) {
     const parsed = parseLine(line);
     if (parsed && parsed[0] === key) return parsed[1];
+  }
+  return undefined;
+}
+
+/**
+ * Read a key from process.env, with optional fallback to the project .env file.
+ */
+export async function read(
+  key: string,
+  projectRoot?: string,
+): Promise<string | undefined> {
+  if (process.env[key] !== undefined) {
+    return process.env[key];
+  }
+  if (projectRoot) {
+    return readEnvVar(projectRoot, key);
   }
   return undefined;
 }

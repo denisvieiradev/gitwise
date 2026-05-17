@@ -25,6 +25,16 @@ export async function isGhAvailable(): Promise<boolean> {
   }
 }
 
+export async function getGhVersion(): Promise<string | null> {
+  try {
+    const result = await exec("gh", ["--version"]);
+    const firstLine = result.stdout.split("\n")[0] ?? "";
+    return firstLine.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function createPR(params: CreatePRParams): Promise<PRResult> {
   debug("Creating PR via gh", { title: params.title });
   const args = ["pr", "create", "--title", params.title, "--body", params.body];
@@ -40,6 +50,21 @@ export async function createPR(params: CreatePRParams): Promise<PRResult> {
     throw new Error("gh pr create returned empty output — check gh auth status");
   }
   return { url };
+}
+
+export interface UpdatePRParams {
+  prNumber: string | number;
+  title?: string;
+  body?: string;
+  cwd: string;
+}
+
+export async function updatePR(params: UpdatePRParams): Promise<void> {
+  debug("Updating PR via gh", { prNumber: params.prNumber });
+  const args = ["pr", "edit", String(params.prNumber)];
+  if (params.title) args.push("--title", params.title);
+  if (params.body) args.push("--body", params.body);
+  await exec("gh", args, { cwd: params.cwd });
 }
 
 export interface CreateReleaseParams {
@@ -69,3 +94,6 @@ export async function createGitHubRelease(
   }
   return { url };
 }
+
+// Alias: openPr — used by downstream tasks expecting this name
+export const openPr = createPR;
