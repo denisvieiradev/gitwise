@@ -29,6 +29,8 @@ export type { LoadTemplateOptions } from "./template/index.js";
 
 // Command exports
 export { commit, applyCommitPlan, parseCommitResponse } from "./commands/commit.js";
+export { review } from "./commands/review.js";
+export type { ReviewOptions, ReviewResult, ReviewFinding } from "./commands/review.js";
 export type { CommitOptions, CommitPlan, CommitEntry, SplitMode, ApplyCommitPlanOptions } from "./commands/commit.js";
 
 // Provider exports
