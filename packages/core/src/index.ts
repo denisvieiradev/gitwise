@@ -27,6 +27,10 @@ export { readRepoConfig } from "./config/repo.js";
 export { loadTemplate, loadAndInterpolate, interpolate } from "./template/index.js";
 export type { LoadTemplateOptions } from "./template/index.js";
 
+// Command exports
+export { commit, applyCommitPlan, parseCommitResponse } from "./commands/commit.js";
+export type { CommitOptions, CommitPlan, CommitEntry, SplitMode, ApplyCommitPlanOptions } from "./commands/commit.js";
+
 // Provider exports
 export type { LLMProvider, LLMChatRequest, LLMChatResponse, ModelTier, ModelConfig, ProviderConfig } from "./providers/types.js";
 export { createProvider } from "./providers/factory.js";
