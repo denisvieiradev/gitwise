@@ -3,10 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import * as p from "@clack/prompts";
 import { debug } from "../infra/logger.js";
-import type { DevflowConfig } from "../core/types.js";
-import type { ChatParams, ChatResponse, LLMProvider, ModelTier } from "./types.js";
+import type { LLMChatRequest, LLMChatResponse, LLMProvider, ModelConfig, ModelTier } from "./types.js";
 
 const execFileAsync = promisify(execFile);
 const LARGE_PROMPT_THRESHOLD = 100_000;
@@ -73,47 +71,22 @@ export function resolveClaudeBinary(customPath?: string): string | null {
   return null;
 }
 
-export function validateClaudeCli(config?: DevflowConfig): void {
-  const resolved = resolveClaudeBinary(config?.claudeCliPath);
-
-  if (!resolved) {
-    const tried = [
-      "  - PATH lookup (which claude)",
-      ...COMMON_CLAUDE_PATHS.map((p) => `  - ${p}`),
-      `  - ~/.nvm/versions/node/*/bin/claude`,
-    ];
-    p.cancel(
-      `Claude Code CLI not found.\n\nSearched:\n${tried.join("\n")}\n\nTo fix:\n  1. Install: npm install -g @anthropic-ai/claude-code\n  2. Or set the path manually: devflow init --force\n  3. Or switch to API provider: devflow init --force`,
-    );
-    process.exit(1);
-  }
-
-  try {
-    execSync(`"${resolved}" --version`, { stdio: "pipe" });
-  } catch {
-    p.cancel(
-      `Claude Code CLI found at "${resolved}" but failed to run.\nTry reinstalling: npm install -g @anthropic-ai/claude-code`,
-    );
-    process.exit(1);
-  }
-}
-
 export class ClaudeCodeProvider implements LLMProvider {
-  private readonly models: DevflowConfig["models"];
+  private readonly models: ModelConfig;
   private readonly claudeBinaryPath: string;
 
-  constructor(config: DevflowConfig) {
-    this.models = config.models;
+  constructor(models: ModelConfig, claudeCliPath?: string) {
+    this.models = models;
     this.claudeBinaryPath =
-      config.claudeCliPath ?? resolveClaudeBinary() ?? "claude";
+      claudeCliPath ?? resolveClaudeBinary() ?? "claude";
   }
 
-  async chat(params: ChatParams): Promise<ChatResponse> {
-    const modelId = this.resolveModel(params.model ?? "balanced");
-    debug("Calling Claude Code CLI", { model: modelId, tier: params.model, binary: this.claudeBinaryPath });
+  async chat(req: LLMChatRequest): Promise<LLMChatResponse> {
+    const modelId = this.resolveModel(req.tier);
+    debug("Calling Claude Code CLI", { model: modelId, tier: req.tier, binary: this.claudeBinaryPath });
 
-    const userContent = params.messages.map((m) => m.content).join("\n\n");
-    const args = this.buildArgs(params.systemPrompt, modelId, userContent);
+    const userContent = req.userMessage;
+    const args = this.buildArgs(req.systemPrompt, modelId, userContent);
 
     const result =
       userContent.length > LARGE_PROMPT_THRESHOLD
@@ -122,9 +95,9 @@ export class ClaudeCodeProvider implements LLMProvider {
 
     return {
       content: result.result,
-      usage: {
-        inputTokens: result.usage.input_tokens,
-        outputTokens: result.usage.output_tokens,
+      tokens: {
+        input: result.usage.input_tokens,
+        output: result.usage.output_tokens,
       },
     };
   }
@@ -149,7 +122,6 @@ export class ClaudeCodeProvider implements LLMProvider {
 
   private async callViaCli(args: string[]): Promise<ClaudeCliResult> {
     try {
-      // `input: ""` closes stdin immediately, preventing Claude CLI's "no stdin data" warning
       const { stdout } = await execFileAsync(this.claudeBinaryPath, args, {
         timeout: DEFAULT_TIMEOUT_MS,
         maxBuffer: 10 * 1024 * 1024,
@@ -158,7 +130,6 @@ export class ClaudeCodeProvider implements LLMProvider {
       return this.parseResponse(stdout as string);
     } catch (err: unknown) {
       const execErr = err as { stdout?: string; stderr?: string };
-      // Try to extract the real error from CLI JSON output
       if (execErr.stdout) {
         try {
           const parsed = JSON.parse(execErr.stdout);
@@ -171,7 +142,6 @@ export class ClaudeCodeProvider implements LLMProvider {
           }
         }
       }
-      // Surface stderr (filtering harmless stdin warning)
       const stderr = execErr.stderr
         ?.replace(/Warning: no stdin data.*\n?/g, "")
         .trim();
@@ -204,7 +174,6 @@ export class ClaudeCodeProvider implements LLMProvider {
 
       child.on("close", (code) => {
         if (code !== 0) {
-          // Try to extract the real error from CLI JSON output
           if (stdout) {
             try {
               const parsed = JSON.parse(stdout);
@@ -213,7 +182,7 @@ export class ClaudeCodeProvider implements LLMProvider {
                 return;
               }
             } catch {
-              // stdout wasn't valid JSON, fall through
+              // stdout wasn't valid JSON
             }
           }
           const filteredStderr = stderr
@@ -269,8 +238,9 @@ export class ClaudeCodeProvider implements LLMProvider {
   private wrapError(err: unknown): Error {
     if (err instanceof Error) {
       if (err.message.includes("ENOENT")) {
-        return new Error(
-          `Claude Code CLI not found at "${this.claudeBinaryPath}". Re-run \`devflow init --force\` to reconfigure.`,
+        return Object.assign(
+          new Error(`Claude Code CLI not found at "${this.claudeBinaryPath}". Re-run \`gw config\` to reconfigure.`),
+          { code: "PROVIDER_UNAVAILABLE" },
         );
       }
       return err;
