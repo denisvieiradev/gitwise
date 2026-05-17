@@ -12,7 +12,7 @@
 | 06 | Port template engine and bundled templates with 3-level precedence | completed | medium | task_02, task_04 |
 | 07 | Port and refit user/repo config loaders with env-file key handling | completed | medium | task_02, task_04 |
 | 08 | Implement core.commit and applyCommitPlan as non-interactive functions | completed | high | task_04, task_05, task_06, task_07 |
-| 09 | Implement core.review without techspec coupling | pending | medium | task_04, task_05, task_06, task_07 |
+| 09 | Implement core.review without techspec coupling | completed | medium | task_04, task_05, task_06, task_07 |
 | 10 | Implement core.pr and applyPr with PR-update semantics | pending | medium | task_04, task_05, task_06, task_07 |
 | 11 | Implement core.release and applyRelease with workspace version propagation | pending | high | task_04, task_05, task_06, task_07 |
 | 12 | Build packages/cli skeleton with commander, first-run flow, and gw config | pending | medium | task_07 |
