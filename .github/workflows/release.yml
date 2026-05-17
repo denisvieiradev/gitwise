@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+          always-auth: true
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Publish workspaces to npm
+        run: npm publish --workspaces --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Extract release notes from CHANGELOG.md
+        id: notes
+        run: |
+          set -euo pipefail
+          notes_file="$(mktemp)"
+          # Print the first "## " section (Keep a Changelog top entry) without its heading.
+          awk '
+            /^## / {
+              if (in_section) exit
+              in_section = 1
+              next
+            }
+            in_section { print }
+          ' CHANGELOG.md > "$notes_file"
+          # Trim leading and trailing blank lines for cleaner release bodies.
+          awk 'NF { found = 1 } found' "$notes_file" \
+            | awk 'BEGIN { blank = 0 } { lines[NR] = $0 } END { for (i = NR; i >= 1; i--) if (lines[i] ~ /[^[:space:]]/) { last = i; break } for (i = 1; i <= last; i++) print lines[i] }' \
+            > "${notes_file}.trimmed"
+          mv "${notes_file}.trimmed" "$notes_file"
+          echo "path=$notes_file" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes-file "${{ steps.notes.outputs.path }}"

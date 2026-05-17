@@ -1,0 +1,55 @@
+{
+  "name": "@denisvieiradev/gitwise-core",
+  "version": "1.6.4",
+  "description": "Shared logic for gitwise: non-interactive commit/review/pr/release commands, LLM providers, git/github primitives, prompt templates.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "node --experimental-vm-modules ../../node_modules/.bin/jest --passWithNoTests",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "gitwise",
+    "git",
+    "ai",
+    "claude",
+    "commit",
+    "pull-request",
+    "release",
+    "code-review"
+  ],
+  "author": "Denis Vieira <denisvieira05@gmail.com> (https://github.com/denisvieiradev)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/denisvieiradev/devflow-cli.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/denisvieiradev/devflow-cli/issues"
+  },
+  "homepage": "https://github.com/denisvieiradev/devflow-cli#readme",
+  "engines": {
+    "node": ">=18"
+  }
+}
