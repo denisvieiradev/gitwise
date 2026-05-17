@@ -9,6 +9,7 @@ export interface CreatePRParams {
   body: string;
   base?: string;
   cwd: string;
+  draft?: boolean;
 }
 
 export interface PRResult {
@@ -29,6 +30,9 @@ export async function createPR(params: CreatePRParams): Promise<PRResult> {
   const args = ["pr", "create", "--title", params.title, "--body", params.body];
   if (params.base) {
     args.push("--base", params.base);
+  }
+  if (params.draft) {
+    args.push("--draft");
   }
   const result = await exec("gh", args, { cwd: params.cwd });
   const url = result.stdout?.trim();

@@ -36,11 +36,11 @@ describe("ConfigManager", () => {
       expect(result.models.fast).toBe("custom-model");
     });
 
-    it("should deep merge project info", () => {
+    it("should deep merge commitConvention override", () => {
       const result = mergeWithDefaults({
-        project: { name: "my-app", language: "typescript", framework: null, testFramework: null, hasCI: false },
+        commitConvention: "gitmoji",
       });
-      expect(result.project.name).toBe("my-app");
+      expect(result.commitConvention).toBe("gitmoji");
     });
   });
 

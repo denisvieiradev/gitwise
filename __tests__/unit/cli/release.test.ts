@@ -5,9 +5,11 @@ const mockChat = jest.fn<any>();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockReadConfig = jest.fn<any>();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockValidateApiKey = jest.fn<any>();
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockHandleLLMError = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockValidateProvider = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockCreateProvider = jest.fn<any>();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockStatus = jest.fn<any>();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,12 +42,6 @@ const mockEnsureDir = jest.fn<any>();
 const mockConfirm = jest.fn<any>();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockSelect = jest.fn<any>();
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockReadState = jest.fn<any>();
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockWriteState = jest.fn<any>();
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockUpdatePhase = jest.fn<any>();
 
 const mockReadFile = jest.fn<() => Promise<string>>();
 const mockWriteFile = jest.fn<() => Promise<void>>();
@@ -59,16 +55,6 @@ jest.unstable_mockModule("../../../src/core/config.js", () => ({
   readConfig: mockReadConfig,
 }));
 
-jest.unstable_mockModule("../../../src/core/state.js", () => ({
-  readState: mockReadState,
-  updatePhase: mockUpdatePhase,
-  writeState: mockWriteState,
-}));
-
-jest.unstable_mockModule("../../../src/core/pipeline.js", () => ({
-  resolveFeatureRef: jest.fn<() => Promise<string | null>>().mockResolvedValue(null),
-}));
-
 jest.unstable_mockModule("../../../src/core/template.js", () => ({
   TemplateEngine: jest.fn().mockImplementation(() => ({
     load: jest.fn<() => Promise<string>>().mockResolvedValue("template content"),
@@ -77,11 +63,12 @@ jest.unstable_mockModule("../../../src/core/template.js", () => ({
 }));
 
 jest.unstable_mockModule("../../../src/providers/claude.js", () => ({
-  ClaudeProvider: jest.fn().mockImplementation(() => ({
-    chat: mockChat,
-  })),
-  validateApiKey: mockValidateApiKey,
   handleLLMError: mockHandleLLMError,
+}));
+
+jest.unstable_mockModule("../../../src/providers/factory.js", () => ({
+  createProvider: mockCreateProvider,
+  validateProvider: mockValidateProvider,
 }));
 
 jest.unstable_mockModule("../../../src/providers/model-router.js", () => ({
@@ -137,7 +124,6 @@ const DEFAULT_CONFIG = {
   models: { balanced: "sonnet" },
   contextMode: "normal",
   templatesPath: ".devflow/templates",
-  project: { name: "test-project" },
 };
 
 describe("release command", () => {
@@ -149,12 +135,12 @@ describe("release command", () => {
     jest.clearAllMocks();
     // Happy path defaults
     mockReadConfig.mockResolvedValue(DEFAULT_CONFIG);
+    mockCreateProvider.mockReturnValue({ chat: mockChat });
     mockFileExists.mockResolvedValue(true);
     mockStatus.mockResolvedValue("");
     mockGetLatestTag.mockResolvedValue("v1.0.0");
     mockGetLog.mockResolvedValue("abc1234 feat: add feature\ndef5678 fix: bug fix");
     mockReadJSON.mockResolvedValue({ version: "1.0.0" });
-    mockReadState.mockResolvedValue({ features: {} });
     mockConfirm.mockResolvedValue(true);
     mockGitCommit.mockResolvedValue("sha123");
     mockCreateTag.mockResolvedValue(undefined);
@@ -213,8 +199,8 @@ describe("release command", () => {
         usage: { inputTokens: 10, outputTokens: 5 },
       });
 
-    // select: version bump (minor), language (English)
-    mockSelect.mockResolvedValueOnce("minor").mockResolvedValueOnce("English");
+    // select: version bump only (language defaults to "en" via CLI option)
+    mockSelect.mockResolvedValueOnce("minor");
 
     const cmd = makeReleaseCommand();
     await cmd.parseAsync(["node", "test"]);
@@ -241,7 +227,7 @@ describe("release command", () => {
       });
 
     // select: version bump (patch), language (English)
-    mockSelect.mockResolvedValueOnce("patch").mockResolvedValueOnce("English");
+    mockSelect.mockResolvedValueOnce("patch");
 
     const cmd = makeReleaseCommand();
     await cmd.parseAsync(["node", "test"]);
@@ -283,7 +269,7 @@ describe("release command", () => {
         usage: { inputTokens: 10, outputTokens: 5 },
       });
 
-    mockSelect.mockResolvedValueOnce("patch").mockResolvedValueOnce("English");
+    mockSelect.mockResolvedValueOnce("patch");
 
     const cmd = makeReleaseCommand();
     await cmd.parseAsync(["node", "test"]);
@@ -333,7 +319,7 @@ describe("release command", () => {
         usage: { inputTokens: 10, outputTokens: 5 },
       });
 
-    mockSelect.mockResolvedValueOnce("patch").mockResolvedValueOnce("English");
+    mockSelect.mockResolvedValueOnce("patch");
 
     const cmd = makeReleaseCommand();
     await cmd.parseAsync(["node", "test"]);
@@ -358,7 +344,7 @@ describe("release command", () => {
         usage: { inputTokens: 10, outputTokens: 5 },
       });
 
-    mockSelect.mockResolvedValueOnce("minor").mockResolvedValueOnce("English");
+    mockSelect.mockResolvedValueOnce("minor");
 
     const cmd = makeReleaseCommand();
     await cmd.parseAsync(["node", "test"]);
@@ -383,7 +369,7 @@ describe("release command", () => {
         usage: { inputTokens: 10, outputTokens: 5 },
       });
 
-    mockSelect.mockResolvedValueOnce("patch").mockResolvedValueOnce("English");
+    mockSelect.mockResolvedValueOnce("patch");
     // confirm: version=true, changelog=true, notes=true, push=false
     mockConfirm
       .mockResolvedValueOnce(true)

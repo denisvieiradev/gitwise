@@ -20,10 +20,6 @@ export function mergeWithDefaults(
       ...DEFAULT_CONFIG.models,
       ...partial.models,
     },
-    project: {
-      ...DEFAULT_CONFIG.project,
-      ...partial.project,
-    },
   };
 }
 

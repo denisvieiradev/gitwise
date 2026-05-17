@@ -19,19 +19,20 @@ describe("TemplateEngine", () => {
 
   describe("load", () => {
     it("should load bundled template when no override exists", async () => {
-      const content = await engine.load("prd");
-      expect(content).toContain("{{feature_name}}");
+      const content = await engine.load("commit");
+      expect(content).toBeTruthy();
+      expect(content.length).toBeGreaterThan(0);
     });
 
     it("should load project override when it exists", async () => {
       const overridePath = join(tempDir, "project-templates");
       await mkdir(overridePath, { recursive: true });
       await writeFile(
-        join(overridePath, "prd.md"),
-        "# Custom PRD: {{feature_name}}",
+        join(overridePath, "commit.md"),
+        "# Custom commit template: {{feature_name}}",
       );
-      const content = await engine.load("prd");
-      expect(content).toBe("# Custom PRD: {{feature_name}}");
+      const content = await engine.load("commit");
+      expect(content).toBe("# Custom commit template: {{feature_name}}");
     });
 
     it("should throw when template does not exist", async () => {

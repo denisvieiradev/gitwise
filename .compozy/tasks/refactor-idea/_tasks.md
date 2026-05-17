@@ -5,7 +5,7 @@
 | # | Title | Status | Complexity | Dependencies |
 |---|-------|--------|------------|--------------|
 | 01 | Initialize monorepo skeleton with npm workspaces and shared configs | completed | medium | — |
-| 02 | Remove deprecated devflow pipeline surfaces and dead state modules | pending | low | — |
+| 02 | Remove deprecated devflow pipeline surfaces and dead state modules | completed | low | — |
 | 03 | Create packages/core skeleton with build and test wiring | completed | low | task_01 |
 | 04 | Port infra modules (git, github, filesystem, env, logger) into core | pending | medium | task_02, task_03 |
 | 05 | Port LLM providers and add MockLLMProvider under core/testing | pending | medium | task_03 |
