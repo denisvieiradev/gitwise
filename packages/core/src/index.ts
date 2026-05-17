@@ -15,9 +15,12 @@ export { github } from "./infra/index.js";
 export { env } from "./infra/index.js";
 export type { ChangedFile, ApplyCommitParams } from "./infra/git.js";
 export type { CreatePRParams, PRResult, UpdatePRParams, CreateReleaseParams } from "./infra/github.js";
+// Export resolveClaudeBinary for CLI use
+export { resolveClaudeBinary } from "./providers/claude-code.js";
 
-// Config exports
-export type { UserConfig, RepoConfig, MergedConfig, ModelConfig, Language, CommitConvention } from "./config/types.js";
+// Config exports — note: ModelConfig here is the config-layer version
+export type { UserConfig, RepoConfig, MergedConfig, Language, CommitConvention } from "./config/types.js";
+export type { ModelConfig as ConfigModelConfig } from "./config/types.js";
 export { DEFAULT_USER_CONFIG } from "./config/types.js";
 export { getMergedConfig, getApiKey } from "./config/merge.js";
 export { readUserConfig, writeUserConfig, writeApiKey } from "./config/user.js";
@@ -37,7 +40,7 @@ export type { PrOptions, PrDraft, ApplyPrOptions, ApplyPrResult } from "./comman
 export type { ReviewOptions, ReviewResult, ReviewFinding } from "./commands/review.js";
 export type { CommitOptions, CommitPlan, CommitEntry, SplitMode, ApplyCommitPlanOptions } from "./commands/commit.js";
 
-// Provider exports
+// Provider exports — ModelConfig here is the provider-layer version
 export type { LLMProvider, LLMChatRequest, LLMChatResponse, ModelTier, ModelConfig, ProviderConfig } from "./providers/types.js";
 export { createProvider } from "./providers/factory.js";
 export { resolveModelTier, SUPPORTED_COMMANDS } from "./providers/model-router.js";
