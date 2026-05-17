@@ -1,5 +1,10 @@
 let verboseEnabled = false;
 
+// Support GITWISE_DEBUG=1 env variable to enable debug output
+if (process.env["GITWISE_DEBUG"] === "1") {
+  verboseEnabled = true;
+}
+
 export function setVerbose(enabled: boolean): void {
   verboseEnabled = enabled;
 }
@@ -33,8 +38,8 @@ export function debug(
 ): void {
   if (!verboseEnabled) return;
   if (context) {
-    console.log(`[debug] ${message}`, context);
+    process.stderr.write(`[debug] ${message} ${JSON.stringify(context)}\n`);
   } else {
-    console.log(`[debug] ${message}`);
+    process.stderr.write(`[debug] ${message}\n`);
   }
 }

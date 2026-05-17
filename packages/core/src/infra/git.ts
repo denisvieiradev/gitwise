@@ -175,3 +175,51 @@ export async function pushWithTags(
 ): Promise<void> {
   await run(["push", remote, branch, "--follow-tags"], cwd);
 }
+
+/**
+ * Detect the base branch of the repository (main or master).
+ * Returns 'main' if both exist, falls back to 'master', throws if neither exists.
+ */
+export async function detectBaseBranch(cwd: string): Promise<string> {
+  try {
+    await exec("git", ["rev-parse", "--verify", "main"], { cwd, timeout: GIT_TIMEOUT_MS });
+    return "main";
+  } catch {
+    // main doesn't exist, try master
+  }
+  try {
+    await exec("git", ["rev-parse", "--verify", "master"], { cwd, timeout: GIT_TIMEOUT_MS });
+    return "master";
+  } catch {
+    // master doesn't exist either
+  }
+  throw Object.assign(new Error("No base branch found: neither main nor master exists"), {
+    code: "NO_BASE_BRANCH",
+  });
+}
+
+export interface ApplyCommitParams {
+  message: string;
+  files: string[];
+  cwd: string;
+}
+
+/**
+ * Stage the given files and create a commit.
+ * Throws a typed error on hook failure or other git errors.
+ */
+export async function applyCommit(params: ApplyCommitParams): Promise<void> {
+  const { message, files, cwd } = params;
+  try {
+    if (files.length > 0) {
+      await add(cwd, files);
+    }
+    await commit(cwd, message);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw Object.assign(
+      new Error(`Git commit failed: ${msg}`),
+      { code: "COMMIT_HOOK_FAILURE", cause: err },
+    );
+  }
+}
