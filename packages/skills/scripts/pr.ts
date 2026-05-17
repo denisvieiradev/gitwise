@@ -6,6 +6,7 @@
 
 import {
   getMergedConfig,
+  getApiKey,
   createProvider,
   pr,
   applyPr,
@@ -35,9 +36,10 @@ if (promptIdx !== -1) {
 async function main(): Promise<void> {
   const cwd = process.cwd();
   const config = await getMergedConfig({ cwd });
-  const provider = createProvider(config);
+  const apiKey = await getApiKey();
+  const provider = createProvider({ kind: config.provider, models: config.models, apiKey, claudeCliPath: config.claudeCliPath });
 
-  const draft = await pr({ base, extraPrompt, provider, cwd });
+  const draft = await pr({ baseBranch: base, prompt: extraPrompt, provider, cwd });
 
   // Emit plan
   process.stdout.write(`## PR Draft\n\n`);

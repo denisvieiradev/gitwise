@@ -6,6 +6,7 @@
 
 import {
   getMergedConfig,
+  getApiKey,
   createProvider,
   release,
   applyRelease,
@@ -34,15 +35,16 @@ if (bumpIdx !== -1) {
 async function main(): Promise<void> {
   const cwd = process.cwd();
   const config = await getMergedConfig({ cwd });
-  const provider = createProvider(config);
+  const apiKey = await getApiKey();
+  const provider = createProvider({ kind: config.provider, models: config.models, apiKey, claudeCliPath: config.claudeCliPath });
 
-  const plan = await release({ forceBump, provider, cwd });
+  const plan = await release({ bump: forceBump, provider, cwd });
 
   // Emit plan
   process.stdout.write(`## Release Plan\n\n`);
-  process.stdout.write(`**Version:** ${plan.version} (${plan.bumpType})\n\n`);
+  process.stdout.write(`**Version:** ${plan.newVersion} (${plan.suggestedBump})\n\n`);
   process.stdout.write(`### Changelog\n\n${plan.changelog}\n\n`);
-  process.stdout.write(`### Release Notes\n\n${plan.releaseNotes}\n\n`);
+  process.stdout.write(`### Release Notes\n\n${plan.notes}\n\n`);
   process.stdout.write(
     `**Tokens used:** ${plan.tokens.input} in / ${plan.tokens.output} out\n\n`
   );
@@ -54,7 +56,7 @@ async function main(): Promise<void> {
 
   await applyRelease(plan, { cwd, createGhRelease: !noGhRelease });
 
-  process.stdout.write(`**Done.** Released ${plan.version}.\n`);
+  process.stdout.write(`**Done.** Released ${plan.newVersion}.\n`);
 }
 
 main().catch((err: unknown) => {
