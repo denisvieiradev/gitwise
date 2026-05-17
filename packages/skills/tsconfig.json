@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "paths": {
+      "@denisvieiradev/gitwise-core": ["../core/src/index.ts"],
+      "@denisvieiradev/gitwise-core/testing": ["../core/src/testing/index.ts"]
+    }
+  },
+  "include": ["src", "scripts"],
+  "exclude": ["node_modules", "dist", "__tests__"]
+}
