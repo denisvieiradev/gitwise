@@ -13,7 +13,7 @@
 | 07 | Port and refit user/repo config loaders with env-file key handling | completed | medium | task_02, task_04 |
 | 08 | Implement core.commit and applyCommitPlan as non-interactive functions | completed | high | task_04, task_05, task_06, task_07 |
 | 09 | Implement core.review without techspec coupling | completed | medium | task_04, task_05, task_06, task_07 |
-| 10 | Implement core.pr and applyPr with PR-update semantics | pending | medium | task_04, task_05, task_06, task_07 |
+| 10 | Implement core.pr and applyPr with PR-update semantics | completed | medium | task_04, task_05, task_06, task_07 |
 | 11 | Implement core.release and applyRelease with workspace version propagation | pending | high | task_04, task_05, task_06, task_07 |
 | 12 | Build packages/cli skeleton with commander, first-run flow, and gw config | pending | medium | task_07 |
 | 13 | Implement CLI command wrappers for commit, review, pr, and release | pending | high | task_08, task_09, task_10, task_11, task_12 |
