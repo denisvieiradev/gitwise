@@ -14,7 +14,7 @@
 | 08 | Implement core.commit and applyCommitPlan as non-interactive functions | completed | high | task_04, task_05, task_06, task_07 |
 | 09 | Implement core.review without techspec coupling | completed | medium | task_04, task_05, task_06, task_07 |
 | 10 | Implement core.pr and applyPr with PR-update semantics | completed | medium | task_04, task_05, task_06, task_07 |
-| 11 | Implement core.release and applyRelease with workspace version propagation | pending | high | task_04, task_05, task_06, task_07 |
+| 11 | Implement core.release and applyRelease with workspace version propagation | completed | high | task_04, task_05, task_06, task_07 |
 | 12 | Build packages/cli skeleton with commander, first-run flow, and gw config | pending | medium | task_07 |
 | 13 | Implement CLI command wrappers for commit, review, pr, and release | pending | high | task_08, task_09, task_10, task_11, task_12 |
 | 14 | Build packages/skills plugin with manifest, skill markdown, and scripts | pending | medium | task_08, task_09, task_10, task_11 |

@@ -25,6 +25,8 @@ export interface RepoConfig {
   defaultBaseBranch?: string;
   commitConvention?: CommitConvention;
   templatesPath?: string;
+  /** When true, applyRelease() propagates the new version to all packages/* */
+  workspacePropagation?: boolean;
 }
 
 /** The merged result of UserConfig + RepoConfig overrides */
