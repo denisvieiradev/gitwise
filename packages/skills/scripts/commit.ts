@@ -45,7 +45,8 @@ async function main(): Promise<void> {
 
   // Emit markdown plan
   if (plan.kind === "single") {
-    const [c] = plan.commits;
+    const c = plan.commits[0];
+    if (!c) throw new Error("commit() returned a single plan with no commits");
     process.stdout.write(`## Commit Plan\n\n**Message:** ${c.message}\n\n`);
     if (c.files && c.files.length > 0) {
       process.stdout.write(`**Files:** ${c.files.join(", ")}\n\n`);
@@ -54,6 +55,7 @@ async function main(): Promise<void> {
     process.stdout.write(`## Commit Plan (split into ${plan.commits.length} commits)\n\n`);
     for (let i = 0; i < plan.commits.length; i++) {
       const c = plan.commits[i];
+      if (!c) continue;
       process.stdout.write(`### Commit ${i + 1}\n**Message:** ${c.message}\n`);
       if (c.files && c.files.length > 0) {
         process.stdout.write(`**Files:** ${c.files.join(", ")}\n`);

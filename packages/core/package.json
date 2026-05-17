@@ -51,5 +51,8 @@
   "homepage": "https://github.com/denisvieiradev/devflow-cli#readme",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
   }
 }
