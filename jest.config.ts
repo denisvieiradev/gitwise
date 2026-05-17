@@ -1,9 +1,7 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { Config } from "jest";
-import { createDefaultEsmPreset } from "ts-jest";
 
-const presetConfig = createDefaultEsmPreset();
 const ROOT_DIR = process.cwd();
 
 function discoverWorkspaceProjects(): string[] {
@@ -26,20 +24,8 @@ function discoverWorkspaceProjects(): string[] {
     );
 }
 
-const legacyProject: Config = {
-  ...presetConfig,
-  displayName: "legacy",
-  testEnvironment: "node",
-  rootDir: ROOT_DIR,
-  roots: ["<rootDir>/__tests__"],
-  moduleNameMapper: {
-    "^(\\.{1,2}/.*)\\.js$": "$1",
-    "^ora$": "<rootDir>/__mocks__/ora.ts",
-  },
-};
-
 const config: Config = {
-  projects: [legacyProject, ...discoverWorkspaceProjects()],
+  projects: discoverWorkspaceProjects(),
   coverageDirectory: "coverage",
   coverageThreshold: {
     global: {
@@ -49,12 +35,6 @@ const config: Config = {
       statements: 80,
     },
   },
-  collectCoverageFrom: [
-    "src/**/*.ts",
-    "tsup.config.ts",
-    "!src/cli/index.ts",
-    "!src/**/index.ts",
-  ],
 };
 
 export default config;
