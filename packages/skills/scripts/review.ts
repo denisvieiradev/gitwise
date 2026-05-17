@@ -6,6 +6,7 @@
 
 import {
   getMergedConfig,
+  getApiKey,
   createProvider,
   review,
 } from "@denisvieiradev/gitwise-core";
@@ -30,9 +31,10 @@ if (promptIdx !== -1) {
 async function main(): Promise<void> {
   const cwd = process.cwd();
   const config = await getMergedConfig({ cwd });
-  const provider = createProvider(config);
+  const apiKey = await getApiKey();
+  const provider = createProvider({ kind: config.provider, models: config.models, apiKey, claudeCliPath: config.claudeCliPath });
 
-  const result = await review({ base, extraPrompt, provider, cwd });
+  const result = await review({ baseBranch: base, prompt: extraPrompt, provider, cwd });
 
   // Emit sections
   process.stdout.write("## Code Review\n\n");
@@ -40,7 +42,8 @@ async function main(): Promise<void> {
   if (result.critical.length > 0) {
     process.stdout.write("### Critical\n\n");
     for (const f of result.critical) {
-      process.stdout.write(`- **${f.file ?? ""}** ${f.message}\n`);
+      const prefix = f.file ? `**${f.file}** ` : "";
+      process.stdout.write(`- ${prefix}${f.description}\n`);
     }
     process.stdout.write("\n");
   }
@@ -48,7 +51,8 @@ async function main(): Promise<void> {
   if (result.suggestions.length > 0) {
     process.stdout.write("### Suggestions\n\n");
     for (const f of result.suggestions) {
-      process.stdout.write(`- **${f.file ?? ""}** ${f.message}\n`);
+      const prefix = f.file ? `**${f.file}** ` : "";
+      process.stdout.write(`- ${prefix}${f.description}\n`);
     }
     process.stdout.write("\n");
   }
@@ -56,7 +60,8 @@ async function main(): Promise<void> {
   if (result.nitpicks.length > 0) {
     process.stdout.write("### Nitpicks\n\n");
     for (const f of result.nitpicks) {
-      process.stdout.write(`- **${f.file ?? ""}** ${f.message}\n`);
+      const prefix = f.file ? `**${f.file}** ` : "";
+      process.stdout.write(`- ${prefix}${f.description}\n`);
     }
     process.stdout.write("\n");
   }

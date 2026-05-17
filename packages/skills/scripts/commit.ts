@@ -6,6 +6,7 @@
 
 import {
   getMergedConfig,
+  getApiKey,
   createProvider,
   commit,
   applyCommitPlan,
@@ -37,9 +38,10 @@ const intent = args.join(" ").trim();
 async function main(): Promise<void> {
   const cwd = process.cwd();
   const config = await getMergedConfig({ cwd });
-  const provider = createProvider(config);
+  const apiKey = await getApiKey();
+  const provider = createProvider({ kind: config.provider, models: config.models, apiKey, claudeCliPath: config.claudeCliPath });
 
-  const plan = await commit({ intent, splitMode, provider, cwd });
+  const plan = await commit({ prompt: intent, split: splitMode, provider, cwd });
 
   // Emit markdown plan
   if (plan.kind === "single") {
@@ -74,7 +76,7 @@ async function main(): Promise<void> {
   await applyCommitPlan(plan, { cwd });
 
   if (push) {
-    await git.push({ cwd });
+    await git.push(cwd, "origin", "HEAD");
   }
 
   process.stdout.write("**Done.** Commits applied.\n");
