@@ -16,6 +16,13 @@ export { env } from "./infra/index.js";
 export type { ChangedFile, ApplyCommitParams } from "./infra/git.js";
 export type { CreatePRParams, PRResult, UpdatePRParams, CreateReleaseParams } from "./infra/github.js";
 
+// Config exports
+export type { UserConfig, RepoConfig, MergedConfig, ModelConfig, Language, CommitConvention } from "./config/types.js";
+export { DEFAULT_USER_CONFIG } from "./config/types.js";
+export { getMergedConfig, getApiKey } from "./config/merge.js";
+export { readUserConfig, writeUserConfig, writeApiKey } from "./config/user.js";
+export { readRepoConfig } from "./config/repo.js";
+
 // Template exports
 export { loadTemplate, loadAndInterpolate, interpolate } from "./template/index.js";
 export type { LoadTemplateOptions } from "./template/index.js";
