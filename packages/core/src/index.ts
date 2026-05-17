@@ -16,6 +16,10 @@ export { env } from "./infra/index.js";
 export type { ChangedFile, ApplyCommitParams } from "./infra/git.js";
 export type { CreatePRParams, PRResult, UpdatePRParams, CreateReleaseParams } from "./infra/github.js";
 
+// Template exports
+export { loadTemplate, loadAndInterpolate, interpolate } from "./template/index.js";
+export type { LoadTemplateOptions } from "./template/index.js";
+
 // Provider exports
 export type { LLMProvider, LLMChatRequest, LLMChatResponse, ModelTier, ModelConfig, ProviderConfig } from "./providers/types.js";
 export { createProvider } from "./providers/factory.js";
