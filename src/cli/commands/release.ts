@@ -5,8 +5,6 @@ import ora from "ora";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { readConfig } from "../../core/config.js";
-import { readState, updatePhase, writeState } from "../../core/state.js";
-import { resolveFeatureRef } from "../../core/pipeline.js";
 import { TemplateEngine } from "../../core/template.js";
 import { handleLLMError } from "../../providers/claude.js";
 import { createProvider, validateProvider } from "../../providers/factory.js";
@@ -57,16 +55,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 export function makeReleaseCommand(): Command {
   return new Command("release")
-    .description("Create a new release with version bump, changelog, and release notes")
-    .argument("[ref]", "Feature reference (optional — ties release to pipeline)")
-    .action(async (ref: string | undefined) => {
+    .description("Versioned release with AI-generated changelog and notes")
+    .option("--bump <type>", "Version bump type: patch, minor, or major")
+    .option("--language <lang>", "Language for release notes (en, pt, es, fr)", "en")
+    .option("--no-publish", "Skip git push and GitHub release creation")
+    .option("--no-gh-release", "Skip GitHub release creation (still pushes)")
+    .action(async (options: { bump?: string; language: string; publish: boolean; ghRelease: boolean }) => {
       const cwd = process.cwd();
-      p.intro("devflow release");
+      p.intro("gitwise release");
 
       // --- Pre-flight checks ---
       const config = await readConfig(cwd);
       if (!config) {
-        p.cancel("No config found. Run `devflow init` first.");
+        p.cancel("No config found.");
         process.exit(1);
       }
 
@@ -84,18 +85,6 @@ export function makeReleaseCommand(): Command {
 
       validateProvider(config);
 
-      // --- Resolve pipeline context (optional) ---
-      let featureRef: string | undefined;
-      let state = await readState(cwd);
-      if (ref) {
-        const resolved = await resolveFeatureRef(cwd, state, ref);
-        if (!resolved) {
-          p.cancel(`Feature '${ref}' not found.`);
-          process.exit(1);
-        }
-        featureRef = resolved;
-      }
-
       // --- Determine commits since last tag ---
       const lastTag = await git.getLatestTag(cwd);
       if (lastTag) {
@@ -111,7 +100,7 @@ export function makeReleaseCommand(): Command {
         process.exit(1);
       }
 
-      const pkg = await readJSON<{ version: string }>(pkgPath);
+      const pkg = await readJSON<{ version: string; name?: string }>(pkgPath);
       const currentVersion = pkg.version;
       p.log.info(`Current version: ${chalk.cyan(currentVersion)}`);
 
@@ -150,21 +139,26 @@ export function makeReleaseCommand(): Command {
         );
       }
 
-      const defaultBump = suggestion?.suggestion ?? "patch";
-      const bumpChoices: BumpType[] = ["patch", "minor", "major"];
-      const bumpResult = await p.select({
-        message: "Select version bump:",
-        options: bumpChoices.map((b) => ({
-          value: b,
-          label: `${b} (${bumpVersion(currentVersion, b)})${b === defaultBump ? chalk.yellow(" ← suggested") : ""}`,
-        })),
-        initialValue: defaultBump,
-      });
-      if (p.isCancel(bumpResult)) {
-        p.cancel("Release cancelled.");
-        process.exit(0);
+      let bumpType: BumpType;
+      if (options.bump && ["patch", "minor", "major"].includes(options.bump)) {
+        bumpType = options.bump as BumpType;
+      } else {
+        const defaultBump = suggestion?.suggestion ?? "patch";
+        const bumpChoices: BumpType[] = ["patch", "minor", "major"];
+        const bumpResult = await p.select({
+          message: "Select version bump:",
+          options: bumpChoices.map((b) => ({
+            value: b,
+            label: `${b} (${bumpVersion(currentVersion, b)})${b === defaultBump ? chalk.yellow(" ← suggested") : ""}`,
+          })),
+          initialValue: defaultBump,
+        });
+        if (p.isCancel(bumpResult)) {
+          p.cancel("Release cancelled.");
+          process.exit(0);
+        }
+        bumpType = bumpResult as BumpType;
       }
-      const bumpType = bumpResult as BumpType;
 
       const newVersion = bumpVersion(currentVersion, bumpType);
       const confirmVersion = await p.confirm({
@@ -178,7 +172,7 @@ export function makeReleaseCommand(): Command {
       // --- AI: Generate technical changelog ---
       const changelogTemplate = await templateEngine.load("release-changelog");
       const changelogPrompt = templateEngine.interpolate(changelogTemplate, {
-        projectName: config.project.name || "this project",
+        projectName: pkg.name || "this project",
       });
 
       let changelog: string;
@@ -210,25 +204,38 @@ export function makeReleaseCommand(): Command {
       }
 
       // --- AI: Generate client release notes ---
-      const language = await p.select({
-        message: "Select language for release notes:",
-        options: [
-          { value: "English", label: "English" },
-          { value: "Portuguese", label: "Portuguese" },
-          { value: "Spanish", label: "Spanish" },
-          { value: "French", label: "French" },
-        ],
-      });
-      if (p.isCancel(language)) {
-        p.cancel("Release cancelled.");
-        process.exit(0);
+      const languageMap: Record<string, string> = {
+        en: "English",
+        pt: "Portuguese",
+        es: "Spanish",
+        fr: "French",
+      };
+
+      let notesLanguage: string;
+      if (options.language && languageMap[options.language]) {
+        notesLanguage = languageMap[options.language]!;
+      } else {
+        const languageResult = await p.select({
+          message: "Select language for release notes:",
+          options: [
+            { value: "English", label: "English" },
+            { value: "Portuguese", label: "Portuguese" },
+            { value: "Spanish", label: "Spanish" },
+            { value: "French", label: "French" },
+          ],
+        });
+        if (p.isCancel(languageResult)) {
+          p.cancel("Release cancelled.");
+          process.exit(0);
+        }
+        notesLanguage = languageResult as string;
       }
 
       const notesTemplate = await templateEngine.load("release-notes");
       const notesPrompt = templateEngine.interpolate(notesTemplate, {
         version: newVersion,
-        projectName: config.project.name || "this project",
-        language: language as string,
+        projectName: pkg.name || "this project",
+        language: notesLanguage,
       });
 
       let releaseNotes: string;
@@ -290,8 +297,8 @@ export function makeReleaseCommand(): Command {
         await writeFile(changelogPath, CHANGELOG_HEADER + newEntry, "utf-8");
       }
 
-      // Save release notes
-      const releasesDir = join(cwd, ".devflow", "releases");
+      // Save release notes in releases dir
+      const releasesDir = join(cwd, ".gitwise", "releases");
       await ensureDir(releasesDir);
       const notesPath = join(releasesDir, `v${newVersion}-release-notes.md`);
       await writeFile(notesPath, releaseNotes, "utf-8");
@@ -299,21 +306,19 @@ export function makeReleaseCommand(): Command {
       spinner.stop();
       p.log.success(`Bumped version to ${chalk.green(newVersion)} in package.json`);
       p.log.success("Updated CHANGELOG.md");
-      p.log.success(`Saved release notes to ${chalk.dim(`.devflow/releases/v${newVersion}-release-notes.md`)}`);
+      p.log.success(`Saved release notes to ${chalk.dim(`.gitwise/releases/v${newVersion}-release-notes.md`)}`);
 
       // --- Git: commit, tag ---
-      await git.add(cwd, ["package.json", "CHANGELOG.md", `.devflow/releases/v${newVersion}-release-notes.md`]);
+      await git.add(cwd, ["package.json", "CHANGELOG.md", `.gitwise/releases/v${newVersion}-release-notes.md`]);
       await git.commit(cwd, `chore(release): v${newVersion}`);
       p.log.success(`Committed: ${chalk.green(`chore(release): v${newVersion}`)}`);
 
       await git.createTag(cwd, `v${newVersion}`, `Release v${newVersion}`);
       p.log.success(`Tagged: ${chalk.green(`v${newVersion}`)}`);
 
-      // --- Pipeline: update phase (optional) ---
-      if (featureRef) {
-        state = updatePhase(state, featureRef, "releasing");
-        await writeState(cwd, state);
-        p.log.info(`Updated feature phase to ${chalk.cyan("releasing")}`);
+      if (!options.publish) {
+        p.outro(`Released v${newVersion} locally. Run \`git push --follow-tags\` to publish.`);
+        return;
       }
 
       // --- Push and GitHub release ---
@@ -338,6 +343,11 @@ export function makeReleaseCommand(): Command {
       }
 
       // GitHub release
+      if (!options.ghRelease) {
+        p.outro(`Released v${newVersion}`);
+        return;
+      }
+
       const ghAvailable = await isGhAvailable();
       if (!ghAvailable) {
         p.log.warn("GitHub CLI (gh) not found. Skipping GitHub release.");

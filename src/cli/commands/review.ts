@@ -1,55 +1,53 @@
 import { Command } from "commander";
 import * as p from "@clack/prompts";
 import ora from "ora";
-import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import { writeState, updatePhase } from "../../core/state.js";
-import { getFeaturePath } from "../../core/pipeline.js";
-import { ContextBuilder, type Document } from "../../core/context.js";
+import { readConfig } from "../../core/config.js";
 import { handleLLMError } from "../../providers/claude.js";
 import { createProvider, validateProvider } from "../../providers/factory.js";
 import { resolveModelTier } from "../../providers/model-router.js";
-import { fileExists } from "../../infra/filesystem.js";
 import * as git from "../../infra/git.js";
-import { withFeatureContext } from "../context.js";
+
+const MAX_DIFF_CHARS = 80_000;
+
+function truncateDiff(diff: string): string {
+  if (diff.length <= MAX_DIFF_CHARS) return diff;
+  return diff.slice(0, MAX_DIFF_CHARS) + "\n\n[diff truncated — too large for context window]";
+}
 
 export function makeReviewCommand(): Command {
   return new Command("review")
-    .description("Automated code review with categorized findings")
-    .argument("[ref]", "Feature reference (number or slug)")
+    .description("AI-powered pre-push code review with categorized findings")
     .option("--base <branch>", "Base branch for diff", "main")
-    .action(async (ref: string | undefined, options: { base: string }) => {
+    .action(async (options: { base: string }) => {
       const cwd = process.cwd();
-      p.intro("devflow review");
-      const { config, state: initialState, featureRef } = await withFeatureContext(cwd, ref, "review");
-      let state = initialState;
-      const featurePath = getFeaturePath(cwd, featureRef);
+      p.intro("gitwise review");
+
+      const config = await readConfig(cwd);
+      if (!config) {
+        p.cancel("No config found. Run `gitwise commit` once to set up your config.");
+        process.exit(1);
+      }
+
       let diff: string;
       try {
         diff = await git.getDiff(cwd, options.base);
       } catch {
-        diff = await git.getDiff(cwd);
+        try {
+          diff = await git.getDiff(cwd);
+        } catch (err) {
+          p.cancel(`Failed to get diff: ${err instanceof Error ? err.message : String(err)}`);
+          process.exit(1);
+        }
       }
+
       if (!diff) {
         p.cancel("No diff found between current branch and base.");
         process.exit(1);
       }
-      const docs: Document[] = [
-        { name: "Diff", content: diff, priority: "high" },
-      ];
-      const techspecPath = join(featurePath, "techspec.md");
-      if (await fileExists(techspecPath)) {
-        docs.push({
-          name: "Tech Spec",
-          content: await readFile(techspecPath, "utf-8"),
-          priority: "medium",
-        });
-      }
+
       validateProvider(config);
       const provider = createProvider(config);
       const tier = resolveModelTier("review");
-      const contextBuilder = new ContextBuilder();
-      const context = contextBuilder.build(docs, config.contextMode);
       const spinner = ora();
       let response;
       try {
@@ -72,7 +70,7 @@ For each finding, include:
 - Suggested fix
 
 End with a summary: total findings count per category and overall recommendation (approve, request changes).`,
-          messages: [{ role: "user", content: context }],
+          messages: [{ role: "user", content: truncateDiff(diff) }],
           model: tier,
         });
         spinner.stop();
@@ -81,16 +79,8 @@ End with a summary: total findings count per category and overall recommendation
         handleLLMError(err);
         return;
       }
-      const reviewPath = join(featurePath, "review.md");
-      await writeFile(reviewPath, response.content, "utf-8");
-      p.log.success(`Review saved: ${reviewPath}`);
-      const hasCritical = /^#{1,3}\s*critical/im.test(response.content) &&
-        !/no critical issues/i.test(response.content);
-      if (hasCritical) {
-        p.log.warn("Critical findings detected. Consider running `devflow tasks` to generate fix tasks.");
-      }
-      state = updatePhase(state, featureRef, "reviewing");
-      await writeState(cwd, state);
+
+      p.log.message(response.content);
       p.outro(`Tokens: ${response.usage.inputTokens} in / ${response.usage.outputTokens} out`);
     });
 }
