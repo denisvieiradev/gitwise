@@ -100,6 +100,11 @@ export function listWorkspaceManifests(rootDir) {
   return results.sort();
 }
 
+function pluginManifestBeside(packageManifest) {
+  // packages/<name>/package.json → packages/<name>/plugin.json
+  return join(packageManifest, "..", "plugin.json");
+}
+
 export function propagateVersion(rootDir, newVersion) {
   const rootManifest = resolve(rootDir, "package.json");
   const updated = [];
@@ -116,6 +121,24 @@ export function propagateVersion(rootDir, newVersion) {
       writeJson(manifest, pkg);
     }
     updated.push(manifest);
+    // Some packages (Claude Code plugins) ship a sibling plugin.json whose
+    // `version` field is shown to end users. Keep it in lockstep with
+    // package.json so the locked-version invariant holds across both files.
+    const pluginManifest = pluginManifestBeside(manifest);
+    let pluginExists = false;
+    try {
+      pluginExists = statSync(pluginManifest).isFile();
+    } catch {
+      // No sibling plugin manifest — nothing to do.
+    }
+    if (pluginExists) {
+      const plugin = readJson(pluginManifest);
+      if (plugin.version !== newVersion) {
+        plugin.version = newVersion;
+        writeJson(pluginManifest, plugin);
+      }
+      updated.push(pluginManifest);
+    }
   }
   return updated;
 }
@@ -141,10 +164,29 @@ function defaultGit(rootDir) {
       });
     },
     tag(name) {
-      execFileSync("git", ["tag", name], {
+      // Annotated tag — carries tagger/timestamp/message so `git describe`,
+      // `gh release view`, and `git for-each-ref --format='%(taggerdate)'` work.
+      execFileSync("git", ["tag", "-a", "-m", `Release ${name}`, name], {
         cwd: rootDir,
         stdio: "inherit",
       });
+    },
+    statusPorcelain() {
+      return execFileSync("git", ["status", "--porcelain"], {
+        cwd: rootDir,
+      }).toString();
+    },
+    tagExists(name) {
+      try {
+        execFileSync(
+          "git",
+          ["rev-parse", "--verify", "--quiet", `refs/tags/${name}`],
+          { cwd: rootDir, stdio: ["ignore", "ignore", "ignore"] },
+        );
+        return true;
+      } catch {
+        return false;
+      }
     },
   };
 }
@@ -161,8 +203,25 @@ export async function runRelease(options = {}) {
     explicitVersion: parsed.explicitVersion,
   });
   const tag = `v${newVersion}`;
-  const updated = propagateVersion(rootDir, newVersion);
   const git = options.git ?? defaultGit(rootDir);
+  // Pre-flight checks before any mutation. The release commit + tag must be
+  // atomic from the operator's perspective: if we mutate manifests, commit,
+  // and only THEN discover the tag already exists, the repo is left in a
+  // half-applied state with a release commit but no tag.
+  if (typeof git.statusPorcelain === "function") {
+    const dirty = git.statusPorcelain().trim();
+    if (dirty) {
+      throw new Error(
+        `Working tree must be clean before releasing — commit or stash first.\n${dirty}`,
+      );
+    }
+  }
+  if (typeof git.tagExists === "function" && git.tagExists(tag)) {
+    throw new Error(
+      `Tag ${tag} already exists. Bump to a new version or delete the tag.`,
+    );
+  }
+  const updated = propagateVersion(rootDir, newVersion);
   git.add(updated);
   git.commit(`chore(release): ${tag}`);
   git.tag(tag);

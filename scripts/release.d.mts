@@ -13,6 +13,10 @@ export interface GitClient {
   add(paths: string[]): void;
   commit(message: string): void;
   tag(name: string): void;
+  // Optional pre-flight hooks. runRelease() skips the corresponding guard
+  // when the method is absent, which keeps existing test doubles compatible.
+  statusPorcelain?(): string;
+  tagExists?(name: string): boolean;
 }
 
 export interface RunReleaseOptions {
