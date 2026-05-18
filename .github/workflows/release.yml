@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  id-token: write
 
 jobs:
   release:
@@ -45,15 +44,21 @@ jobs:
         run: |
           set -euo pipefail
           notes_file="$(mktemp)"
-          # Print the first "## " section (Keep a Changelog top entry) without its heading.
-          awk '
-            /^## / {
-              if (in_section) exit
+          version="${GITHUB_REF_NAME#v}"
+          # Print the "## [<version>]" section (Keep a Changelog entry for this tag) without its heading.
+          # Fails loudly if the changelog has no section for the tag being released.
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" {
               in_section = 1
               next
             }
+            /^## / && in_section { exit }
             in_section { print }
           ' CHANGELOG.md > "$notes_file"
+          if [ ! -s "$notes_file" ]; then
+            echo "::error::No CHANGELOG.md section found for version ${version} (tag ${GITHUB_REF_NAME}). Refusing to publish release with stale or missing notes." >&2
+            exit 1
+          fi
           # Trim leading and trailing blank lines for cleaner release bodies.
           awk 'NF { found = 1 } found' "$notes_file" \
             | awk 'BEGIN { blank = 0 } { lines[NR] = $0 } END { for (i = NR; i >= 1; i--) if (lines[i] ~ /[^[:space:]]/) { last = i; break } for (i = 1; i <= last; i++) print lines[i] }' \
