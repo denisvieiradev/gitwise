@@ -1,6 +1,6 @@
 {
   "name": "@denisvieiradev/gitwise-core",
-  "version": "1.6.4",
+  "version": "0.1.0",
   "description": "Shared logic for gitwise: non-interactive commit/review/pr/release commands, LLM providers, git/github primitives, prompt templates.",
   "type": "module",
   "main": "./dist/index.js",
@@ -42,13 +42,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/denisvieiradev/devflow-cli.git",
+    "url": "git+https://github.com/denisvieiradev/gitwise.git",
     "directory": "packages/core"
   },
   "bugs": {
-    "url": "https://github.com/denisvieiradev/devflow-cli/issues"
+    "url": "https://github.com/denisvieiradev/gitwise/issues"
   },
-  "homepage": "https://github.com/denisvieiradev/devflow-cli#readme",
+  "homepage": "https://github.com/denisvieiradev/gitwise#readme",
   "engines": {
     "node": ">=18"
   },
