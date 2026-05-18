@@ -1,5 +1,6 @@
-import { describe, it, expect } from "@jest/globals";
-import { createProgram } from "../src/program.js";
+import { describe, it, expect, afterEach } from "@jest/globals";
+import chalk from "chalk";
+import { applyNoColor, createProgram } from "../src/program.js";
 
 describe("program (cli)", () => {
   it("registers commit, review, pr, release, and config commands", () => {
@@ -27,5 +28,66 @@ describe("program (cli)", () => {
     const program = createProgram();
     const apiKeyOpt = program.options.find((o) => o.long === "--api-key");
     expect(apiKeyOpt).toBeDefined();
+  });
+
+  describe("--no-color handling", () => {
+    const originalLevel = chalk.level;
+    const originalEnv = process.env.NO_COLOR;
+
+    afterEach(() => {
+      chalk.level = originalLevel;
+      if (originalEnv === undefined) {
+        delete process.env.NO_COLOR;
+      } else {
+        process.env.NO_COLOR = originalEnv;
+      }
+    });
+
+    it("applyNoColor disables chalk and sets NO_COLOR env", () => {
+      chalk.level = 3;
+      delete process.env.NO_COLOR;
+
+      applyNoColor();
+
+      expect(chalk.level).toBe(0);
+      expect(process.env.NO_COLOR).toBe("1");
+    });
+
+    it("invoking a subcommand with --no-color disables chalk via preAction hook", async () => {
+      chalk.level = 3;
+      delete process.env.NO_COLOR;
+
+      const program = createProgram();
+      program
+        .command("__test_noop")
+        .description("test-only no-op command")
+        .action(() => {
+          // intentionally empty
+        });
+
+      await program.parseAsync(["node", "gw", "--no-color", "__test_noop"]);
+
+      expect(chalk.level).toBe(0);
+      expect(process.env.NO_COLOR).toBe("1");
+      expect(chalk.cyan("hello")).toBe("hello");
+    });
+
+    it("invoking a subcommand without --no-color leaves chalk untouched", async () => {
+      chalk.level = 3;
+      delete process.env.NO_COLOR;
+
+      const program = createProgram();
+      program
+        .command("__test_noop")
+        .description("test-only no-op command")
+        .action(() => {
+          // intentionally empty
+        });
+
+      await program.parseAsync(["node", "gw", "__test_noop"]);
+
+      expect(chalk.level).toBe(3);
+      expect(process.env.NO_COLOR).toBeUndefined();
+    });
   });
 });
