@@ -49,6 +49,84 @@ describe("parseCommitResponse", () => {
     const result = parseCommitResponse("This is just a commit message");
     expect(result.type).toBe("single");
   });
+
+  it("strategy 3: extracts plan JSON wrapped in surrounding prose", () => {
+    const raw =
+      'Here is the plan for your changes:\n{"type":"plan","commits":[{"message":"feat: a","files":["a.ts"]},{"message":"fix: b","files":["b.ts"]}]}\nLet me know if you want adjustments.';
+    const result = parseCommitResponse(raw);
+    expect(result.type).toBe("plan");
+    if (result.type === "plan") {
+      expect(result.commits).toHaveLength(2);
+      expect(result.commits[0]?.message).toBe("feat: a");
+    }
+  });
+
+  it("strategy 3: prefers plan when both plan and single objects are emitted with prose between them", () => {
+    const raw = [
+      "First, here is a single fallback in case you want it:",
+      '{"type":"single","message":"chore: rollup"}',
+      "But the real recommendation is to split:",
+      '{"type":"plan","commits":[{"message":"feat: a","files":["a.ts"]},{"message":"fix: b","files":["b.ts"]}]}',
+    ].join("\n");
+    const result = parseCommitResponse(raw);
+    expect(result.type).toBe("plan");
+    if (result.type === "plan") {
+      expect(result.commits.map((c) => c.message)).toEqual(["feat: a", "fix: b"]);
+    }
+  });
+
+  it("strategy 3: picks the first valid JSON when two separate single objects are emitted with prose between them", () => {
+    const raw = [
+      "First, the feature change:",
+      '{"type":"single","message":"feat: add login"}',
+      "Then the unrelated fix:",
+      '{"type":"single","message":"fix: typo"}',
+    ].join("\n");
+    const result = parseCommitResponse(raw);
+    expect(result.type).toBe("single");
+    if (result.type === "single") {
+      expect(result.message).toBe("feat: add login");
+    }
+  });
+
+  it("strategy 3: ignores braces embedded inside JSON string values when scanning", () => {
+    const raw =
+      'Preface text { with a stray brace.\n{"type":"single","message":"fix: handle } and { in input"}\nTrailer.';
+    const result = parseCommitResponse(raw);
+    expect(result.type).toBe("single");
+    if (result.type === "single") {
+      expect(result.message).toBe("fix: handle } and { in input");
+    }
+  });
+
+  it("strategy 3: skips malformed JSON-like prefixes and recovers a later valid object", () => {
+    const raw = [
+      "Draft (ignore this, broken):",
+      '{"type":"plan", "commits": [',
+      "Actually, use this instead:",
+      '{"type":"single","message":"chore: bump deps"}',
+    ].join("\n");
+    const result = parseCommitResponse(raw);
+    expect(result.type).toBe("single");
+    if (result.type === "single") {
+      expect(result.message).toBe("chore: bump deps");
+    }
+  });
+
+  it("strategy 2: still extracts JSON from a fenced ```json block", () => {
+    const raw = [
+      "Reasoning blurb...",
+      "```json",
+      '{"type":"plan","commits":[{"message":"feat: x","files":["x.ts"]},{"message":"feat: y","files":["y.ts"]}]}',
+      "```",
+      "End.",
+    ].join("\n");
+    const result = parseCommitResponse(raw);
+    expect(result.type).toBe("plan");
+    if (result.type === "plan") {
+      expect(result.commits).toHaveLength(2);
+    }
+  });
 });
 
 describe("commit()", () => {
@@ -149,6 +227,23 @@ describe("commit()", () => {
       commit({ cwd: tempDir, provider: mock })
     ).rejects.toMatchObject({ code: "SENSITIVE_FILE_STAGED" });
     mock.assertCallCount(0); // LLM should NOT be called
+  });
+
+  it("SENSITIVE_FILE_STAGED error message omits filenames but exposes them on .files", async () => {
+    const mock = new MockLLMProvider();
+
+    const leakyName = "prod-customer-db-credentials.json";
+    await writeFile(join(tempDir, leakyName), "{}");
+    await exec("git", ["add", leakyName], { cwd: tempDir });
+
+    const err = await commit({ cwd: tempDir, provider: mock }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(Error);
+    const e = err as Error & { code?: string; files?: string[] };
+    expect(e.code).toBe("SENSITIVE_FILE_STAGED");
+    expect(e.message).not.toContain(leakyName);
+    expect(e.message).toContain("1 file(s)");
+    expect(e.files).toEqual([leakyName]);
+    mock.assertCallCount(0);
   });
 
   it("threads prompt into the LLM call userMessage", async () => {
