@@ -83,6 +83,17 @@ export function makePrCommand(): Command {
       try {
         result = await applyPr(draft, { cwd, draft: opts.draft, baseBranch: opts.base });
       } catch (err: unknown) {
+        const code = (err as { code?: unknown })?.code;
+        if (code === "GH_UNAVAILABLE") {
+          applySpinner.stop("gh CLI not found");
+          console.log(chalk.bold("\nTitle:"), chalk.cyan(draft.title));
+          console.log(chalk.bold("\nBody:"));
+          console.log(chalk.dim("─".repeat(60)));
+          console.log(draft.body);
+          console.log(chalk.dim("─".repeat(60)));
+          p.outro(chalk.yellow("Install the gh CLI (https://cli.github.com) to create or update PRs."));
+          return;
+        }
         applySpinner.stop("Failed");
         const msg = err instanceof Error ? err.message : String(err);
         p.cancel(`PR creation failed: ${msg}`);
@@ -90,11 +101,6 @@ export function makePrCommand(): Command {
       }
 
       applySpinner.stop("Done");
-
-      if (result.url) {
-        p.outro(chalk.green(`PR: ${result.url}`));
-      } else {
-        p.outro(chalk.yellow("PR applied — gh CLI may not be available for URL retrieval."));
-      }
+      p.outro(chalk.green(`PR: ${result.url}`));
     });
 }

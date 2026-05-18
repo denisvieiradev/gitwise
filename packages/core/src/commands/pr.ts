@@ -146,33 +146,30 @@ export async function applyPr(draft: PrDraft, opts: ApplyPrOptions): Promise<App
 
   const ghAvailable = await isGhAvailable();
   if (!ghAvailable) {
-    // Graceful fallback: print to stdout
-    console.log(`Title: ${draft.title}`);
-    console.log(draft.body);
-    return { url: "" };
+    throw Object.assign(
+      new Error("gh CLI is not installed — cannot create or update a PR"),
+      { code: "GH_UNAVAILABLE", draft },
+    );
   }
 
   if (draft.existingPrNumber !== undefined) {
-    // Update existing PR
-    await updatePR({
+    const updated = await updatePR({
       prNumber: draft.existingPrNumber,
       title: draft.title,
       body: draft.body,
       cwd,
     });
-    return { url: "" };
+    return { url: updated.url };
   }
 
-  // Create new PR
-  const result = await createPR({
+  const created = await createPR({
     title: draft.title,
     body: draft.body,
     base: baseBranch,
     cwd,
     draft: isDraft,
   });
-
-  return { url: result.url };
+  return { url: created.url };
 }
 
 async function resolveBaseBranch(cwd: string): Promise<string> {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
-import { mkdtemp, rm, readFile, mkdir, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, readFile, mkdir, writeFile, stat, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { loadEnv, writeEnvVar, readEnvVar, read } from "../../../src/infra/env.js";
@@ -35,6 +35,39 @@ describe("env (core)", () => {
       const content = await readFile(join(tempDir, ".gitwise", ".env"), "utf-8");
       expect(content).toContain("OTHER_VAR=value1");
       expect(content).toContain("ANTHROPIC_API_KEY=test-api-key");
+    });
+
+    const itPosix = process.platform === "win32" ? it.skip : it;
+
+    itPosix(
+      "writes the .env file with 0600 permissions atomically (no world-readable window)",
+      async () => {
+        await writeEnvVar(tempDir, "ANTHROPIC_API_KEY", "test-api-secret");
+        const envPath = join(tempDir, ".gitwise", ".env");
+        const info = await stat(envPath);
+        expect(info.mode & 0o777).toBe(0o600);
+      },
+    );
+
+    itPosix(
+      "creates the new key as 0600 even when no prior file exists",
+      async () => {
+        const prevUmask = process.umask(0o022);
+        try {
+          await writeEnvVar(tempDir, "ANTHROPIC_API_KEY", "test-api-new");
+        } finally {
+          process.umask(prevUmask);
+        }
+        const envPath = join(tempDir, ".gitwise", ".env");
+        const info = await stat(envPath);
+        expect(info.mode & 0o777).toBe(0o600);
+      },
+    );
+
+    it("does not leave temp files behind after a successful write", async () => {
+      await writeEnvVar(tempDir, "ANTHROPIC_API_KEY", "test-api-cleanup");
+      const dirEntries = await readdir(join(tempDir, ".gitwise"));
+      expect(dirEntries.filter((name) => name.endsWith(".tmp"))).toEqual([]);
     });
   });
 

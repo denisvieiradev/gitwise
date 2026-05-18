@@ -1,4 +1,4 @@
-import { readFile, writeFile, chmod } from "node:fs/promises";
+import { readFile, open, rename, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { fileExists, ensureDir } from "./filesystem.js";
 
@@ -60,8 +60,21 @@ export async function writeEnvVar(
   }
 
   const final = lines.join("\n").replace(/\n{3,}/g, "\n\n");
-  await writeFile(envPath, final.endsWith("\n") ? final : final + "\n", "utf-8");
-  await chmod(envPath, 0o600);
+  const payload = final.endsWith("\n") ? final : final + "\n";
+
+  const tmpPath = `${envPath}.${process.pid}.${Date.now()}.tmp`;
+  const fd = await open(tmpPath, "w", 0o600);
+  try {
+    await fd.writeFile(payload, "utf-8");
+  } finally {
+    await fd.close();
+  }
+  try {
+    await rename(tmpPath, envPath);
+  } catch (err) {
+    await unlink(tmpPath).catch(() => undefined);
+    throw err;
+  }
 }
 
 export async function readEnvVar(
