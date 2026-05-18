@@ -34,6 +34,30 @@ export interface ReviewOptions {
 
 const MAX_DIFF_CHARS = 80_000;
 
+// Mirrors packages/core/templates/review.md so `gw review` stays functional
+// when a user-customized templates directory omits review.md or when the
+// bundled template is missing from a packaged build.
+const DEFAULT_REVIEW_TEMPLATE = `You are a senior code reviewer. Analyze the diff and produce a code review with findings in these categories:
+
+## Critical
+Issues that must be fixed before merging (bugs, security, data loss).
+
+## Suggestions
+Improvements worth considering (performance, readability, patterns).
+
+## Nitpicks
+Minor style or convention issues.
+
+For each finding, include:
+- File and line reference
+- Description of the issue
+- Suggested fix
+
+End with a summary: total findings count per category and overall recommendation (approve, request changes).
+
+{{diff}}
+`;
+
 function truncateDiff(diff: string): string {
   if (diff.length <= MAX_DIFF_CHARS) return diff;
   return diff.slice(0, MAX_DIFF_CHARS) + "\n\n[diff truncated — too large for context window]";
@@ -110,9 +134,18 @@ export async function review(opts: ReviewOptions): Promise<ReviewResult> {
   let diff: string;
   try {
     diff = await git.getDiff(cwd, baseBranch);
-  } catch {
-    // Fall back to unstaged diff
-    diff = await git.getDiff(cwd);
+  } catch (err: unknown) {
+    if (isUnknownRevisionError(err)) {
+      // Base branch is unknown locally (not fetched, typo, fresh clone). Fall back to
+      // the working-tree diff so the caller still gets a review of pending edits.
+      diff = await git.getDiff(cwd);
+    } else {
+      const reason = errorMessage(err);
+      throw Object.assign(
+        new Error(`Failed to compute diff against ${baseBranch}: ${reason}`),
+        { code: "DIFF_FAILED", cause: err },
+      );
+    }
   }
 
   if (!diff) {
@@ -122,11 +155,17 @@ export async function review(opts: ReviewOptions): Promise<ReviewResult> {
     );
   }
 
-  // Load review template
-  const templateContent = await loadTemplate("review", {
-    repoRoot: opts.repoRoot ?? cwd,
-    templatesPath: opts.templatesPath,
-  });
+  // Load review template, falling back to the embedded default when the
+  // resolved templates directory does not provide review.md.
+  let templateContent: string;
+  try {
+    templateContent = await loadTemplate("review", {
+      repoRoot: opts.repoRoot ?? cwd,
+      templatesPath: opts.templatesPath,
+    });
+  } catch {
+    templateContent = DEFAULT_REVIEW_TEMPLATE;
+  }
 
   // Build system prompt from template (review.md is used as the user message with diff injected)
   const truncated = truncateDiff(diff);
@@ -163,4 +202,22 @@ async function resolveBaseBranch(cwd: string): Promise<string> {
   } catch {
     return "main";
   }
+}
+
+function errorMessage(err: unknown): string {
+  if (err && typeof err === "object" && typeof (err as { message?: unknown }).message === "string") {
+    return (err as { message: string }).message;
+  }
+  return String(err);
+}
+
+// Duck-typed instead of `instanceof Error` because jest's --experimental-vm-modules
+// can run modules in separate VM realms, where the Error constructor differs.
+function isUnknownRevisionError(err: unknown): boolean {
+  if (err === null || typeof err !== "object") return false;
+  const errObj = err as { message?: unknown; stderr?: unknown };
+  const message = typeof errObj.message === "string" ? errObj.message : "";
+  const stderr = typeof errObj.stderr === "string" ? errObj.stderr : "";
+  const text = `${message}\n${stderr}`;
+  return /unknown revision|bad revision|not a valid object name|ambiguous argument/i.test(text);
 }

@@ -141,6 +141,65 @@ describe("review()", () => {
     expect(result).toBeDefined();
   });
 
+  it("falls back to working-tree diff when base branch is unknown locally", async () => {
+    // Stage an unstaged edit so the working-tree diff is non-empty
+    await writeFile(join(tempDir, "auth.ts"), "function login() { return false; }");
+
+    const mock = new MockLLMProvider();
+    mock.queueByIndex({ content: MOCK_REVIEW_RESPONSE });
+
+    const result = await review({
+      cwd: tempDir,
+      provider: mock,
+      baseBranch: "does-not-exist-anywhere",
+    });
+
+    expect(result.critical.length).toBeGreaterThan(0);
+    mock.assertCallCount(1);
+  });
+
+  it("throws DIFF_FAILED (not silent fallback) when git diff fails for a non-revision reason", async () => {
+    // A directory that is not a git repo — `git diff` fails with "not a git repository",
+    // which is NOT a "branch not found" error and must surface as DIFF_FAILED.
+    const nonRepoDir = await mkdtemp(join(tmpdir(), "gitwise-review-nonrepo-"));
+    const mock = new MockLLMProvider();
+
+    try {
+      await expect(
+        review({ cwd: nonRepoDir, provider: mock, baseBranch: "main" }),
+      ).rejects.toMatchObject({ code: "DIFF_FAILED" });
+    } finally {
+      await rm(nonRepoDir, { recursive: true, force: true });
+    }
+  });
+
+  it("falls back to the embedded default template when templatesPath omits review.md", async () => {
+    // Point templatesPath at a directory that exists but does not contain review.md
+    const emptyTemplates = await mkdtemp(join(tmpdir(), "gitwise-review-empty-templates-"));
+    const mock = new MockLLMProvider();
+    mock.queueByIndex({ content: MOCK_REVIEW_RESPONSE });
+
+    try {
+      const result = await review({
+        cwd: tempDir,
+        provider: mock,
+        templatesPath: emptyTemplates,
+        // Point repoRoot at the templates dir too, so the repo-level lookup also misses.
+        repoRoot: emptyTemplates,
+      });
+
+      expect(result.critical.length).toBeGreaterThan(0);
+      const calls = mock.getCalls();
+      // The embedded default template's "Critical" heading should appear in the user message.
+      expect(calls[0]?.userMessage).toContain("## Critical");
+      // The diff must still be interpolated into the fallback template.
+      expect(calls[0]?.userMessage).toContain("auth.ts");
+      mock.assertCallCount(1);
+    } finally {
+      await rm(emptyTemplates, { recursive: true, force: true });
+    }
+  });
+
   it("integration: mkdtemp repo with feature branch returns findings from canned mock", async () => {
     const mock = new MockLLMProvider();
     mock.queueByIndex({ content: MOCK_REVIEW_RESPONSE });
