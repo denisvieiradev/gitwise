@@ -6,7 +6,7 @@
 Analyzes staged git changes using AI and generates a conventional commit message. Supports multi-context splitting into separate commits.
 
 ## Tool allowlist
-- Bash: `node packages/skills/dist/scripts/commit.js`
+- Bash: `node "${CLAUDE_PLUGIN_ROOT}/dist/scripts/commit.js"`
 - Bash: `git add`
 - Bash: `git status`
 - Read: any file in the working directory
@@ -14,10 +14,10 @@ Analyzes staged git changes using AI and generates a conventional commit message
 ## Instructions
 1. Run `git status` to see staged and unstaged changes.
 2. If no files are staged, offer to stage all or let the user select.
-3. Run: `node packages/skills/dist/scripts/commit.js "<intent>"` where `<intent>` is the user's description (may be empty).
+3. Run: `node "${CLAUDE_PLUGIN_ROOT}/dist/scripts/commit.js" "<intent>"` where `<intent>` is the user's description (may be empty).
 4. Display the emitted markdown plan to the user.
 5. Ask for confirmation. If the user approves:
-   - Run: `node packages/skills/dist/scripts/commit.js "<intent>" --apply` (the plan is re-emitted and applied).
+   - Run: `node "${CLAUDE_PLUGIN_ROOT}/dist/scripts/commit.js" "<intent>" --apply` (the plan is re-emitted and applied).
 6. If the user edits the message, update it before applying.
 7. After applying, run `git log --oneline -3` to confirm.
 

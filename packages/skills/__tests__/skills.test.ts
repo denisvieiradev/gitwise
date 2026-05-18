@@ -16,6 +16,35 @@ const __dirname = dirname(__filename);
 const pkgRoot = join(__dirname, "..");
 
 // ---------------------------------------------------------------------------
+// package.json
+// ---------------------------------------------------------------------------
+
+describe("package.json", () => {
+  const raw = readFileSync(join(pkgRoot, "package.json"), "utf8");
+  const pkg = JSON.parse(raw) as {
+    version: string;
+    dependencies: Record<string, string>;
+  };
+  const coreRaw = readFileSync(join(pkgRoot, "..", "core", "package.json"), "utf8");
+  const corePkg = JSON.parse(coreRaw) as { version: string };
+
+  // Regression guard for ADR-005 (locked-version monorepo releases). A wildcard
+  // range survives `npm publish --workspaces`, so the published tarball would
+  // let consumers resolve `gitwise-core` to whatever happens to be latest on
+  // the registry, defeating the locked-version contract.
+  it("pins @denisvieiradev/gitwise-core to an exact semver, never a wildcard", () => {
+    const spec = pkg.dependencies["@denisvieiradev/gitwise-core"];
+    expect(spec).toBeDefined();
+    expect(spec).not.toBe("*");
+    expect(spec).toMatch(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/);
+  });
+
+  it("keeps the gitwise-core dependency in lockstep with the sibling package version", () => {
+    expect(pkg.dependencies["@denisvieiradev/gitwise-core"]).toBe(corePkg.version);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // plugin.json
 // ---------------------------------------------------------------------------
 
@@ -78,6 +107,14 @@ describe("skills/commit.md", () => {
   it("references the node runner script", () => {
     expect(content).toMatch(/scripts\/commit\.js/);
   });
+
+  it("anchors the runner path on ${CLAUDE_PLUGIN_ROOT} so the skill works from any user CWD", () => {
+    expect(content).toMatch(/\$\{CLAUDE_PLUGIN_ROOT\}\/dist\/scripts\/commit\.js/);
+  });
+
+  it("does not invoke the runner via a bare repo-relative path", () => {
+    expect(content).not.toMatch(/(^|[^/${}])packages\/skills\/dist\/scripts\/commit\.js/);
+  });
 });
 
 describe("skills/review.md", () => {
@@ -94,6 +131,14 @@ describe("skills/review.md", () => {
   it("references the node runner script", () => {
     expect(content).toMatch(/scripts\/review\.js/);
   });
+
+  it("anchors the runner path on ${CLAUDE_PLUGIN_ROOT} so the skill works from any user CWD", () => {
+    expect(content).toMatch(/\$\{CLAUDE_PLUGIN_ROOT\}\/dist\/scripts\/review\.js/);
+  });
+
+  it("does not invoke the runner via a bare repo-relative path", () => {
+    expect(content).not.toMatch(/(^|[^/${}])packages\/skills\/dist\/scripts\/review\.js/);
+  });
 });
 
 describe("skills/pr.md", () => {
@@ -109,6 +154,14 @@ describe("skills/pr.md", () => {
 
   it("references the node runner script", () => {
     expect(content).toMatch(/scripts\/pr\.js/);
+  });
+
+  it("anchors the runner path on ${CLAUDE_PLUGIN_ROOT} so the skill works from any user CWD", () => {
+    expect(content).toMatch(/\$\{CLAUDE_PLUGIN_ROOT\}\/dist\/scripts\/pr\.js/);
+  });
+
+  it("does not invoke the runner via a bare repo-relative path", () => {
+    expect(content).not.toMatch(/(^|[^/${}])packages\/skills\/dist\/scripts\/pr\.js/);
   });
 });
 
@@ -129,6 +182,14 @@ describe("skills/release.md", () => {
 
   it("references the node runner script", () => {
     expect(content).toMatch(/scripts\/release\.js/);
+  });
+
+  it("anchors the runner path on ${CLAUDE_PLUGIN_ROOT} so the skill works from any user CWD", () => {
+    expect(content).toMatch(/\$\{CLAUDE_PLUGIN_ROOT\}\/dist\/scripts\/release\.js/);
+  });
+
+  it("does not invoke the runner via a bare repo-relative path", () => {
+    expect(content).not.toMatch(/(^|[^/${}])packages\/skills\/dist\/scripts\/release\.js/);
   });
 });
 
