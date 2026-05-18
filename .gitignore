@@ -1,8 +1,6 @@
 node_modules/
 dist/
 coverage/
-.devflow/config.json
-.devflow/state.json
 *.tsbuildinfo
 .DS_Store
 docs/.astro/
@@ -11,7 +9,6 @@ docs/package-lock.json
 # Environment and secrets
 .env
 .env.*
-.devflow/.env
 
 # IDE
 .vscode/
