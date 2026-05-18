@@ -103,8 +103,24 @@ describe("applyPr()", () => {
     await rm(tempDir, { recursive: true, force: true });
   });
 
-  it("returns { url: '' } and prints to stdout when gh is not available", async () => {
-    const stdoutSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+  it("throws GH_UNAVAILABLE (with the draft attached) when gh is not available", async () => {
+    jest.resetModules();
+    jest.unstable_mockModule("../../../src/infra/github.js", () => ({
+      isGhAvailable: async () => false,
+      createPR: async () => {
+        throw new Error("should not be called");
+      },
+      updatePR: async () => {
+        throw new Error("should not be called");
+      },
+      getPrUrl: async () => {
+        throw new Error("should not be called");
+      },
+      openPr: async () => {
+        throw new Error("should not be called");
+      },
+    }));
+    const { applyPr: applyPrMocked } = await import("../../../src/commands/pr.js");
 
     const draft = {
       title: "feat: test PR",
@@ -112,23 +128,32 @@ describe("applyPr()", () => {
       tokens: { input: 10, output: 5 },
     };
 
-    // When gh IS available but fails (e.g., no remote), applyPr will throw.
-    // When gh is NOT available, it returns { url: '' }.
-    // Either way, the function contract is testable:
-    try {
-      const result = await applyPr(draft, { cwd: tempDir });
-      // gh not available path: url is empty string
-      expect(result.url).toBe("");
-      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining("feat: test PR"));
-    } catch {
-      // gh available but no remote — acceptable in test env
-      // The graceful fallback path is tested; gh errors are environment-specific
-    }
+    await expect(applyPrMocked(draft, { cwd: tempDir })).rejects.toMatchObject({
+      code: "GH_UNAVAILABLE",
+      draft,
+    });
 
-    stdoutSpy.mockRestore();
+    jest.dontMock("../../../src/infra/github.js");
+    jest.resetModules();
   });
 
-  it("invokes gh pr edit when existingPrNumber is set (graceful if gh missing)", async () => {
+  it("returns the URL from updatePR when existingPrNumber is set", async () => {
+    jest.resetModules();
+    const expectedUrl = "https://github.com/owner/repo/pull/42";
+    const updatePR = jest.fn(async () => ({ url: expectedUrl }));
+    jest.unstable_mockModule("../../../src/infra/github.js", () => ({
+      isGhAvailable: async () => true,
+      createPR: async () => {
+        throw new Error("should not be called for update path");
+      },
+      updatePR,
+      getPrUrl: async () => expectedUrl,
+      openPr: async () => {
+        throw new Error("should not be called");
+      },
+    }));
+    const { applyPr: applyPrMocked } = await import("../../../src/commands/pr.js");
+
     const draft = {
       title: "feat: update PR",
       body: "Updated body",
@@ -136,13 +161,33 @@ describe("applyPr()", () => {
       tokens: { input: 10, output: 5 },
     };
 
-    // If gh is not available this should gracefully return
-    // If gh is available but there's no actual PR #42, it would fail — so we just verify no crash
+    const result = await applyPrMocked(draft, { cwd: tempDir });
+    expect(result.url).toBe(expectedUrl);
+    expect(updatePR).toHaveBeenCalledWith(
+      expect.objectContaining({ prNumber: 42, title: draft.title, body: draft.body }),
+    );
+
+    jest.dontMock("../../../src/infra/github.js");
+    jest.resetModules();
+  });
+
+  it("never returns an empty url — non-empty string on success or throws on failure", async () => {
+    const draft = {
+      title: "feat: update PR",
+      body: "Updated body",
+      existingPrNumber: 42,
+      tokens: { input: 10, output: 5 },
+    };
+
+    // Honest contract: url is always a non-empty string, or the call throws.
+    // In a test env without a real PR #42 or no gh, the call must throw — never silently succeed with "".
     try {
       const result = await applyPr(draft, { cwd: tempDir });
       expect(typeof result.url).toBe("string");
-    } catch {
-      // gh available but failed editing (expected in test env without real PR) — acceptable
+      expect(result.url.length).toBeGreaterThan(0);
+    } catch (err) {
+      // Acceptable: GH_UNAVAILABLE (gh not present) or a gh subprocess failure (no real PR).
+      expect(err).toBeDefined();
     }
   });
 });

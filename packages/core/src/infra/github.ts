@@ -59,12 +59,27 @@ export interface UpdatePRParams {
   cwd: string;
 }
 
-export async function updatePR(params: UpdatePRParams): Promise<void> {
+export async function updatePR(params: UpdatePRParams): Promise<PRResult> {
   debug("Updating PR via gh", { prNumber: params.prNumber });
   const args = ["pr", "edit", String(params.prNumber)];
   if (params.title) args.push("--title", params.title);
   if (params.body) args.push("--body", params.body);
   await exec("gh", args, { cwd: params.cwd });
+  const url = await getPrUrl(params.prNumber, params.cwd);
+  return { url };
+}
+
+export async function getPrUrl(prNumber: string | number, cwd: string): Promise<string> {
+  const result = await exec(
+    "gh",
+    ["pr", "view", String(prNumber), "--json", "url", "-q", ".url"],
+    { cwd },
+  );
+  const url = result.stdout?.trim();
+  if (!url) {
+    throw new Error(`gh pr view ${prNumber} returned empty output — check gh auth status`);
+  }
+  return url;
 }
 
 export interface CreateReleaseParams {
