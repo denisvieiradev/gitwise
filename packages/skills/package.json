@@ -1,6 +1,6 @@
 {
   "name": "@denisvieiradev/gitwise-skills",
-  "version": "1.6.4",
+  "version": "0.1.0",
   "description": "Claude Code plugin for gitwise — AI commit, review, PR, and release skills.",
   "type": "module",
   "main": "./dist/index.js",
@@ -24,7 +24,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@denisvieiradev/gitwise-core": "*"
+    "@denisvieiradev/gitwise-core": "0.1.0"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",

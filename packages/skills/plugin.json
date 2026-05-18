@@ -1,7 +1,7 @@
 {
   "$schema": "https://claude.ai/code/plugin-schema/v1",
   "name": "gitwise",
-  "version": "1.6.4",
+  "version": "0.1.0",
   "description": "AI-powered git toolbelt: intelligent commit, code review, PR drafting, and versioned releases.",
   "skills": [
     {
