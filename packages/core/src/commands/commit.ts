@@ -88,6 +88,46 @@ function tryParseJson(text: string): LLMCommitResponse | null {
   return null;
 }
 
+// Scans `raw` for balanced-brace substrings using a stack so each `}` emits the
+// substring opened by its matching `{`. String literals (with `\\` escapes) are
+// honored so braces inside JSON string values don't skew matching. An unclosed
+// outer `{` does not prevent inner balanced objects from being emitted, which
+// matters when an LLM emits a malformed draft followed by a valid object.
+// Candidates are returned in completion order (inner objects before their
+// enclosing parents).
+function extractBalancedJsonCandidates(raw: string): string[] {
+  const candidates: string[] = [];
+  const stack: number[] = [];
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw[i];
+    if (inString) {
+      if (escape) {
+        escape = false;
+      } else if (c === "\\") {
+        escape = true;
+      } else if (c === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (c === '"') {
+      inString = true;
+      continue;
+    }
+    if (c === "{") {
+      stack.push(i);
+    } else if (c === "}") {
+      const start = stack.pop();
+      if (start !== undefined) {
+        candidates.push(raw.slice(start, i + 1));
+      }
+    }
+  }
+  return candidates;
+}
+
 export function parseCommitResponse(raw: string): LLMCommitResponse {
   // Strategy 1: pure JSON
   const direct = tryParseJson(raw);
@@ -100,13 +140,16 @@ export function parseCommitResponse(raw: string): LLMCommitResponse {
     if (fromFence) return fromFence;
   }
 
-  // Strategy 3: brace extraction
-  const start = raw.indexOf("{");
-  const end = raw.lastIndexOf("}");
-  if (start !== -1 && end > start) {
-    const fromBraces = tryParseJson(raw.slice(start, end + 1));
-    if (fromBraces) return fromBraces;
-  }
+  // Strategy 3: balanced-brace candidate extraction. Prefer a "plan" candidate
+  // when present so multi-context output is not silently downgraded to the
+  // first "single" object the model emits alongside it.
+  const candidates = extractBalancedJsonCandidates(raw);
+  const parsedCandidates = candidates
+    .map(tryParseJson)
+    .filter((p): p is LLMCommitResponse => p !== null);
+  const plan = parsedCandidates.find((p) => p.type === "plan");
+  if (plan) return plan;
+  if (parsedCandidates[0]) return parsedCandidates[0];
 
   // Fallback: treat the whole response as a single commit message
   return { type: "single", message: raw.trim() };
@@ -155,11 +198,19 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan> {
     throw Object.assign(new Error("No staged changes to commit"), { code: "NOTHING_STAGED" });
   }
 
-  // Sensitive file guard
+  // Sensitive file guard.
+  // The user-facing Error message intentionally omits filenames: paths like
+  // `prod-customer-db-credentials.json` are themselves sensitive and can leak
+  // via shell history, CI logs, or pasted terminal output. The flagged files
+  // are exposed only on the structured `files` property and emitted through
+  // the debug logger so opt-in `GITWISE_DEBUG=1` surfaces them for triage.
   const sensitiveFiles = stagedFiles.filter(isSensitiveFile);
   if (sensitiveFiles.length > 0) {
+    debug("Sensitive files blocked from commit", { files: sensitiveFiles });
     throw Object.assign(
-      new Error(`Sensitive files staged: ${sensitiveFiles.join(", ")}`),
+      new Error(
+        `SENSITIVE_FILE_STAGED: ${sensitiveFiles.length} file(s) matched sensitive patterns (env/pem/credentials). Set GITWISE_DEBUG=1 to see which files were flagged.`,
+      ),
       { code: "SENSITIVE_FILE_STAGED", files: sensitiveFiles },
     );
   }

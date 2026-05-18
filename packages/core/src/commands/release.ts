@@ -42,11 +42,18 @@ export interface ApplyReleaseOptions {
 
 // ─── Version utilities ────────────────────────────────────────────────────────
 
+const STRICT_SEMVER_RE = /^v?(\d+)\.(\d+)\.(\d+)$/;
+
 export function bumpVersion(current: string, type: BumpType): string {
-  const parts = current.replace(/^v/, "").split(".").map(Number);
-  const major = parts[0] ?? 0;
-  const minor = parts[1] ?? 0;
-  const patch = parts[2] ?? 0;
+  const match = STRICT_SEMVER_RE.exec(current);
+  if (!match) {
+    throw Object.assign(new Error(`Invalid current version: ${current}`), {
+      code: "INVALID_VERSION",
+    });
+  }
+  const major = Number(match[1]);
+  const minor = Number(match[2]);
+  const patch = Number(match[3]);
   switch (type) {
     case "major": return `${major + 1}.0.0`;
     case "minor": return `${major}.${minor + 1}.0`;
@@ -190,11 +197,45 @@ export async function release(opts: ReleaseOptions): Promise<ReleasePlan> {
 
 // ─── applyRelease ────────────────────────────────────────────────────────────
 
+/**
+ * Apply a release plan to the repository: bump manifests, rewrite CHANGELOG,
+ * commit, tag, push, and optionally create a GitHub release.
+ *
+ * Preflight: throws `WORKING_TREE_DIRTY` if the working tree has uncommitted
+ * changes, and (when `tagAndPush` is enabled) `TAG_EXISTS` if the target
+ * `v<newVersion>` ref already exists. Both checks run before any file or git
+ * mutation so a failed run leaves the repo untouched.
+ *
+ * Failure modes after preflight: if `git push` fails (step 7), the release
+ * commit and annotated tag remain local — recover with
+ * `git push origin HEAD --follow-tags`. If `gh release create` fails (step 8),
+ * the local commit, tag, and remote ref are intact; the GitHub release alone
+ * is missing and can be created manually with `gh release create`.
+ */
 export async function applyRelease(
   plan: ReleasePlan,
   opts: ApplyReleaseOptions,
 ): Promise<void> {
   const { cwd, tagAndPush = true, createGhRelease = true, workspacePropagation = false } = opts;
+
+  // Preflight — refuse to start if the repo isn't in a state where a release
+  // commit + tag can be applied atomically.
+  const dirty = (await git.status(cwd)).trim();
+  if (dirty) {
+    throw Object.assign(
+      new Error(`Working tree must be clean before releasing — commit or stash first.\n${dirty}`),
+      { code: "WORKING_TREE_DIRTY" },
+    );
+  }
+  if (tagAndPush) {
+    const tag = `v${plan.newVersion}`;
+    if (await git.tagExists(cwd, tag)) {
+      throw Object.assign(
+        new Error(`Tag ${tag} already exists. Bump to a new version or delete the tag.`),
+        { code: "TAG_EXISTS" },
+      );
+    }
+  }
 
   // 1. Update root package.json
   const pkgPath = join(cwd, "package.json");
@@ -220,7 +261,12 @@ export async function applyRelease(
       const newContent = existing.slice(0, headerEnd) + versionHeader + existing.slice(headerEnd);
       await writeFile(changelogPath, newContent, "utf-8");
     } else {
-      await writeFile(changelogPath, CHANGELOG_HEADER + versionHeader + existing, "utf-8");
+      // No version entries yet. Strip any pre-existing standard header so the
+      // rewrite doesn't end up with two copies of CHANGELOG_HEADER stacked.
+      const body = existing.startsWith(CHANGELOG_HEADER)
+        ? existing.slice(CHANGELOG_HEADER.length)
+        : existing;
+      await writeFile(changelogPath, CHANGELOG_HEADER + versionHeader + body, "utf-8");
     }
   } else {
     await writeFile(changelogPath, CHANGELOG_HEADER + versionHeader, "utf-8");
@@ -295,6 +341,14 @@ async function propagateVersionToWorkspaces(cwd: string, version: string): Promi
       const pkg = await readJSON<Record<string, unknown>>(pkgPath);
       pkg["version"] = version;
       await writeJSON(pkgPath, pkg);
+    }
+    // Keep a sibling plugin.json (Claude Code plugin manifest) in lockstep
+    // with package.json so its surfaced version doesn't drift after release.
+    const pluginPath = join(packagesDir, entry, "plugin.json");
+    if (await fileExists(pluginPath)) {
+      const plugin = await readJSON<Record<string, unknown>>(pluginPath);
+      plugin["version"] = version;
+      await writeJSON(pluginPath, plugin);
     }
   }
 }
