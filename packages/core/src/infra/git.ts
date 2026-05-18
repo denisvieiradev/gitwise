@@ -168,6 +168,18 @@ export async function createTag(
   await run(["tag", "-a", tag, "-m", message], cwd);
 }
 
+export async function tagExists(cwd: string, tag: string): Promise<boolean> {
+  try {
+    await exec("git", ["rev-parse", "--verify", "--quiet", `refs/tags/${tag}`], {
+      cwd,
+      timeout: GIT_TIMEOUT_MS,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function pushWithTags(
   cwd: string,
   remote: string,
