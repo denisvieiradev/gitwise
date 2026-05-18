@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from "@jest/globals";
-import { makeCommitCommand } from "../src/commands/commit.js";
+import { makeCommitCommand, formatCommitErrorCancel } from "../src/commands/commit.js";
 import { makeReviewCommand } from "../src/commands/review.js";
 import { makePrCommand } from "../src/commands/pr.js";
 import { makeReleaseCommand } from "../src/commands/release.js";
@@ -38,9 +38,68 @@ describe("makeCommitCommand", () => {
     expect(opt).toBeDefined();
   });
 
-  it("registers --apply option", () => {
+  it("registers --apply option (alias kept for backward compat)", () => {
     const opt = cmd.options.find((o) => o.long === "--apply");
     expect(opt).toBeDefined();
+  });
+
+  it("registers --no-confirm option (spec-canonical confirm-skip flag)", () => {
+    const opt = cmd.options.find((o) => o.long === "--no-confirm");
+    expect(opt).toBeDefined();
+  });
+
+  it("registers --message <m> option to bypass the LLM", () => {
+    const opt = cmd.options.find((o) => o.long === "--message");
+    expect(opt).toBeDefined();
+    expect(opt?.required).toBe(true);
+  });
+
+  it("registers --base <branch> option", () => {
+    const opt = cmd.options.find((o) => o.long === "--base");
+    expect(opt).toBeDefined();
+    expect(opt?.required).toBe(true);
+  });
+});
+
+describe("formatCommitErrorCancel", () => {
+  it("returns the staging-help message for NOTHING_STAGED code", () => {
+    const err = Object.assign(new Error("No staged changes to commit"), {
+      code: "NOTHING_STAGED",
+    });
+    expect(formatCommitErrorCancel(err)).toBe(
+      "No staged changes. Use `git add` to stage files first.",
+    );
+  });
+
+  it("returns the sensitive-file message for SENSITIVE_FILE_STAGED code", () => {
+    const err = Object.assign(
+      new Error("SENSITIVE_FILE_STAGED: 1 file(s) matched sensitive patterns."),
+      { code: "SENSITIVE_FILE_STAGED" },
+    );
+    expect(formatCommitErrorCancel(err)).toBe(
+      "Sensitive file detected: SENSITIVE_FILE_STAGED: 1 file(s) matched sensitive patterns.",
+    );
+  });
+
+  it("falls back to generic Error: <message> when code is unrecognized", () => {
+    const err = new Error("boom");
+    expect(formatCommitErrorCancel(err)).toBe("Error: boom");
+  });
+
+  it("does not match on substring of the message (regression for dead-branch bug)", () => {
+    // Mimics the historical bug: error message happens to contain a code token
+    // but the structured code is something else. The friendly branch must NOT fire.
+    const err = Object.assign(new Error("contains NOTHING_STAGED in the text"), {
+      code: "SOMETHING_ELSE",
+    });
+    expect(formatCommitErrorCancel(err)).toBe(
+      "Error: contains NOTHING_STAGED in the text",
+    );
+  });
+
+  it("handles non-Error throwables via String() fallback", () => {
+    expect(formatCommitErrorCancel("plain string")).toBe("Error: plain string");
+    expect(formatCommitErrorCancel(null)).toBe("Error: null");
   });
 });
 
@@ -133,6 +192,11 @@ describe("makeReleaseCommand", () => {
 
   it("registers --no-gh-release option", () => {
     const opt = cmd.options.find((o) => o.long === "--no-gh-release");
+    expect(opt).toBeDefined();
+  });
+
+  it("registers --no-workspace-propagation option", () => {
+    const opt = cmd.options.find((o) => o.long === "--no-workspace-propagation");
     expect(opt).toBeDefined();
   });
 });
