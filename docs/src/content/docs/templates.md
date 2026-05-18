@@ -1,50 +1,20 @@
 ---
 title: Templates
-description: Customize devflow-cli templates
+description: Customize gitwise prompt templates
 ---
 
-## How Templates Work
+## Overview
 
-devflow-cli uses Markdown templates with `{{variable}}` interpolation. When generating content, the CLI:
+gitwise generates content (commits, PR bodies, reviews, release notes) from bundled prompt templates. A repository can opt into local template overrides by setting `templatesPath` in its `<repo>/.gitwise.json`:
 
-1. Checks for a project override in `.devflow/templates/`
-2. Falls back to bundled default templates
-
-## Default Templates
-
-| Template | Used by | Variables |
-|----------|---------|-----------|
-| `prd.md` | `devflow prd` | `feature_name`, `description` |
-| `techspec.md` | `devflow techspec` | `feature_name` |
-| `tasks.md` | `devflow tasks` | `feature_name`, `task_description` |
-| `commit.md` | `devflow commit` | `type`, `scope`, `description` |
-| `pr.md` | `devflow pr` | `summary`, `changelog`, `test_plan` |
-
-## Customizing Templates
-
-Create a `.devflow/templates/` directory and add your custom templates:
-
-```bash
-mkdir -p .devflow/templates
+```json
+{
+  "templatesPath": ".gitwise/templates"
+}
 ```
 
-Copy a default template and modify it:
-
-```markdown
-# PRD: {{feature_name}}
-
-## Context
-<!-- Your team's specific PRD structure -->
-
-## Problem Statement
-
-## Proposed Solution
-
-## Success Metrics
-```
+When `templatesPath` is set, gitwise looks for matching template files there before falling back to the bundled defaults.
 
 ## Variable Interpolation
 
-- Variables use `{{variable_name}}` syntax
-- Unmatched variables are kept as-is in the output
-- The LLM receives the template as a structural guide
+Templates are Markdown with `{{variable_name}}` placeholders. Unmatched variables are kept as-is in the output. The LLM receives the rendered template as a structural guide rather than a strict format.

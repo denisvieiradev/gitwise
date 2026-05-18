@@ -4,9 +4,9 @@ import starlight from "@astrojs/starlight";
 export default defineConfig({
   integrations: [
     starlight({
-      title: "devflow-cli",
+      title: "gitwise",
       description:
-        "CLI pipeline for structured software development — from PRD to merge",
+        "AI-powered git toolbelt — smart commits, reviews, PRs, and releases",
       sidebar: [
         { label: "Getting Started", link: "/getting-started/" },
         {

@@ -1,25 +1,23 @@
 ---
-title: devflow-cli
-description: CLI pipeline for structured software development — from PRD to merge
+title: gitwise
+description: AI-powered git toolbelt — smart commits, reviews, PRs, and releases
 ---
 
-A complete development pipeline in your terminal. From PRD to merge — powered by AI.
+An AI-powered git toolbelt for your terminal.
 
 ## Features
 
-- **PRD Generation** — Generate structured product requirements from a simple description
-- **Tech Spec & Tasks** — Auto-generate technical specifications and decompose into tasks
 - **Smart Commits** — Conventional commit messages generated from staged changes
 - **Code Review** — Automated code review with categorized findings
-- **Pull Requests** — AI-generated PR descriptions from commit history
+- **Pull Requests** — AI-drafted PR title and description, created via `gh`
+- **Releases** — Versioned releases with changelog and release notes
 
 ## Quick Start
 
 ```bash
-npm install -g devflow-cli
+npm install -g @denisvieiradev/gitwise
 cd my-project
-devflow init
-devflow prd "add OAuth authentication"
+gw commit
 ```
 
 [Get Started](/getting-started/) to learn more.

@@ -135,12 +135,43 @@ The four product commands live in `core` as **non-interactive async functions** 
 ### PRD & ADRs
 
 - [PRD: gitwise — AI Git Toolbelt](.compozy/tasks/refactor-idea/_prd.md)
-- [TechSpec: gitwise — Refactor from devflow-cli](.compozy/tasks/refactor-idea/_techspec.md)
+- [TechSpec: gitwise](.compozy/tasks/refactor-idea/_techspec.md)
 - [ADR-001: Four-command AI git toolbelt](.compozy/tasks/refactor-idea/adrs/adr-001.md)
 - [ADR-002: Monorepo with npm workspaces (core / cli / skills)](.compozy/tasks/refactor-idea/adrs/adr-002.md)
 - [ADR-003: Non-interactive core with four high-level command functions](.compozy/tasks/refactor-idea/adrs/adr-003.md)
 - [ADR-004: Explicit first-run provider choice with persisted user config](.compozy/tasks/refactor-idea/adrs/adr-004.md)
 - [ADR-005: Locked-version monorepo releases via dogfooded `gw release`](.compozy/tasks/refactor-idea/adrs/adr-005.md)
+
+## Local Development
+
+Building and running `gitwise` from source — for contributors or anyone who wants to try unreleased changes.
+
+```bash
+# 1. Clone and install
+git clone https://github.com/denisvieiradev/gitwise.git
+cd gitwise
+npm install
+
+# 2. Build every workspace (core, cli, skills) via tsup
+npm run build
+
+# 3. Run the CLI directly from the built output
+node packages/cli/dist/index.js --help
+
+# Or link the workspace globally so `gw` resolves to your local build
+npm link -w @denisvieiradev/gitwise
+gw --help
+```
+
+Useful variants:
+
+```bash
+npm run build -w @denisvieiradev/gitwise-core   # build a single workspace
+npm run typecheck                               # tsc --noEmit across workspaces
+npm test                                        # jest across workspaces
+```
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full development workflow, repository layout, and release runbook.
 
 ## Contributing
 

@@ -5,13 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2026-05-16 — gitwise refactor
+## [0.1.0] - 2026-05-16 — gitwise initial release
 
-This release renames the project from `devflow-cli` to `gitwise` and resets the
-versioning. `gitwise` is a focused AI git toolbelt — `commit`, `review`, `pr`,
-`release` — distributed as both a CLI (`gw`) and a Claude Code plugin. The
-locked-version monorepo (`@denisvieiradev/gitwise-core`,
-`@denisvieiradev/gitwise`, `@denisvieiradev/gitwise-skills`) starts at `0.1.0`.
+`gitwise` is a focused AI git toolbelt — `commit`, `review`, `pr`, `release` —
+distributed as both a CLI (`gw`) and a Claude Code plugin. The locked-version
+monorepo (`@denisvieiradev/gitwise-core`, `@denisvieiradev/gitwise`,
+`@denisvieiradev/gitwise-skills`) starts at `0.1.0`.
 
 ### Added
 - Monorepo with three publishable packages (`core`, `cli`, `skills`); locked
@@ -23,24 +22,18 @@ locked-version monorepo (`@denisvieiradev/gitwise-core`,
 - `gw pr --update` to refresh the description on an existing branch PR.
 - Free-form `prompt` argument on every command (`gw commit "<intent>"`,
   `gw review "<intent>"`, ...).
-- `docs/migrating-from-devflow.md` migration guide.
-- `docs/deprecation-banner.md` canonical banner for the final `devflow-cli`
-  release.
 
 ### Changed
-- Package name: `@denisvieiradev/devflow-cli` → `@denisvieiradev/gitwise`.
-- Binary: `devflow` → `gw`.
-- Config moved out of `.devflow/` (per-repo) into `~/.gitwise/` (user-global)
-  with optional `<repo>/.gitwise.json` overrides.
+- User-global config layout: `~/.gitwise/` with optional `<repo>/.gitwise.json`
+  overrides.
 - `review` no longer loads a techspec; it operates on the current branch diff
   vs. base only.
 
 ### Removed
 - All pipeline commands: `init`, `prd`, `techspec`, `tasks`, `run-tasks`,
   `test`, `done`, `status`.
-- The `.devflow/` state directory, `state.json`, drift detection, and the
-  per-feature state machine.
-- Update-checker (devflow-cli specific); may return in a later phase.
+- Per-feature state directory and state machine; gitwise is stateless.
+- Update-checker; may return in a later phase.
 - Pipeline-only template files (`prd.md`, `techspec.md`, `tasks.md`).
 
 ## [1.6.4] - 2026-04-07
@@ -67,7 +60,7 @@ locked-version monorepo (`@denisvieiradev/gitwise-core`,
 ## [1.6.0] - 2026-04-02
 
 ### Changed
-- Renamed package to `@denisvieiradev/devflow-cli`
+- Adjusted npm package metadata
 
 ## [1.5.0] - 2026-04-02
 
@@ -82,7 +75,7 @@ locked-version monorepo (`@denisvieiradev/gitwise-core`,
 
 ### Added
 - Added support for multiple provider backends
-- Added Claude binary path resolution and validation to the `init` command
+- Added Claude binary path resolution and validation to the setup flow
 - Added language and commit convention selection to configuration setup
 - Added grouped file display with descriptions in the commit UI
 - Added npm update check notification on CLI startup
@@ -100,16 +93,16 @@ locked-version monorepo (`@denisvieiradev/gitwise-core`,
 
 ### Added
 
-- 9-phase structured pipeline: init, prd, techspec, tasks, run-tasks, test, review, pr, done
+- Structured pipeline covering setup through release
 - Intelligent model routing (Haiku/Sonnet/Opus) based on task complexity
 - Project auto-detection (language, framework, test runner, CI)
-- State persistence in `.devflow/` with file locking
+- State persistence with file locking
 - Customizable templates with `{{variable}}` interpolation
 - Git and GitHub integration with Conventional Commits format
 - Context modes (normal/light) for different project sizes
 - Sensitive file filtering for commits
-- Standalone `devflow commit` command with `--push` flag
-- `devflow status` command for feature tracking
+- Standalone `commit` command with `--push` flag
+- `status` command for feature tracking
 
 [0.1.0]: https://github.com/denisvieiradev/gitwise/releases/tag/v0.1.0
-[1.0.0]: https://github.com/denisvieiradev/devflow-cli/releases/tag/v1.0.0
+[1.0.0]: https://github.com/denisvieiradev/gitwise/releases/tag/v1.0.0

@@ -1,12 +1,12 @@
 ---
 title: Getting Started
-description: Install and set up devflow-cli in your project
+description: Install and set up gitwise in your project
 ---
 
 ## Installation
 
 ```bash
-npm install -g devflow-cli
+npm install -g @denisvieiradev/gitwise
 ```
 
 ## Prerequisites
@@ -14,9 +14,9 @@ npm install -g devflow-cli
 - **Node.js** >= 18
 - **Git** repository initialized
 - **One of the following for LLM access:**
-  - **Anthropic API key** set as `ANTHROPIC_API_KEY` environment variable (provider: `claude-code-api-key`)
-  - **Claude Code CLI** installed and authenticated with an active Claude subscription (provider: `claude-code-cli`)
-- **GitHub CLI** (`gh`) installed and authenticated (for `devflow pr`)
+  - **Anthropic API key** set as `ANTHROPIC_API_KEY` environment variable (provider: `api`)
+  - **Claude Code CLI** installed and authenticated with an active Claude subscription (provider: `claude-code`)
+- **GitHub CLI** (`gh`) installed and authenticated (for `gw pr`)
 
 ## Quick Start
 
@@ -24,53 +24,30 @@ npm install -g devflow-cli
 # Navigate to your project
 cd my-project
 
-# Initialize devflow
-devflow init
+# Stage changes and generate a commit
+git add .
+gw commit
 
-# Create a PRD from a description
-devflow prd "add OAuth authentication with Google and GitHub"
+# Run an AI-powered review against main
+gw review
 
-# Generate tech spec from the PRD
-devflow techspec 001
+# Draft and create a pull request
+gw pr
 
-# Decompose into implementable tasks
-devflow tasks 001
-
-# Execute tasks sequentially with auto-commit
-devflow run-tasks 001
-
-# Run tests based on requirements
-devflow test 001
-
-# Automated code review
-devflow review 001
-
-# Create a pull request
-devflow pr 001
-
-# Finalize the feature
-devflow done 001
+# Cut a versioned release
+gw release
 ```
 
-## Pipeline Overview
+## Commands
 
-devflow-cli guides you through 9 phases of development:
+gitwise ships five top-level commands:
 
-1. **Init** — Detect project stack and configure
-2. **PRD** — Generate product requirements document
-3. **Tech Spec** — Generate technical specification
-4. **Tasks** — Decompose into implementable tasks
-5. **Run Tasks** — Execute tasks with auto-commit
-6. **Test** — Generate and run tests
-7. **Review** — Automated code review
-8. **PR** — Create pull request
-9. **Done** — Finalize and clean up
+1. **commit** — Generate conventional commit messages from staged changes
+2. **review** — AI-powered code review against the base branch
+3. **pr** — Draft and create/update a GitHub pull request
+4. **release** — Cut a versioned release with changelog and notes
+5. **config** — Get or set gitwise configuration
 
 ## Configuration
 
-After running `devflow init`, your project will have a `.devflow/config.json` file with settings for:
-
-- LLM provider and model tiers
-- Context mode (normal vs light)
-- Branch naming pattern
-- Templates path
+On first run, gitwise will prompt for an Anthropic API key and store it at `~/.gitwise/.env`. User-level settings live at `~/.gitwise/config.json`. Per-repo overrides can be placed in `<repo>/.gitwise.json` — see the [Configuration](/configuration/) page.

@@ -1,32 +1,43 @@
 ---
 title: Configuration
-description: Configure devflow-cli for your project
+description: Configure gitwise
 ---
 
-## Config File
+## Config Files
 
-After running `devflow init`, a `.devflow/config.json` file is created:
+gitwise reads configuration from two layered locations:
+
+1. **User config** — `~/.gitwise/config.json` (created on first run)
+2. **Repo config** — `<repo>/.gitwise.json` (optional, overrides user config for that repo)
+
+### User config example (`~/.gitwise/config.json`)
 
 ```json
 {
-  "provider": "claude-code-api-key",
+  "provider": "api",
   "models": {
     "fast": "claude-haiku-4-5-20251001",
-    "balanced": "claude-sonnet-4-5-20250929",
-    "powerful": "claude-opus-4-5-20250929"
+    "balanced": "claude-sonnet-4-6",
+    "powerful": "claude-opus-4-7"
   },
   "language": "en",
+  "commitConvention": "conventional"
+}
+```
+
+### Repo config example (`<repo>/.gitwise.json`)
+
+All fields are optional and override the user config for the current repository.
+
+```json
+{
+  "models": {
+    "balanced": "claude-sonnet-4-6"
+  },
+  "language": "en",
+  "defaultBaseBranch": "main",
   "commitConvention": "conventional",
-  "branchPattern": "feature/{{slug}}",
-  "templatesPath": ".devflow/templates",
-  "contextMode": "normal",
-  "project": {
-    "name": "my-project",
-    "language": "typescript",
-    "framework": "express",
-    "testFramework": "jest",
-    "hasCI": true
-  }
+  "workspacePropagation": true
 }
 ```
 
@@ -34,47 +45,38 @@ After running `devflow init`, a `.devflow/config.json` file is created:
 
 ### provider
 
-LLM provider to use. Available options:
+LLM provider to use:
 
-- **`"claude-code-api-key"`** — Uses the Anthropic API directly with an API key. Requires `ANTHROPIC_API_KEY` to be set.
-- **`"claude-code-cli"`** — Uses the Claude Code CLI as a subprocess. Requires the `claude` CLI installed and authenticated with an active Claude subscription (Max/Pro). No API key needed.
+- **`"api"`** — Uses the Anthropic API directly. Reads `ANTHROPIC_API_KEY` from the environment or from `~/.gitwise/.env`.
+- **`"claude-code"`** — Shells out to the Claude Code CLI. Requires the `claude` CLI installed and authenticated with an active Claude subscription. No API key needed.
 
 ### models
 
 Model IDs for each complexity tier:
 
-- **fast** — Used for simple tasks (commit, status, pr)
-- **balanced** — Used for medium tasks (tasks, run-tasks, test)
-- **powerful** — Used for complex tasks (prd, techspec, review)
+- **fast** — Lightweight tasks
+- **balanced** — Default tasks (commit, review, pr)
+- **powerful** — Heavier reasoning tasks
 
-### contextMode
+### language
 
-- **normal** — Sends full documents as context (best quality, higher cost)
-- **light** — Chunks documents by headings, limits to ~4000 tokens (lower cost)
+Output language for generated content.
 
-### branchPattern
+### defaultBaseBranch
 
-Pattern for feature branch names. `{{slug}}` is replaced with the feature slug.
+Override the auto-detected base branch (`main`/`master`) used by `gw review` and `gw pr`.
 
-### templatesPath
+### commitConvention
 
-Path to custom template overrides. Defaults to `.devflow/templates`.
+`conventional` | `gitmoji` | `angular` | `kernel` | `custom`
+
+### workspacePropagation (repo-only)
+
+When `true`, `gw release` propagates the new version to all `packages/*` in a monorepo.
 
 ## Environment Variables
 
 | Variable | Description |
 |----------|-------------|
-| `ANTHROPIC_API_KEY` | Anthropic API key (required for `claude-code-api-key` provider) |
-| `DEVFLOW_LLM_PROVIDER` | Override provider from config |
-| `DEVFLOW_API_KEY` | Alternative to ANTHROPIC_API_KEY |
-
-## Gitignore
-
-Add these to your `.gitignore`:
-
-```
-.devflow/config.json
-.devflow/state.json
-```
-
-Features, templates, and reviews should be committed — they are valuable project documentation.
+| `ANTHROPIC_API_KEY` | Anthropic API key (required for `api` provider). Read from the environment first, then `~/.gitwise/.env`. |
+| `NO_COLOR` | Disable ANSI color output (also `--no-color`). |
