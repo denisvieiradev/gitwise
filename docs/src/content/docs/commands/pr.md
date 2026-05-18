@@ -1,20 +1,22 @@
 ---
-title: devflow pr
-description: Create a pull request from feature branch
+title: gw pr
+description: AI-drafted pull request — create or update a GitHub PR
 ---
 
 ```bash
-devflow pr [ref] [--base <branch>]
+gw pr [options]
 ```
 
-Creates a GitHub pull request with an AI-generated title and description.
+Drafts a GitHub pull request title and description from the current branch's commits, then creates or updates the PR via the `gh` CLI.
 
-## Arguments & Options
+## Options
 
-| Argument/Option | Description |
-|-----------------|-------------|
-| `ref` | Feature reference (optional) |
-| `--base` | Base branch (default: `main`) |
+| Option | Description |
+|--------|-------------|
+| `--base <branch>` | Base branch for the PR (default: auto-detect `main`/`master`) |
+| `--prompt <text>` | Additional focus instructions for the PR drafter |
+| `--apply` | Skip confirmation and create/update the PR immediately |
+| `--draft` | Create the PR as a draft |
 
 ## Prerequisites
 
@@ -22,8 +24,7 @@ Creates a GitHub pull request with an AI-generated title and description.
 
 ## What it does
 
-1. Analyzes commits on the current branch
-2. Generates PR title and structured description
-3. Shows preview and asks for confirmation
-4. Pushes branch and creates PR via `gh`
-5. Updates phase to `pr_created`
+1. Analyzes the commits on the current branch against the base
+2. Generates a PR title and structured description
+3. Shows a preview and asks for confirmation
+4. Pushes the branch and creates (or updates) the PR via `gh`

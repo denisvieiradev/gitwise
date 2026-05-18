@@ -2,7 +2,7 @@
 // tests written in TypeScript can import it without enabling allowJs.
 
 export const REQUIRED_README_SECTIONS: readonly string[];
-export const REMOVED_DEVFLOW_COMMANDS: readonly string[];
+export const REMOVED_PIPELINE_COMMANDS: readonly string[];
 
 export interface RelativeLink {
   target: string;

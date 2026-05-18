@@ -12,7 +12,7 @@ export const REQUIRED_README_SECTIONS = [
   "Configuration",
 ];
 
-export const REMOVED_DEVFLOW_COMMANDS = [
+export const REMOVED_PIPELINE_COMMANDS = [
   "init",
   "prd",
   "techspec",

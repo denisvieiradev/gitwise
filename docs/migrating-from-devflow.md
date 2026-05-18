@@ -85,5 +85,4 @@ File issues on the new repository: <https://github.com/denisvieiradev/gitwise> (
 ## Further reading
 
 - [PRD: gitwise — AI Git Toolbelt](../.compozy/tasks/refactor-idea/_prd.md)
-- [TechSpec: gitwise — Refactor from devflow-cli](../.compozy/tasks/refactor-idea/_techspec.md)
-- [Deprecation banner text for the final `devflow-cli` release](deprecation-banner.md)
+- [TechSpec: gitwise](../.compozy/tasks/refactor-idea/_techspec.md)
