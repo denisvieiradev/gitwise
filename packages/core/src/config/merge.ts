@@ -11,6 +11,8 @@ export function deepMerge(base: UserConfig, override: RepoConfig): MergedConfig 
     ...(override.defaultBaseBranch !== undefined && { defaultBaseBranch: override.defaultBaseBranch }),
     ...(override.commitConvention !== undefined && { commitConvention: override.commitConvention }),
     ...(override.templatesPath !== undefined && { templatesPath: override.templatesPath }),
+    ...(override.releaseStrategy !== undefined && { releaseStrategy: override.releaseStrategy }),
+    ...(override.developBranch !== undefined && { developBranch: override.developBranch }),
     models: {
       ...base.models,
       ...(override.models ?? {}),

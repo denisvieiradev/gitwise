@@ -180,23 +180,79 @@ describe("makeReleaseCommand", () => {
     expect(cmd.description()).toBeTruthy();
   });
 
-  it("registers --bump option", () => {
+  it("registers --bump option on the root action", () => {
     const opt = cmd.options.find((o) => o.long === "--bump");
     expect(opt).toBeDefined();
   });
 
-  it("registers --apply option", () => {
+  it("registers --apply option on the root action", () => {
     const opt = cmd.options.find((o) => o.long === "--apply");
     expect(opt).toBeDefined();
   });
 
-  it("registers --no-gh-release option", () => {
+  it("registers --no-gh-release option on the root action", () => {
     const opt = cmd.options.find((o) => o.long === "--no-gh-release");
     expect(opt).toBeDefined();
   });
 
-  it("registers --no-workspace-propagation option", () => {
+  it("registers --no-workspace-propagation option on the root action", () => {
     const opt = cmd.options.find((o) => o.long === "--no-workspace-propagation");
     expect(opt).toBeDefined();
+  });
+
+  describe("subcommands", () => {
+    const subcommandNames = cmd.commands.map((c) => c.name());
+
+    it("registers 'prepare' subcommand", () => {
+      expect(subcommandNames).toContain("prepare");
+    });
+
+    it("registers 'finish' subcommand", () => {
+      expect(subcommandNames).toContain("finish");
+    });
+
+    it("registers 'abort' subcommand", () => {
+      expect(subcommandNames).toContain("abort");
+    });
+
+    it("'prepare' accepts an optional [version] argument", () => {
+      const prepare = cmd.commands.find((c) => c.name() === "prepare");
+      // commander stringifies optional args as "[version]"
+      const usage = prepare?.usage() ?? "";
+      expect(usage).toContain("[version]");
+    });
+
+    it("'prepare' registers --bump option", () => {
+      const prepare = cmd.commands.find((c) => c.name() === "prepare");
+      const opt = prepare?.options.find((o) => o.long === "--bump");
+      expect(opt).toBeDefined();
+    });
+
+    it("'finish' registers --no-delete-branch flag (per ADR-001)", () => {
+      const finish = cmd.commands.find((c) => c.name() === "finish");
+      const opt = finish?.options.find((o) => o.long === "--no-delete-branch");
+      expect(opt).toBeDefined();
+    });
+
+    it("'finish' registers --no-gh-release and --no-workspace-propagation", () => {
+      const finish = cmd.commands.find((c) => c.name() === "finish");
+      const optGh = finish?.options.find((o) => o.long === "--no-gh-release");
+      const optWs = finish?.options.find(
+        (o) => o.long === "--no-workspace-propagation",
+      );
+      expect(optGh).toBeDefined();
+      expect(optWs).toBeDefined();
+    });
+
+    it("does NOT expose --strategy as a CLI flag (resolved from RepoConfig per ADR-002)", () => {
+      // Strategy is a repo-level property; flags on prepare/finish would let
+      // the two phases disagree. Guard against accidental reintroduction.
+      const allOptions = [
+        ...cmd.options,
+        ...cmd.commands.flatMap((c) => c.options),
+      ];
+      const strategyOpt = allOptions.find((o) => o.long === "--strategy");
+      expect(strategyOpt).toBeUndefined();
+    });
   });
 });

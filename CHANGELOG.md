@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — two-phase release lifecycle
+
+### Added
+- `gw release prepare [version]` and `gw release finish` subcommands split the
+  release flow into an explicit plan-then-apply lifecycle backed by a persisted
+  `.gitwise/release-plan.json` (auto-gitignored, short-lived).
+- `gw release abort` discards a saved plan and optionally deletes the release
+  branch.
+- `gw release finish --no-delete-branch` keeps the release branch after merging
+  (gitflow only — useful when CI re-uses the branch).
+- Opt-in `RepoConfig.releaseStrategy` (`"github-flow"` default, `"gitflow"`) and
+  `RepoConfig.developBranch` (defaults to `"develop"`). GitFlow creates a
+  `release/<version>` branch on `prepare` and merges into both the main and the
+  develop branches on `finish`.
+- New typed error codes surfaced by the release lifecycle:
+  `STRATEGY_DEVELOP_MISSING`, `STRATEGY_RELEASE_BRANCH_EXISTS`,
+  `STALE_PLAN_TAG_EXISTS`, `STALE_PLAN_BRANCH_MISMATCH`, `NO_RELEASE_PLAN`,
+  `INVALID_PLAN_SCHEMA`, `INVALID_PLAN_JSON`, `RELEASE_BRANCH_UNMERGED`.
+
+### Changed
+- `gw release` (no subcommand) keeps today's one-shot UX but now drives the
+  unified `prepare → confirm → finish` path internally; behavior on a
+  single-branch repo is unchanged.
+
 ## [0.1.0] - 2026-05-16 — gitwise initial release
 
 `gitwise` is a focused AI git toolbelt — `commit`, `review`, `pr`, `release` —

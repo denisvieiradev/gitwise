@@ -180,6 +180,22 @@ describe("skills/release.md", () => {
     expect(content).toMatch(/--bump/);
   });
 
+  it("documents the prepare subcommand", () => {
+    expect(content).toMatch(/\bprepare\b/);
+  });
+
+  it("documents the finish subcommand", () => {
+    expect(content).toMatch(/\bfinish\b/);
+  });
+
+  it("documents the abort subcommand", () => {
+    expect(content).toMatch(/\babort\b/);
+  });
+
+  it("documents the --no-delete-branch flag", () => {
+    expect(content).toMatch(/--no-delete-branch/);
+  });
+
   it("references the node runner script", () => {
     expect(content).toMatch(/scripts\/release\.js/);
   });
@@ -277,11 +293,26 @@ describe("scripts/release.ts", () => {
     expect(content).toMatch(/\bapplyRelease\b/);
   });
 
+  it("imports prepareRelease, finishRelease, and abortRelease", () => {
+    expect(content).toMatch(/\bprepareRelease\b/);
+    expect(content).toMatch(/\bfinishRelease\b/);
+    expect(content).toMatch(/\babortRelease\b/);
+  });
+
+  it("dispatches on the phase positional via the shared parser", () => {
+    expect(content).toMatch(/parseReleaseArgs/);
+  });
+
   it("handles --apply flag", () => {
     expect(content).toMatch(/--apply/);
   });
 
   it("handles --bump flag", () => {
     expect(content).toMatch(/--bump/);
+  });
+
+  it("surfaces the typed error.code on failure", () => {
+    expect(content).toMatch(/error\.code|\.code/i);
+    expect(content).toMatch(/process\.exit\(1\)/);
   });
 });
