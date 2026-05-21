@@ -1,0 +1,8 @@
+version: 2
+secret:
+  ignored-paths:
+    - packages/cli/__tests__/**
+    - packages/core/__tests__/**
+  ignored-matches:
+    - name: test fixture sk-ant prefix
+      match: "sk-ant-test"
