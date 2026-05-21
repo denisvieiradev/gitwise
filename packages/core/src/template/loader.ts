@@ -7,8 +7,16 @@ import { debug } from "../infra/logger.js";
 import { interpolate } from "./interpolate.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-// Bundled templates are at packages/core/templates/
-const BUNDLED_TEMPLATES_PATH = join(__dirname, "..", "..", "templates");
+// Bundled templates live at packages/core/templates/. The relative ascent
+// differs depending on where this module ends up at runtime:
+//   - source layout:   packages/core/src/template/loader.ts → ../../templates
+//   - bundled dist:    packages/core/dist/index.js          → ../templates
+// We probe both so the loader works whether consumers import the source via
+// ts-jest or the built dist via `node`.
+const BUNDLED_TEMPLATES_CANDIDATES = [
+  join(__dirname, "..", "templates"),
+  join(__dirname, "..", "..", "templates"),
+];
 
 function validateTemplateName(name: string): void {
   if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
@@ -58,11 +66,13 @@ export async function loadTemplate(
     return readFile(userOverride, "utf-8");
   }
 
-  // Level 3: bundled
-  const bundled = join(BUNDLED_TEMPLATES_PATH, `${name}.md`);
-  if (await fileExists(bundled)) {
-    debug("Loading bundled template", { path: bundled });
-    return readFile(bundled, "utf-8");
+  // Level 3: bundled (probe each candidate layout)
+  for (const candidate of BUNDLED_TEMPLATES_CANDIDATES) {
+    const bundled = join(candidate, `${name}.md`);
+    if (await fileExists(bundled)) {
+      debug("Loading bundled template", { path: bundled });
+      return readFile(bundled, "utf-8");
+    }
   }
 
   throw Object.assign(

@@ -331,6 +331,24 @@ describe("applyCommitPlan()", () => {
     expect(log.stdout).toContain("feat: add beta");
   });
 
+  it("single-commit plan with a staged deletion commits without re-adding the deleted path", async () => {
+    await writeFile(join(tempDir, "doomed.md"), "to be removed");
+    await exec("git", ["add", "doomed.md"], { cwd: tempDir });
+    await exec("git", ["commit", "-m", "add doomed"], { cwd: tempDir });
+    await exec("git", ["rm", "doomed.md"], { cwd: tempDir });
+
+    const plan = {
+      kind: "single" as const,
+      commits: [{ message: "chore: drop doomed", files: ["doomed.md"] }],
+      tokens: { input: 0, output: 0 },
+    };
+
+    await expect(applyCommitPlan(plan, { cwd: tempDir })).resolves.toBeUndefined();
+
+    const log = await exec("git", ["log", "--oneline", "-2"], { cwd: tempDir });
+    expect(log.stdout).toContain("chore: drop doomed");
+  });
+
   it("integration: staging .env produces SENSITIVE_FILE_STAGED without any LLM call", async () => {
     const mock = new MockLLMProvider();
     await writeFile(join(tempDir, ".env"), "API_KEY=secret");

@@ -54,6 +54,38 @@ Four orthogonal commands. Each works standalone — no `init`, no persistent sta
 
 Every LLM call prints input/output token counts after the operation. The model tier (`fast` / `balanced` / `powerful`) is routed per-command and configurable per repo.
 
+## Release lifecycle
+
+`gw release` splits into a two-phase lifecycle so you can review (or edit) the generated changelog and notes before tagging and pushing. The one-shot `gw release` invocation keeps today's UX and runs both phases in a single process.
+
+```bash
+gw release prepare              # plan + (gitflow) create release branch; stops before tagging
+gw release prepare 1.2.0        # pin the version explicitly
+gw release prepare --bump minor # override the LLM-suggested bump
+gw release finish               # apply the saved plan: bump, commit, merge, tag, push
+gw release finish --no-delete-branch # keep the release branch after merging (gitflow only)
+gw release abort                # discard the saved plan (asks before deleting the branch)
+```
+
+Between `prepare` and `finish`/`abort`, the plan is persisted at `.gitwise/release-plan.json`. The file is short-lived (deleted by `finish` or `abort`), and `prepare` appends it to `.gitignore` automatically so it never leaks into commits. Edit `.gitwise/release-<version>.md` between phases to tune the notes — `finish` re-reads that file from disk, not the in-memory plan.
+
+See [ADR-001](.compozy/tasks/release-prepare/adrs/adr-001.md) for the rationale behind splitting `prepare` and `finish`, and [ADR-003](.compozy/tasks/release-prepare/adrs/adr-003.md) for the plan-file lifecycle and integrity checks.
+
+### GitFlow opt-in
+
+The lifecycle defaults to GitHub-flow (single trunk, tag on `main`). GitFlow is opt-in via `RepoConfig` in `<repo>/.gitwise.json`:
+
+```jsonc
+{
+  "releaseStrategy": "gitflow",   // "github-flow" (default) | "gitflow"
+  "developBranch": "develop"      // optional; defaults to "develop"; gitflow only
+}
+```
+
+With `gitflow`, `prepare` creates a `release/<version>` branch and bumps `package.json` + writes the changelog entry on that branch; `finish` merges the release branch into both the main branch and the develop branch, tags, pushes, and (unless `--no-delete-branch` is passed) deletes the release branch.
+
+See [ADR-002](.compozy/tasks/release-prepare/adrs/adr-002.md) for why the strategy abstraction is scoped to release behavior only. Merge conflicts during `finish` are surfaced as plain errors — gitwise does not attempt automated conflict resolution.
+
 ## Privacy
 
 **Diffs are sent to Claude** (via the Anthropic API or your local Claude Code subprocess) for processing. There is no other telemetry; no usage data leaves your machine except the LLM calls themselves.

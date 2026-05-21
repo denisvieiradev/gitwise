@@ -114,4 +114,122 @@ describe("git infra (core)", () => {
       expect(log).toContain("chore: integration test");
     });
   });
+
+  describe("mergeNoFf", () => {
+    it("produces a non-fast-forward merge commit when branches have diverged", async () => {
+      const baseBranch = await git.getBranch(tempDir);
+      await exec("git", ["checkout", "-b", "feature"], { cwd: tempDir });
+      await writeFile(join(tempDir, "feature.txt"), "feature");
+      await exec("git", ["add", "feature.txt"], { cwd: tempDir });
+      await exec("git", ["commit", "-m", "feat: feature"], { cwd: tempDir });
+      await exec("git", ["checkout", baseBranch], { cwd: tempDir });
+      await writeFile(join(tempDir, "base.txt"), "base");
+      await exec("git", ["add", "base.txt"], { cwd: tempDir });
+      await exec("git", ["commit", "-m", "chore: base"], { cwd: tempDir });
+
+      await git.mergeNoFf(tempDir, "feature");
+
+      const { stdout: parents } = await exec(
+        "git",
+        ["rev-list", "-1", "--parents", "HEAD"],
+        { cwd: tempDir },
+      );
+      const shas = parents.trim().split(/\s+/);
+      expect(shas).toHaveLength(3); // merge commit + 2 parents
+    });
+
+    it("rejects with a message containing 'conflict' when the merge cannot auto-resolve", async () => {
+      const baseBranch = await git.getBranch(tempDir);
+      await exec("git", ["checkout", "-b", "conflicting"], { cwd: tempDir });
+      await writeFile(join(tempDir, "shared.txt"), "from feature");
+      await exec("git", ["add", "shared.txt"], { cwd: tempDir });
+      await exec("git", ["commit", "-m", "feat: shared from feature"], { cwd: tempDir });
+      await exec("git", ["checkout", baseBranch], { cwd: tempDir });
+      await writeFile(join(tempDir, "shared.txt"), "from base");
+      await exec("git", ["add", "shared.txt"], { cwd: tempDir });
+      await exec("git", ["commit", "-m", "feat: shared from base"], { cwd: tempDir });
+
+      await expect(git.mergeNoFf(tempDir, "conflicting")).rejects.toThrow(/conflict/i);
+    });
+  });
+
+  describe("branchExists", () => {
+    it("returns true for an existing local branch", async () => {
+      await exec("git", ["branch", "exists"], { cwd: tempDir });
+      await expect(git.branchExists(tempDir, "exists")).resolves.toBe(true);
+    });
+
+    it("returns false for a missing branch without throwing", async () => {
+      await expect(git.branchExists(tempDir, "nope-not-a-branch")).resolves.toBe(false);
+    });
+  });
+
+  describe("headSha", () => {
+    it("returns a 40-character SHA matching git rev-parse HEAD", async () => {
+      const sha = await git.headSha(tempDir);
+      expect(sha).toMatch(/^[0-9a-f]{40}$/);
+      const { stdout } = await exec("git", ["rev-parse", "HEAD"], { cwd: tempDir });
+      expect(sha).toBe(stdout.trim());
+    });
+  });
+
+  describe("deleteBranch", () => {
+    it("succeeds when the branch is fully merged", async () => {
+      await exec("git", ["branch", "merged"], { cwd: tempDir });
+      await expect(git.deleteBranch(tempDir, "merged")).resolves.toBeUndefined();
+      await expect(git.branchExists(tempDir, "merged")).resolves.toBe(false);
+    });
+
+    it("rejects when the branch is unmerged (no force)", async () => {
+      const baseBranch = await git.getBranch(tempDir);
+      await exec("git", ["checkout", "-b", "unmerged"], { cwd: tempDir });
+      await writeFile(join(tempDir, "loose.txt"), "loose");
+      await exec("git", ["add", "loose.txt"], { cwd: tempDir });
+      await exec("git", ["commit", "-m", "feat: loose"], { cwd: tempDir });
+      await exec("git", ["checkout", baseBranch], { cwd: tempDir });
+
+      await expect(git.deleteBranch(tempDir, "unmerged")).rejects.toThrow();
+      await expect(git.branchExists(tempDir, "unmerged")).resolves.toBe(true);
+    });
+
+    it("force-deletes an unmerged branch when force=true", async () => {
+      const baseBranch = await git.getBranch(tempDir);
+      await exec("git", ["checkout", "-b", "force-me"], { cwd: tempDir });
+      await writeFile(join(tempDir, "force.txt"), "force");
+      await exec("git", ["add", "force.txt"], { cwd: tempDir });
+      await exec("git", ["commit", "-m", "feat: force"], { cwd: tempDir });
+      await exec("git", ["checkout", baseBranch], { cwd: tempDir });
+
+      await expect(git.deleteBranch(tempDir, "force-me", true)).resolves.toBeUndefined();
+      await expect(git.branchExists(tempDir, "force-me")).resolves.toBe(false);
+    });
+  });
+
+  describe("integration: mergeNoFf + deleteBranch round-trip", () => {
+    it("merges a feature branch into base and then deletes it", async () => {
+      const baseBranch = await git.getBranch(tempDir);
+      await exec("git", ["checkout", "-b", "feature-roundtrip"], { cwd: tempDir });
+      await writeFile(join(tempDir, "rt.txt"), "rt");
+      await exec("git", ["add", "rt.txt"], { cwd: tempDir });
+      await exec("git", ["commit", "-m", "feat: rt"], { cwd: tempDir });
+      const featureSha = await git.headSha(tempDir);
+
+      await exec("git", ["checkout", baseBranch], { cwd: tempDir });
+      const baseSha = await git.headSha(tempDir);
+
+      await git.mergeNoFf(tempDir, "feature-roundtrip");
+
+      const { stdout: parents } = await exec(
+        "git",
+        ["rev-list", "-1", "--parents", "HEAD"],
+        { cwd: tempDir },
+      );
+      const shas = parents.trim().split(/\s+/);
+      expect(shas).toHaveLength(3);
+      expect(shas).toEqual(expect.arrayContaining([baseSha, featureSha]));
+
+      await git.deleteBranch(tempDir, "feature-roundtrip");
+      await expect(git.branchExists(tempDir, "feature-roundtrip")).resolves.toBe(false);
+    });
+  });
 });

@@ -71,7 +71,24 @@ export async function commit(cwd: string, message: string): Promise<string> {
 }
 
 export async function status(cwd: string): Promise<string> {
-  return run(["status", "--porcelain"], cwd);
+  // Bypass `run()`'s `stdout.trim()` because porcelain status lines start with
+  // a leading space when the file is unstaged-modified (e.g. " M .gitignore").
+  // Trimming the outer whitespace strips that space and downstream parsers
+  // that rely on the fixed 3-char `XY ` prefix would misread the path.
+  debug("git command", { args: ["status", "--porcelain"], cwd });
+  try {
+    const result: ExecResult = await exec(
+      "git",
+      ["status", "--porcelain"],
+      { cwd, timeout: GIT_TIMEOUT_MS, maxBuffer: GIT_MAX_BUFFER },
+    );
+    return result.stdout.replace(/\n+$/, "");
+  } catch (err: unknown) {
+    if (err instanceof Error && "killed" in err && (err as { killed: boolean }).killed) {
+      throw new Error(`Git command timed out after ${GIT_TIMEOUT_MS / 1000}s: git status --porcelain`);
+    }
+    throw err;
+  }
 }
 
 export async function push(
@@ -186,6 +203,82 @@ export async function pushWithTags(
   branch: string,
 ): Promise<void> {
   await run(["push", remote, branch, "--follow-tags"], cwd);
+}
+
+export async function mergeNoFf(cwd: string, source: string): Promise<void> {
+  await run(["merge", "--no-ff", source], cwd);
+}
+
+export async function branchExists(cwd: string, branch: string): Promise<boolean> {
+  try {
+    await exec(
+      "git",
+      ["show-ref", "--verify", "--quiet", `refs/heads/${branch}`],
+      { cwd, timeout: GIT_TIMEOUT_MS, maxBuffer: GIT_MAX_BUFFER },
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function headSha(cwd: string): Promise<string> {
+  return run(["rev-parse", "HEAD"], cwd);
+}
+
+/**
+ * Read a file's contents at `HEAD` via `git show HEAD:<path>`. Returns `null`
+ * when the path does not exist in the HEAD tree (so callers can distinguish
+ * "missing in HEAD" from "exists but empty"). Bypasses the helper `run()` to
+ * preserve trailing newlines, which the working-tree validators compare
+ * byte-for-byte.
+ */
+export async function showFileAtHead(
+  cwd: string,
+  path: string,
+): Promise<string | null> {
+  debug("git command", { args: ["show", `HEAD:${path}`], cwd });
+  try {
+    const result: ExecResult = await exec("git", ["show", `HEAD:${path}`], {
+      cwd,
+      timeout: GIT_TIMEOUT_MS,
+      maxBuffer: GIT_MAX_BUFFER,
+    });
+    return result.stdout;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteBranch(
+  cwd: string,
+  branch: string,
+  force = false,
+): Promise<void> {
+  await run(["branch", force ? "-D" : "-d", branch], cwd);
+}
+
+/**
+ * Is `branch` fully reachable from `target`? Resolves to true when every commit
+ * on `branch` is already in `target` (i.e., the merge would be a no-op). Used
+ * by abortRelease to refuse deleting a release branch that still has commits
+ * not present in main/develop.
+ */
+export async function isBranchMerged(
+  cwd: string,
+  branch: string,
+  target: string,
+): Promise<boolean> {
+  try {
+    await exec(
+      "git",
+      ["merge-base", "--is-ancestor", branch, target],
+      { cwd, timeout: GIT_TIMEOUT_MS, maxBuffer: GIT_MAX_BUFFER },
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**

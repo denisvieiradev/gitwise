@@ -302,13 +302,17 @@ export async function applyCommitPlan(
       await git.applyCommit({ message: msg, files: entry.files, cwd });
     }
   } else {
-    // Single commit — files already staged or we stage the listed files
+    // Single commit — entry.files mirrors `git diff --cached --name-only`, so
+    // every path is already staged. Re-running `git add` is both redundant
+    // and fatal on staged deletions: once the deletion is in the index, the
+    // file exists in neither the worktree nor the index, so pathspec
+    // matching fails with "pathspec did not match any files".
     const entry = plan.commits[0];
     if (!entry) return;
     const msg = entry.description
       ? `${entry.message}\n\n${entry.description}`
       : entry.message;
-    await git.applyCommit({ message: msg, files: entry.files, cwd });
+    await git.applyCommit({ message: msg, files: [], cwd });
   }
 
   if (shouldPush) {

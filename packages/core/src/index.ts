@@ -34,8 +34,36 @@ export type { LoadTemplateOptions } from "./template/index.js";
 export { commit, applyCommitPlan, parseCommitResponse } from "./commands/commit.js";
 export { review } from "./commands/review.js";
 export { pr, applyPr } from "./commands/pr.js";
-export { release, applyRelease, bumpVersion, heuristicBump } from "./commands/release.js";
-export type { ReleaseOptions, ReleasePlan, ApplyReleaseOptions, BumpType } from "./commands/release.js";
+export {
+  release,
+  prepareRelease,
+  applyRelease,
+  finishRelease,
+  abortRelease,
+  runReleaseInProcess,
+  bumpVersion,
+  heuristicBump,
+  detectWorkspaceRoot,
+} from "./commands/release.js";
+export type {
+  ReleaseOptions,
+  ReleasePlan,
+  PrepareReleaseOptions,
+  ApplyReleaseOptions,
+  FinishReleaseOptions,
+  AbortReleaseOptions,
+  RunReleaseInProcessOptions,
+  BumpType,
+} from "./commands/release.js";
+export { createReleaseStrategy } from "./strategies/release.js";
+export type { ReleaseStrategy, ReleaseStrategyName } from "./strategies/release.js";
+export {
+  saveReleasePlan,
+  loadReleasePlan,
+  deleteReleasePlan,
+  ensureGitignored,
+} from "./commands/release-plan.js";
+export type { PersistedReleasePlan } from "./commands/release-plan.js";
 export type { PrOptions, PrDraft, ApplyPrOptions, ApplyPrResult } from "./commands/pr.js";
 export type { ReviewOptions, ReviewResult, ReviewFinding } from "./commands/review.js";
 export type { CommitOptions, CommitPlan, CommitEntry, SplitMode, ApplyCommitPlanOptions } from "./commands/commit.js";

@@ -125,6 +125,92 @@ describe("config (core)", () => {
     });
   });
 
+  describe("release strategy fields", () => {
+    it("readRepoConfig surfaces releaseStrategy when set in .gitwise.json", async () => {
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({ releaseStrategy: "gitflow" }),
+        "utf-8",
+      );
+      const config = await getMergedConfig({ cwd, homeDir });
+      expect(config.releaseStrategy).toBe("gitflow");
+      expect(config.developBranch).toBeUndefined();
+    });
+
+    it("readRepoConfig surfaces developBranch when set in .gitwise.json", async () => {
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({ developBranch: "trunk" }),
+        "utf-8",
+      );
+      const config = await getMergedConfig({ cwd, homeDir });
+      expect(config.developBranch).toBe("trunk");
+      expect(config.releaseStrategy).toBeUndefined();
+    });
+
+    it("readRepoConfig leaves both fields undefined when neither is set", async () => {
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({ language: "es" }),
+        "utf-8",
+      );
+      const config = await getMergedConfig({ cwd, homeDir });
+      expect(config.releaseStrategy).toBeUndefined();
+      expect(config.developBranch).toBeUndefined();
+      expect(config.language).toBe("es");
+    });
+
+    it("getMergedConfig carries both fields when both are set", async () => {
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({ releaseStrategy: "gitflow", developBranch: "trunk" }),
+        "utf-8",
+      );
+      const config = await getMergedConfig({ cwd, homeDir });
+      expect(config.releaseStrategy).toBe("gitflow");
+      expect(config.developBranch).toBe("trunk");
+    });
+
+    it("getMergedConfig preserves repo-level releaseStrategy when user config is unset", async () => {
+      await writeUserConfig({ language: "pt-br" }, homeDir);
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({ releaseStrategy: "gitflow" }),
+        "utf-8",
+      );
+      const config = await getMergedConfig({ cwd, homeDir });
+      expect(config.releaseStrategy).toBe("gitflow");
+      expect(config.language).toBe("pt-br");
+    });
+
+    it("getMergedConfig does not invent a default developBranch", async () => {
+      await writeUserConfig({ language: "en" }, homeDir);
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({ releaseStrategy: "gitflow" }),
+        "utf-8",
+      );
+      const config = await getMergedConfig({ cwd, homeDir });
+      expect(config.developBranch).toBeUndefined();
+    });
+
+    it("round-trips both fields through a .gitwise.json file end-to-end", async () => {
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({
+          releaseStrategy: "gitflow",
+          developBranch: "develop-next",
+          language: "de",
+        }),
+        "utf-8",
+      );
+      const config = await getMergedConfig({ cwd, homeDir });
+      expect(config.releaseStrategy).toBe("gitflow");
+      expect(config.developBranch).toBe("develop-next");
+      expect(config.language).toBe("de");
+    });
+  });
+
   describe("integration round-trip", () => {
     it("write user config, write repo config, read merged shape", async () => {
       await writeUserConfig({ provider: "api", language: "en", models: { fast: "haiku", balanced: "sonnet", powerful: "opus" } }, homeDir);
