@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
-    "ts-jest": "^29.2.5",
+    "ts-jest": "^29.4.11",
     "typescript": "^5.7.3"
   },
   "keywords": ["gitwise", "git", "ai", "commit", "review", "pull-request", "release"],
