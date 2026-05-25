@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { debug } from "../infra/logger.js";
+import { EXIT_CODES, GitwiseError } from "../errors.js";
 import type { LLMChatRequest, LLMChatResponse, LLMProvider, ModelConfig, ModelTier } from "./types.js";
 
 const execFileAsync = promisify(execFile);
@@ -238,10 +239,12 @@ export class ClaudeCodeProvider implements LLMProvider {
   private wrapError(err: unknown): Error {
     if (err instanceof Error) {
       if (err.message.includes("ENOENT")) {
-        return Object.assign(
-          new Error(`Claude Code CLI not found at "${this.claudeBinaryPath}". Re-run \`gw config\` to reconfigure.`),
-          { code: "PROVIDER_UNAVAILABLE" },
-        );
+        return new GitwiseError({
+          code: "PROVIDER_UNAVAILABLE",
+          message: `Claude Code CLI not found at "${this.claudeBinaryPath}". Re-run \`gw config\` to reconfigure.`,
+          exitCode: EXIT_CODES.API_FAILED,
+          cause: err,
+        });
       }
       return err;
     }

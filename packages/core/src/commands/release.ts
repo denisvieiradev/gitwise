@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, unlink, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import * as git from "../infra/git.js";
 import { isGhAvailable, createGitHubRelease } from "../infra/github.js";
@@ -7,8 +7,11 @@ import { loadTemplate } from "../template/loader.js";
 import { interpolate } from "../template/interpolate.js";
 import type { LLMProvider } from "../providers/types.js";
 import { resolveModelTier } from "../providers/model-router.js";
-import { debug } from "../infra/logger.js";
+import { debug, warn as logWarn } from "../infra/logger.js";
 import { readRepoConfig } from "../config/repo.js";
+import { EXIT_CODES, GitwiseError } from "../errors.js";
+import { Transaction, type Logger, type Step } from "../infra/transaction.js";
+import { acquireRepoLock } from "../infra/lockfile.js";
 import {
   createReleaseStrategy,
   type ReleaseStrategyName,
@@ -58,6 +61,8 @@ export interface ApplyReleaseOptions {
   tagAndPush?: boolean;
   createGhRelease?: boolean;
   workspacePropagation?: boolean;
+  /** Forwarded to finishRelease. Default true. Set false only for testing. */
+  signTags?: boolean;
 }
 
 // ─── Version utilities ────────────────────────────────────────────────────────
@@ -67,8 +72,10 @@ const STRICT_SEMVER_RE = /^v?(\d+)\.(\d+)\.(\d+)$/;
 export function bumpVersion(current: string, type: BumpType): string {
   const match = STRICT_SEMVER_RE.exec(current);
   if (!match) {
-    throw Object.assign(new Error(`Invalid current version: ${current}`), {
+    throw new GitwiseError({
       code: "INVALID_VERSION",
+      message: `Invalid current version: ${current}`,
+      exitCode: EXIT_CODES.CONFIG_INVALID,
     });
   }
   const major = Number(match[1]);
@@ -83,10 +90,11 @@ export function bumpVersion(current: string, type: BumpType): string {
     // could smuggle in a bogus value. Surface it as INVALID_VERSION instead
     // of silently returning undefined and minting `release/undefined` /
     // `vundefined` artifacts downstream.
-    default: throw Object.assign(
-      new Error(`Invalid bump type: ${String(type)}`),
-      { code: "INVALID_VERSION" },
-    );
+    default: throw new GitwiseError({
+      code: "INVALID_VERSION",
+      message: `Invalid bump type: ${String(type)}`,
+      exitCode: EXIT_CODES.CONFIG_INVALID,
+    });
   }
 }
 
@@ -150,7 +158,11 @@ export async function release(opts: ReleaseOptions): Promise<ReleasePlan> {
 
   const pkgPath = join(cwd, "package.json");
   if (!(await fileExists(pkgPath))) {
-    throw Object.assign(new Error("No package.json found"), { code: "NO_PACKAGE_JSON" });
+    throw new GitwiseError({
+      code: "NO_PACKAGE_JSON",
+      message: "No package.json found",
+      exitCode: EXIT_CODES.CONFIG_INVALID,
+    });
   }
 
   const pkg = await readJSON<{ version: string; name?: string }>(pkgPath);
@@ -162,7 +174,11 @@ export async function release(opts: ReleaseOptions): Promise<ReleasePlan> {
   const commits = await git.getLog(cwd, logRange);
 
   if (!commits) {
-    throw Object.assign(new Error("No new commits since last release"), { code: "NO_COMMITS" });
+    throw new GitwiseError({
+      code: "NO_COMMITS",
+      message: "No new commits since last release",
+      exitCode: EXIT_CODES.RELEASE_PLAN_STALE,
+    });
   }
 
   const templateOpts = {
@@ -250,16 +266,236 @@ export interface PrepareReleaseOptions extends ReleaseOptions {
 }
 
 /**
+ * Step factory: create a gitflow release branch off `startPoint` and capture
+ * the previously-checked-out branch so compensate can return there.
+ *
+ * Compensate: force-checkout the previously-checked-out branch (discards any
+ * working-tree dirt accumulated on the release branch from later steps that
+ * failed before their own compensate could fire) then `git branch -D` the
+ * release branch. ADR-004 §Decision item 1 names this exact compensate.
+ */
+export function createReleaseBranchStep(
+  cwd: string,
+  branchName: string,
+  startPoint: string,
+): Step<{ branchName: string; previousBranch: string }> {
+  return {
+    name: `create-branch:${branchName}`,
+    apply: async () => {
+      const previousBranch = await git.getBranch(cwd);
+      await git.createBranch(cwd, branchName, startPoint);
+      return { branchName, previousBranch };
+    },
+    compensate: async ({ branchName: branch, previousBranch }) => {
+      // Force-checkout so any uncommitted working-tree mutation that the
+      // catch path could not undo (e.g. a per-file compensate that itself
+      // threw and is now reported as ROLLBACK_PARTIAL) is still discarded
+      // before we try to delete the branch.
+      await git.checkoutForce(cwd, previousBranch);
+      await git.deleteBranch(cwd, branch, true);
+    },
+  };
+}
+
+/**
+ * Step factory: write `contents` to `filePath` and capture any pre-existing
+ * file's prior bytes so compensate can restore byte-for-byte.
+ *
+ * The captured state is either the original `Buffer` (file existed) or
+ * `null` (file did not exist). Compensate restores the original bytes or
+ * `fs.unlink`s the file accordingly. Mirrors the contract of
+ * {@link writeWorkspaceVersionStep} for non-JSON payloads.
+ */
+export function writeFileStep(
+  filePath: string,
+  contents: string | Buffer,
+): Step<Buffer | null> {
+  return {
+    name: `write-file:${filePath}`,
+    apply: async () => {
+      const priorBytes = (await fileExists(filePath))
+        ? await readFile(filePath)
+        : null;
+      await writeFile(filePath, contents);
+      return priorBytes;
+    },
+    compensate: async (priorBytes) => {
+      if (priorBytes === null) {
+        try {
+          await unlink(filePath);
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+        }
+      } else {
+        await writeFile(filePath, priorBytes);
+      }
+    },
+  };
+}
+
+/**
+ * Step factory: apply both `ensureGitignored` calls (plan file + notes glob)
+ * to `.gitignore`, capturing the file's prior bytes (or `null` when it did
+ * not exist) so compensate can restore the original state.
+ *
+ * Compensate writes the captured bytes back, or unlinks the file when it
+ * did not exist pre-apply. ADR-004 §Decision item 1 names "gitignore
+ * mutation → revert original bytes" as the canonical compensate.
+ */
+export function mutateGitignoreStep(cwd: string): Step<Buffer | null> {
+  const gitignorePath = join(cwd, ".gitignore");
+  return {
+    name: "mutate-gitignore",
+    apply: async () => {
+      const priorBytes = (await fileExists(gitignorePath))
+        ? await readFile(gitignorePath)
+        : null;
+      await ensureGitignored(cwd, RELEASE_PLAN_REL_PATH);
+      await ensureGitignored(cwd, RELEASE_NOTES_GLOB_REL_PATH);
+      return priorBytes;
+    },
+    compensate: async (priorBytes) => {
+      if (priorBytes === null) {
+        try {
+          await unlink(gitignorePath);
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+        }
+      } else {
+        await writeFile(gitignorePath, priorBytes);
+      }
+    },
+  };
+}
+
+/**
+ * Step factory: prepend a Keep-a-Changelog entry for `newVersion` to
+ * `CHANGELOG.md`, creating the file with the standard header if it does not
+ * exist. Captures the file's prior bytes (or `null`) so compensate can
+ * restore it byte-for-byte.
+ */
+export function writeChangelogStep(
+  cwd: string,
+  newVersion: string,
+  entryBody: string,
+): Step<Buffer | null> {
+  const changelogPath = join(cwd, "CHANGELOG.md");
+  return {
+    name: "write-changelog",
+    apply: async () => {
+      const priorBytes = (await fileExists(changelogPath))
+        ? await readFile(changelogPath)
+        : null;
+      const date = new Date().toISOString().split("T")[0];
+      const versionHeader = `## [${newVersion}] - ${date}\n\n${entryBody}\n\n`;
+      if (priorBytes !== null) {
+        const existing = priorBytes.toString("utf-8");
+        const headerEnd = existing.indexOf("## [");
+        if (headerEnd > 0) {
+          await writeFile(
+            changelogPath,
+            existing.slice(0, headerEnd) + versionHeader + existing.slice(headerEnd),
+            "utf-8",
+          );
+        } else {
+          const body = existing.startsWith(CHANGELOG_HEADER)
+            ? existing.slice(CHANGELOG_HEADER.length)
+            : existing;
+          await writeFile(
+            changelogPath,
+            CHANGELOG_HEADER + versionHeader + body,
+            "utf-8",
+          );
+        }
+      } else {
+        await writeFile(
+          changelogPath,
+          CHANGELOG_HEADER + versionHeader,
+          "utf-8",
+        );
+      }
+      return priorBytes;
+    },
+    compensate: async (priorBytes) => {
+      if (priorBytes === null) {
+        try {
+          await unlink(changelogPath);
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+        }
+      } else {
+        await writeFile(changelogPath, priorBytes);
+      }
+    },
+  };
+}
+
+/**
+ * Step factory: stage `files` and create the release commit on the current
+ * branch. Captures the pre-commit `HEAD` SHA so compensate can `git reset
+ * --hard` back to it, undoing the commit AND any staged/working-tree
+ * changes that the prior file-write compensates have not yet reverted.
+ *
+ * The hard reset is intentional: when the release branch is later deleted
+ * by {@link createReleaseBranchStep}'s compensate, a force-checkout would
+ * need to be tolerant of working-tree dirt. Resetting the commit also
+ * cleans the working tree so subsequent compensates run from a known state.
+ */
+export function commitReleaseStep(
+  cwd: string,
+  message: string,
+  files: string[],
+): Step<string> {
+  return {
+    name: "commit-release-bump",
+    apply: async () => {
+      const preSha = await git.headSha(cwd);
+      await git.applyCommit({ message, files, cwd });
+      return preSha;
+    },
+    compensate: async (preSha) => {
+      await git.resetHard(cwd, preSha);
+    },
+  };
+}
+
+/**
+ * Step factory: persist the release plan JSON. ADR-004 §Decision item 1
+ * names this as the LAST step of `prepareRelease` so a partial run never
+ * leaves a plan file referencing a half-prepared branch.
+ *
+ * Compensate `fs.unlink`s the plan file (idempotent: ENOENT is swallowed).
+ */
+export function savePlanStep(
+  cwd: string,
+  plan: PersistedReleasePlan,
+): Step<void> {
+  return {
+    name: "save-plan",
+    apply: async () => {
+      await saveReleasePlan(cwd, plan);
+    },
+    compensate: async () => {
+      await deleteReleasePlan(cwd);
+    },
+  };
+}
+
+/**
  * Run the planning half of the two-phase release lifecycle (ADR-001).
  *
  * Resolves the active strategy, validates preconditions (clean tree, develop
  * exists for gitflow, no pre-existing release branch), runs the LLM planner
- * via {@link release}, optionally creates the gitflow release branch and
- * commits a version bump + CHANGELOG entry on it, writes the user-editable
- * notes file, ensures `.gitwise/release-plan.json` is gitignored, and saves
- * the persisted plan **last** (ADR-003 invariant: the plan file's existence
- * means every earlier step succeeded). Does not tag, push, or merge — those
- * happen in {@link finishRelease}.
+ * via {@link release}, then drives every side-effectful step inside a single
+ * {@link Transaction} under a `.gitwise/.lock`. On any failure the
+ * transaction rolls back in LIFO order: plan file unlinked, release commit
+ * reset (gitflow), `.gitignore` reverted, CHANGELOG.md reverted, workspace
+ * + root manifests reverted, notes file unlinked, release branch deleted.
+ * Compensate failures surface as a `ROLLBACK_PARTIAL` log warning emitted by
+ * the transaction itself; the original cause is always rethrown unchanged.
+ *
+ * ADR-004 §Decision item 1: the release plan file is written LAST so its
+ * presence on disk is a contract that every preceding step succeeded.
  */
 export async function prepareRelease(
   opts: PrepareReleaseOptions,
@@ -276,179 +512,192 @@ export async function prepareRelease(
 
   debug("release.prepare.start", { strategy: strategyName, cwd });
 
-  // 2. Preflight — refuse to start if the working tree is dirty. Runs before
-  // any LLM call so we don't pay tokens on a doomed run.
-  //
-  // Filter `.gitignore` from the dirty set: prepare's step 11 mutates it via
-  // `ensureGitignored`, and on github-flow that change is intentionally
-  // deferred to finish (no commit happens in prepare). After a prior github-flow
-  // `prepare → abort`, the leftover ` M .gitignore` (or `?? .gitignore`) would
-  // otherwise block the next prepare and force the user to manually
-  // `git checkout -- .gitignore`. Matches the symmetric tolerance in
-  // finishRelease's step 2c.
-  const dirtyEntries = (await git.status(cwd))
-    .split("\n")
-    .map((line) => line.replace(/\s+$/, ""))
-    .filter((line) => line.length >= 3)
-    .filter((line) => line.slice(3).trim() !== ".gitignore");
-  if (dirtyEntries.length > 0) {
-    throw Object.assign(
-      new Error(
-        `Working tree must be clean before preparing a release — commit or stash first.\n${dirtyEntries.join("\n")}`,
-      ),
-      { code: "WORKING_TREE_DIRTY" },
-    );
-  }
-
-  // 3. Refuse to clobber an in-flight plan. Mirrors ADR-003's "plan-first
-  // delete" invariant in finishRelease: a persisted plan file is a contract
-  // that prepare's earlier steps already succeeded. Re-running prepare without
-  // finishing or aborting would silently overwrite that file (different
-  // newVersion / baseCommit / preparedAt), erasing the only trace of the
-  // prior run. Running this before the LLM call keeps retries cheap.
-  const existingPlan = await loadReleasePlan(cwd);
-  if (existingPlan) {
-    throw Object.assign(
-      new Error(
-        `An in-flight release plan already exists at .gitwise/release-plan.json for v${existingPlan.newVersion} (${existingPlan.strategy}). Finish it with "gw release finish" or discard it with "gw release abort" before preparing a new release.`,
-      ),
-      { code: "RELEASE_PLAN_EXISTS" },
-    );
-  }
-
-  // 4. Strategy preconditions — gitflow requires the develop branch to exist.
-  if (strategy.requiresDevelop()) {
-    if (!(await git.branchExists(cwd, developBranch))) {
-      throw Object.assign(
-        new Error(
-          `GitFlow requires a "${developBranch}" branch but it does not exist. Create it first (e.g. git checkout -b ${developBranch}).`,
-        ),
-        { code: "STRATEGY_DEVELOP_MISSING" },
-      );
-    }
-  }
-
-  // 5. Capture the user's HEAD before any mutation so the plan records where
-  // prepare started — useful for stale-plan diagnostics in finish.
-  const baseCommit = await git.headSha(cwd);
-
-  // 6. Run the LLM planner (also raises NO_PACKAGE_JSON / NO_COMMITS /
-  // INVALID_VERSION before we touch the filesystem).
-  const plan = await release(opts);
-
-  // 7. Now that newVersion is known, derive the release branch name and check
-  // it doesn't already exist (gitflow only — github-flow returns null).
-  const releaseBranch = strategy.releaseBranchFor(plan.newVersion);
-  if (releaseBranch && (await git.branchExists(cwd, releaseBranch))) {
-    throw Object.assign(
-      new Error(
-        `Release branch "${releaseBranch}" already exists. Delete it or pick a different version.`,
-      ),
-      { code: "STRATEGY_RELEASE_BRANCH_EXISTS" },
-    );
-  }
-
-  // 8. For gitflow, branch off develop and mutate manifests on the release
-  // branch. For github-flow, manifests are deferred to finish.
-  if (releaseBranch) {
-    await git.createBranch(cwd, releaseBranch, developBranch);
-    debug("release.prepare.branch.created", {
-      branch: releaseBranch,
-      from: developBranch,
-    });
-  }
-
-  const targetBranch = releaseBranch ?? (await git.getBranch(cwd));
-
-  // 9. Write the user-editable notes file (both strategies). Lives under
-  // .gitwise/ which prepare will gitignore in step 11.
-  await ensureDir(join(cwd, ".gitwise"));
-  await writeFile(
-    join(cwd, ".gitwise", `release-${plan.newVersion}.md`),
-    plan.notes,
-    "utf-8",
-  );
-
-  // 10. Gitflow-only: bump root package.json + write CHANGELOG entry, then
-  // commit on the release branch so finish can merge it directly.
-  if (releaseBranch) {
-    const pkgPath = join(cwd, "package.json");
-    const pkg = await readJSON<Record<string, unknown>>(pkgPath);
-    pkg["version"] = plan.newVersion;
-    await writeJSON(pkgPath, pkg);
-
-    const changelogPath = join(cwd, "CHANGELOG.md");
-    const date = new Date().toISOString().split("T")[0];
-    const versionHeader = `## [${plan.newVersion}] - ${date}\n\n${plan.changelog}\n\n`;
-
-    if (await fileExists(changelogPath)) {
-      const existing = await readFile(changelogPath, "utf-8");
-      const headerEnd = existing.indexOf("## [");
-      if (headerEnd > 0) {
-        const next =
-          existing.slice(0, headerEnd) + versionHeader + existing.slice(headerEnd);
-        await writeFile(changelogPath, next, "utf-8");
-      } else {
-        const body = existing.startsWith(CHANGELOG_HEADER)
-          ? existing.slice(CHANGELOG_HEADER.length)
-          : existing;
-        await writeFile(
-          changelogPath,
-          CHANGELOG_HEADER + versionHeader + body,
-          "utf-8",
-        );
-      }
-    } else {
-      await writeFile(changelogPath, CHANGELOG_HEADER + versionHeader, "utf-8");
-    }
-  }
-
-  // 11. Ensure the plan file is gitignored BEFORE we write it (ADR-003: never
-  // tracked). For gitflow, fold the .gitignore change into the version-bump
-  // commit here; for github-flow the equivalent happens in finishRelease (it
-  // stages .gitignore alongside package.json/CHANGELOG.md) since prepare
-  // doesn't create a commit on this strategy. The notes-file glob is
-  // gitignored alongside so old `.gitwise/release-<prev>.md` files left behind
-  // by previous releases (ADR-003 keeps them on disk) don't trip this
-  // function's clean-tree check on the next prepare.
-  await ensureGitignored(cwd, RELEASE_PLAN_REL_PATH);
-  await ensureGitignored(cwd, RELEASE_NOTES_GLOB_REL_PATH);
-
-  if (releaseBranch) {
-    const stagePaths = ["package.json", "CHANGELOG.md"];
-    if (await fileExists(join(cwd, ".gitignore"))) {
-      stagePaths.push(".gitignore");
-    }
-    await git.add(cwd, stagePaths);
-    await git.commit(cwd, `chore(release): v${plan.newVersion}`);
-  }
-
-  // 12. Persist the plan LAST. Its presence on disk signals to finish/abort
-  // that every preceding step succeeded.
-  const persistedPlan: PersistedReleasePlan = {
-    schema: 1,
-    strategy: strategyName,
-    currentVersion: plan.currentVersion,
-    newVersion: plan.newVersion,
-    suggestedBump: plan.suggestedBump,
-    changelog: plan.changelog,
-    notes: plan.notes,
-    commits: plan.commits,
-    preparedAt: new Date().toISOString(),
-    baseCommit,
-    targetBranch,
-    releaseBranchCreated: releaseBranch !== null,
-    tokens: plan.tokens,
-  };
-
-  await saveReleasePlan(cwd, persistedPlan);
-  debug("release.prepare.plan.saved", {
-    newVersion: plan.newVersion,
-    targetBranch,
-    releaseBranchCreated: persistedPlan.releaseBranchCreated,
+  const releaseLock = await acquireRepoLock(cwd, {
+    command: "release prepare",
   });
 
-  return persistedPlan;
+  try {
+    // 2. Preflight — refuse to start if the working tree is dirty. Runs
+    // before any LLM call so we don't pay tokens on a doomed run.
+    //
+    // Filter `.gitignore` from the dirty set: prepare mutates it via
+    // `ensureGitignored`, and on github-flow that change is intentionally
+    // deferred to finish (no commit happens in prepare). After a prior
+    // github-flow `prepare → abort`, the leftover ` M .gitignore` (or
+    // `?? .gitignore`) would otherwise block the next prepare and force the
+    // user to manually `git checkout -- .gitignore`. Matches the symmetric
+    // tolerance in finishRelease's step 2c.
+    //
+    // Also filter the `.gitwise/` directory entry: `acquireRepoLock` (just
+    // above) writes `.gitwise/.lock` to coordinate concurrent gitwise runs,
+    // which would otherwise surface here as `?? .gitwise/` on a fresh repo
+    // and reject every prepare. The lockfile is gitwise's own scratch, not
+    // user state.
+    const dirtyEntries = (await git.status(cwd))
+      .split("\n")
+      .map((line) => line.replace(/\s+$/, ""))
+      .filter((line) => line.length >= 3)
+      .filter((line) => {
+        const path = line.slice(3).trim();
+        if (path === ".gitignore") return false;
+        if (path === ".gitwise/" || path === ".gitwise") return false;
+        if (path.startsWith(".gitwise/")) return false;
+        return true;
+      });
+    if (dirtyEntries.length > 0) {
+      throw new GitwiseError({
+        code: "WORKING_TREE_DIRTY",
+        message: `Working tree must be clean before preparing a release — commit or stash first.\n${dirtyEntries.join("\n")}`,
+        exitCode: EXIT_CODES.REPO_STATE_INVALID,
+      });
+    }
+
+    // 3. Refuse to clobber an in-flight plan (ADR-003 plan-first delete
+    // invariant). Running this before the LLM call keeps retries cheap.
+    const existingPlan = await loadReleasePlan(cwd);
+    if (existingPlan) {
+      throw new GitwiseError({
+        code: "RELEASE_PLAN_EXISTS",
+        message: `An in-flight release plan already exists at .gitwise/release-plan.json for v${existingPlan.newVersion} (${existingPlan.strategy}). Finish it with "gw release finish" or discard it with "gw release abort" before preparing a new release.`,
+        exitCode: EXIT_CODES.RELEASE_BRANCH_CONFLICT,
+      });
+    }
+
+    // 4. Strategy preconditions — gitflow requires the develop branch to exist.
+    if (strategy.requiresDevelop()) {
+      if (!(await git.branchExists(cwd, developBranch))) {
+        throw new GitwiseError({
+          code: "STRATEGY_DEVELOP_MISSING",
+          message: `GitFlow requires a "${developBranch}" branch but it does not exist. Create it first (e.g. git checkout -b ${developBranch}).`,
+          exitCode: EXIT_CODES.REPO_STATE_INVALID,
+        });
+      }
+    }
+
+    // 5. Capture the user's HEAD before any mutation so the plan records
+    // where prepare started — useful for stale-plan diagnostics in finish.
+    const baseCommit = await git.headSha(cwd);
+
+    // 6. Run the LLM planner (also raises NO_PACKAGE_JSON / NO_COMMITS /
+    // INVALID_VERSION before we touch the filesystem).
+    const plan = await release(opts);
+
+    // 7. Now that newVersion is known, derive the release branch name and
+    // check it doesn't already exist (gitflow only). Failure here predates
+    // any transactional mutation; raise the typed `RELEASE_BRANCH_CONFLICT`
+    // surfaced by ADR-004 with a docs/recovery.md hint.
+    const releaseBranch = strategy.releaseBranchFor(plan.newVersion);
+    if (releaseBranch && (await git.branchExists(cwd, releaseBranch))) {
+      throw new GitwiseError({
+        code: "RELEASE_BRANCH_CONFLICT",
+        message: `Release branch "${releaseBranch}" already exists. Delete it or pick a different version — see docs/recovery.md if a prior prepare crashed before its rollback finished.`,
+        exitCode: EXIT_CODES.RELEASE_BRANCH_CONFLICT,
+        details: { releaseBranch, newVersion: plan.newVersion },
+      });
+    }
+
+    // 8. Drive every side-effectful mutation through a single Transaction
+    // so a failure at any step rolls every prior step back in LIFO order.
+    const tx = new Transaction();
+    await ensureDir(join(cwd, ".gitwise"));
+    let targetBranch: string;
+
+    try {
+      if (releaseBranch) {
+        await tx.run(
+          createReleaseBranchStep(cwd, releaseBranch, developBranch),
+        );
+        debug("release.prepare.branch.created", {
+          branch: releaseBranch,
+          from: developBranch,
+        });
+        targetBranch = releaseBranch;
+      } else {
+        targetBranch = await git.getBranch(cwd);
+      }
+
+      const notesPath = join(cwd, ".gitwise", `release-${plan.newVersion}.md`);
+      await tx.run(writeFileStep(notesPath, plan.notes));
+
+      let propagatedManifests: string[] = [];
+      if (releaseBranch) {
+        const pkgPath = join(cwd, "package.json");
+        await tx.run(writeWorkspaceVersionStep(pkgPath, plan.newVersion));
+
+        if (opts.workspacePropagation) {
+          propagatedManifests = await runWorkspaceVersionStepsInto(
+            tx,
+            cwd,
+            plan.newVersion,
+          );
+        }
+
+        await tx.run(writeChangelogStep(cwd, plan.newVersion, plan.changelog));
+      }
+
+      await tx.run(mutateGitignoreStep(cwd));
+
+      if (releaseBranch) {
+        const stagePaths = ["package.json", "CHANGELOG.md"];
+        if (await fileExists(join(cwd, ".gitignore"))) {
+          stagePaths.push(".gitignore");
+        }
+        stagePaths.push(...propagatedManifests);
+        await tx.run(
+          commitReleaseStep(
+            cwd,
+            `chore(release): v${plan.newVersion}`,
+            stagePaths,
+          ),
+        );
+      }
+
+      const persistedPlan: PersistedReleasePlan = {
+        schema: 1,
+        strategy: strategyName,
+        currentVersion: plan.currentVersion,
+        newVersion: plan.newVersion,
+        suggestedBump: plan.suggestedBump,
+        changelog: plan.changelog,
+        notes: plan.notes,
+        commits: plan.commits,
+        preparedAt: new Date().toISOString(),
+        baseCommit,
+        targetBranch,
+        releaseBranchCreated: releaseBranch !== null,
+        tokens: plan.tokens,
+      };
+
+      await tx.run(savePlanStep(cwd, persistedPlan));
+      debug("release.prepare.plan.saved", {
+        newVersion: plan.newVersion,
+        targetBranch,
+        releaseBranchCreated: persistedPlan.releaseBranchCreated,
+      });
+
+      return persistedPlan;
+    } catch (err) {
+      const reason =
+        err instanceof GitwiseError
+          ? err
+          : new GitwiseError({
+              code: "RELEASE_PREPARE_FAILED",
+              message: `Failed to prepare release: ${
+                err instanceof Error ? err.message : String(err)
+              }`,
+              exitCode: EXIT_CODES.GIT_FAILED,
+              cause: err,
+            });
+      debug("release.prepare.rollback.start", {
+        appliedSteps: tx.size,
+        code: reason.code,
+      });
+      await tx.rollback(reason, txLogger);
+      throw reason;
+    }
+  } finally {
+    await releaseLock();
+  }
 }
 
 // ─── applyRelease ────────────────────────────────────────────────────────────
@@ -475,7 +724,7 @@ export async function applyRelease(
   plan: ReleasePlan,
   opts: ApplyReleaseOptions,
 ): Promise<void> {
-  const { cwd, tagAndPush = true, createGhRelease = true, workspacePropagation = false } = opts;
+  const { cwd, tagAndPush = true, createGhRelease = true, workspacePropagation = false, signTags } = opts;
 
   // Preflight — refuse to start if the repo isn't in a state where a release
   // commit + tag can be applied atomically. Unconditional tag check matches
@@ -483,17 +732,19 @@ export async function applyRelease(
   // means the plan is inconsistent regardless of tagAndPush.
   const dirty = (await git.status(cwd)).trim();
   if (dirty) {
-    throw Object.assign(
-      new Error(`Working tree must be clean before releasing — commit or stash first.\n${dirty}`),
-      { code: "WORKING_TREE_DIRTY" },
-    );
+    throw new GitwiseError({
+      code: "WORKING_TREE_DIRTY",
+      message: `Working tree must be clean before releasing — commit or stash first.\n${dirty}`,
+      exitCode: EXIT_CODES.REPO_STATE_INVALID,
+    });
   }
   const tag = `v${plan.newVersion}`;
   if (await git.tagExists(cwd, tag)) {
-    throw Object.assign(
-      new Error(`Tag ${tag} already exists. Bump to a new version or delete the tag.`),
-      { code: "TAG_EXISTS" },
-    );
+    throw new GitwiseError({
+      code: "TAG_EXISTS",
+      message: `Tag ${tag} already exists. Bump to a new version or delete the tag.`,
+      exitCode: EXIT_CODES.RELEASE_BRANCH_CONFLICT,
+    });
   }
 
   // Build a PersistedReleasePlan equivalent of the in-memory plan and hand it
@@ -527,7 +778,7 @@ export async function applyRelease(
   await ensureGitignored(cwd, RELEASE_NOTES_GLOB_REL_PATH);
   await saveReleasePlan(cwd, persistedPlan);
 
-  await finishRelease({ cwd, tagAndPush, createGhRelease, workspacePropagation });
+  await finishRelease({ cwd, tagAndPush, createGhRelease, workspacePropagation, signTags });
 }
 
 // ─── finishRelease ───────────────────────────────────────────────────────────
@@ -551,6 +802,12 @@ export interface FinishReleaseOptions {
    * release branch.
    */
   workspacePropagation?: boolean;
+  /**
+   * Sign the release tag with the local GPG key (`git tag -s`). Default true.
+   * Set to false only for testing or environments without a GPG key — a
+   * warning is emitted to stderr when signing is skipped.
+   */
+  signTags?: boolean;
 }
 
 /**
@@ -590,17 +847,23 @@ export async function finishRelease(opts: FinishReleaseOptions): Promise<void> {
     createGhRelease = true,
     deleteReleaseBranch = true,
     workspacePropagation = false,
+    signTags = true,
   } = opts;
+
+  if (signTags === false) {
+    process.stderr.write(
+      "[gitwise] WARNING: --no-sign / signTags:false is a testing-only escape hatch. Release tags will NOT be GPG-signed. Do not use in production releases.\n",
+    );
+  }
 
   // 1. Load the persisted plan (also raises INVALID_PLAN_SCHEMA / INVALID_PLAN_JSON).
   const plan = await loadReleasePlan(cwd);
   if (!plan) {
-    throw Object.assign(
-      new Error(
-        `No release plan found at .gitwise/release-plan.json. Run "gw release prepare" first.`,
-      ),
-      { code: "NO_RELEASE_PLAN" },
-    );
+    throw new GitwiseError({
+      code: "NO_RELEASE_PLAN",
+      message: `No release plan found at .gitwise/release-plan.json. Run "gw release prepare" first.`,
+      exitCode: EXIT_CODES.RELEASE_PLAN_STALE,
+    });
   }
 
   debug("release.finish.start", {
@@ -622,12 +885,11 @@ export async function finishRelease(opts: FinishReleaseOptions): Promise<void> {
       code: "STALE_PLAN_TAG_EXISTS",
       tag,
     });
-    throw Object.assign(
-      new Error(
-        `Tag ${tag} already exists — the saved plan is stale. Run "gw release abort" or delete the tag before retrying.`,
-      ),
-      { code: "STALE_PLAN_TAG_EXISTS" },
-    );
+    throw new GitwiseError({
+      code: "STALE_PLAN_TAG_EXISTS",
+      message: `Tag ${tag} already exists — the saved plan is stale. Run "gw release abort" or delete the tag before retrying.`,
+      exitCode: EXIT_CODES.RELEASE_PLAN_STALE,
+    });
   }
 
   // 2b. Current branch must match the plan's target branch.
@@ -638,12 +900,11 @@ export async function finishRelease(opts: FinishReleaseOptions): Promise<void> {
       expected: plan.targetBranch,
       actual: currentBranch,
     });
-    throw Object.assign(
-      new Error(
-        `Release plan targets "${plan.targetBranch}" but the current branch is "${currentBranch}". Check out the target branch before running finish.`,
-      ),
-      { code: "STALE_PLAN_BRANCH_MISMATCH" },
-    );
+    throw new GitwiseError({
+      code: "STALE_PLAN_BRANCH_MISMATCH",
+      message: `Release plan targets "${plan.targetBranch}" but the current branch is "${currentBranch}". Check out the target branch before running finish.`,
+      exitCode: EXIT_CODES.RELEASE_PLAN_STALE,
+    });
   }
 
   // 2c. Working tree must be clean of user changes. Filter out paths prepare
@@ -676,12 +937,11 @@ export async function finishRelease(opts: FinishReleaseOptions): Promise<void> {
     debug("release.finish.validate.failed", {
       code: "WORKING_TREE_DIRTY",
     });
-    throw Object.assign(
-      new Error(
-        `Working tree must be clean before finishing a release — commit or stash first.\n${dirtyEntries.join("\n")}`,
-      ),
-      { code: "WORKING_TREE_DIRTY" },
-    );
+    throw new GitwiseError({
+      code: "WORKING_TREE_DIRTY",
+      message: `Working tree must be clean before finishing a release — commit or stash first.\n${dirtyEntries.join("\n")}`,
+      exitCode: EXIT_CODES.REPO_STATE_INVALID,
+    });
   }
 
   // 2d. Gitflow requires a develop branch to merge into and push.
@@ -693,12 +953,11 @@ export async function finishRelease(opts: FinishReleaseOptions): Promise<void> {
         code: "STRATEGY_DEVELOP_MISSING",
         developBranch,
       });
-      throw Object.assign(
-        new Error(
-          `GitFlow requires a "${developBranch}" branch but it does not exist.`,
-        ),
-        { code: "STRATEGY_DEVELOP_MISSING" },
-      );
+      throw new GitwiseError({
+        code: "STRATEGY_DEVELOP_MISSING",
+        message: `GitFlow requires a "${developBranch}" branch but it does not exist.`,
+        exitCode: EXIT_CODES.REPO_STATE_INVALID,
+      });
     }
   }
 
@@ -726,12 +985,11 @@ export async function finishRelease(opts: FinishReleaseOptions): Promise<void> {
     } else {
       const cause = err instanceof Error ? err.message : String(err);
       debug("release.finish.notes.read.failed", { path: notesPath, error: cause });
-      throw Object.assign(
-        new Error(
-          `Failed to read release notes at ${notesPath}: ${cause}. Recreate the file from the plan or run "gw release abort" to discard the in-flight release.`,
-        ),
-        { code: "NOTES_READ_FAILED" },
-      );
+      throw new GitwiseError({
+        code: "NOTES_READ_FAILED",
+        message: `Failed to read release notes at ${notesPath}: ${cause}. Recreate the file from the plan or run "gw release abort" to discard the in-flight release.`,
+        cause: err,
+      });
     }
   }
 
@@ -836,17 +1094,17 @@ export async function finishRelease(opts: FinishReleaseOptions): Promise<void> {
         source: plan.targetBranch,
         error: cause,
       });
-      throw Object.assign(
-        new Error(
-          `Failed to merge "${plan.targetBranch}" into "${target}" while finishing v${plan.newVersion}. The release plan file has already been deleted, so finish cannot be re-run. Resolve the conflicts, run "git merge --continue", then tag and push manually: git tag -a v${plan.newVersion} -F .gitwise/release-${plan.newVersion}.md && git push --follow-tags origin ${mainBranch}.\n${cause}`,
-        ),
-        {
-          code: "FINISH_MERGE_CONFLICT",
+      throw new GitwiseError({
+        code: "FINISH_MERGE_CONFLICT",
+        message: `Failed to merge "${plan.targetBranch}" into "${target}" while finishing v${plan.newVersion}. The release plan file has already been deleted, so finish cannot be re-run. Resolve the conflicts, run "git merge --continue", then tag and push manually: git tag -a v${plan.newVersion} -F .gitwise/release-${plan.newVersion}.md && git push --follow-tags origin ${mainBranch}.\n${cause}`,
+        exitCode: EXIT_CODES.GIT_FAILED,
+        cause: err,
+        details: {
           target,
           source: plan.targetBranch,
           newVersion: plan.newVersion,
         },
-      );
+      });
     }
     debug("release.finish.merge.target", {
       target,
@@ -863,7 +1121,7 @@ export async function finishRelease(opts: FinishReleaseOptions): Promise<void> {
 
   // 9. Tag and push. Tag annotation = the (possibly edited) notes.
   if (tagAndPush) {
-    await git.createTag(cwd, tag, notes);
+    await git.createTag(cwd, tag, notes, { signed: signTags !== false });
     await git.pushWithTags(cwd, "origin", mainBranch);
     debug("release.finish.tag.pushed", {
       tag,
@@ -939,12 +1197,11 @@ export async function abortRelease(opts: AbortReleaseOptions): Promise<void> {
   // 1. Load the plan; absent plan is the only fatal precondition.
   const plan = await loadReleasePlan(cwd);
   if (!plan) {
-    throw Object.assign(
-      new Error(
-        `No release plan found at .gitwise/release-plan.json. Nothing to abort.`,
-      ),
-      { code: "NO_RELEASE_PLAN" },
-    );
+    throw new GitwiseError({
+      code: "NO_RELEASE_PLAN",
+      message: `No release plan found at .gitwise/release-plan.json. Nothing to abort.`,
+      exitCode: EXIT_CODES.RELEASE_PLAN_STALE,
+    });
   }
 
   const shouldDeleteBranch = deleteBranch && plan.releaseBranchCreated;
@@ -964,12 +1221,11 @@ export async function abortRelease(opts: AbortReleaseOptions): Promise<void> {
     for (const target of strategy.mergeTargets(mainBranch, developBranch)) {
       if (target === plan.targetBranch) continue;
       if (!(await git.isBranchMerged(cwd, plan.targetBranch, target))) {
-        throw Object.assign(
-          new Error(
-            `Refusing to delete release branch "${plan.targetBranch}" — it has commits not present in "${target}". Merge or cherry-pick them first, or remove the branch manually.`,
-          ),
-          { code: "RELEASE_BRANCH_UNMERGED" },
-        );
+        throw new GitwiseError({
+          code: "RELEASE_BRANCH_UNMERGED",
+          message: `Refusing to delete release branch "${plan.targetBranch}" — it has commits not present in "${target}". Merge or cherry-pick them first, or remove the branch manually.`,
+          exitCode: EXIT_CODES.RELEASE_BRANCH_CONFLICT,
+        });
       }
     }
   }
@@ -1117,29 +1373,132 @@ async function gitignoreMatchesPrepareOutput(cwd: string): Promise<boolean> {
   return currentContent === expected;
 }
 
-async function propagateVersionToWorkspaces(
+/**
+ * Step factory for atomically bumping the `version` field of a single
+ * manifest (package.json or sibling plugin.json) under a {@link Transaction}.
+ *
+ * `apply` reads the manifest's prior bytes (Buffer, not parsed JSON, so any
+ * trailing newline or formatting in the on-disk file is preserved verbatim
+ * for rollback), rewrites the `version` field in place via `writeJSON`, and
+ * returns the captured prior bytes as the step result. `compensate` writes
+ * those bytes back, restoring the file byte-for-byte regardless of what the
+ * apply path produced. Steps are intended to run sequentially so ordering is
+ * deterministic per ADR-004.
+ */
+export function writeWorkspaceVersionStep(
+  manifestPath: string,
+  newVersion: string,
+): Step<Buffer> {
+  return {
+    name: `write-version:${manifestPath}`,
+    apply: async () => {
+      const priorBytes = await readFile(manifestPath);
+      const parsed = JSON.parse(priorBytes.toString("utf-8")) as Record<
+        string,
+        unknown
+      >;
+      parsed["version"] = newVersion;
+      await writeJSON(manifestPath, parsed);
+      return priorBytes;
+    },
+    compensate: async (priorBytes) => {
+      await writeFile(manifestPath, priorBytes);
+    },
+  };
+}
+
+const txLogger: Logger = {
+  warn(message, context) {
+    logWarn(`[gitwise] ${message}`, context);
+  },
+};
+
+/**
+ * Propagate `version` into every workspace manifest under a {@link Transaction}
+ * so that a write failure on `packages[N]/package.json` reliably restores the
+ * bytes of every previously-written manifest (ADR-004 §Decision item 2).
+ *
+ * Acquires `.gitwise/.lock` for the duration of the flow and releases it in a
+ * `finally` block so a concurrent gitwise invocation fails fast with
+ * `REPO_LOCKED`. Writes are sequential (not concurrent) to keep ordering
+ * deterministic. On any apply failure, runs `Transaction.rollback` BEFORE
+ * propagating the error so callers always see the original cause; a partial
+ * rollback (compensate itself fails) surfaces as a single `ROLLBACK_PARTIAL`
+ * warning emitted by `Transaction.rollback`.
+ *
+ * Returns the cwd-relative paths of every manifest the function actually
+ * modified so the caller can stage exactly those files (never a directory
+ * sweep, which would also pick up unrelated untracked work).
+ */
+export async function propagateVersionToWorkspaces(
+  cwd: string,
+  version: string,
+): Promise<string[]> {
+  const releaseLock = await acquireRepoLock(cwd, {
+    command: "release propagate-version",
+  });
+
+  try {
+    const tx = new Transaction();
+    try {
+      return await runWorkspaceVersionStepsInto(tx, cwd, version);
+    } catch (err) {
+      const reason =
+        err instanceof GitwiseError
+          ? err
+          : new GitwiseError({
+              code: "WORKSPACE_VERSION_WRITE_FAILED",
+              message: `Failed to propagate version ${version} to workspaces: ${
+                err instanceof Error ? err.message : String(err)
+              }`,
+              exitCode: EXIT_CODES.GIT_FAILED,
+              cause: err,
+            });
+      await tx.rollback(reason, txLogger);
+      throw reason;
+    }
+  } finally {
+    await releaseLock();
+  }
+}
+
+/**
+ * Inner variant of {@link propagateVersionToWorkspaces} that runs the
+ * workspace version-bump steps inside a caller-provided {@link Transaction}.
+ *
+ * Use this when a larger flow (e.g. {@link prepareRelease}) already holds the
+ * repo lock and owns its own transaction — calling
+ * {@link propagateVersionToWorkspaces} from inside such a flow would
+ * deadlock on `acquireRepoLock` (same-pid is treated as alive).
+ *
+ * Sorts workspace directories alphabetically so iteration order is
+ * deterministic across filesystems — ADR-004 §Decision requires sequential
+ * writes "so ordering is deterministic." Without this, `readdir` order leaks
+ * platform-specific behavior into both the rollback boundary AND the list
+ * returned to callers (which drives `git add` order in the release commit).
+ *
+ * Returns the cwd-relative paths of every manifest the function modified so
+ * the caller can stage exactly those files.
+ */
+export async function runWorkspaceVersionStepsInto(
+  tx: Transaction,
   cwd: string,
   version: string,
 ): Promise<string[]> {
   const patterns = await readWorkspacePatterns(cwd);
-  const workspaceDirs = await expandWorkspacePatterns(cwd, patterns);
-
+  const workspaceDirs = (await expandWorkspacePatterns(cwd, patterns)).sort();
   const modified: string[] = [];
   for (const dir of workspaceDirs) {
     const pkgPath = join(dir, "package.json");
     if (await fileExists(pkgPath)) {
-      const pkg = await readJSON<Record<string, unknown>>(pkgPath);
-      pkg["version"] = version;
-      await writeJSON(pkgPath, pkg);
+      await tx.run(writeWorkspaceVersionStep(pkgPath, version));
       modified.push(relative(cwd, pkgPath));
     }
     // Keep a sibling plugin.json (Claude Code plugin manifest) in lockstep
     // with package.json so its surfaced version doesn't drift after release.
     const pluginPath = join(dir, "plugin.json");
     if (await fileExists(pluginPath)) {
-      const plugin = await readJSON<Record<string, unknown>>(pluginPath);
-      plugin["version"] = version;
-      await writeJSON(pluginPath, plugin);
+      await tx.run(writeWorkspaceVersionStep(pluginPath, version));
       modified.push(relative(cwd, pluginPath));
     }
   }

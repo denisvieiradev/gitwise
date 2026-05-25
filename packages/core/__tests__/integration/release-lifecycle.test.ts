@@ -145,6 +145,7 @@ describe("release lifecycle integration — gitflow prepare → finish", () => {
       cwd,
       tagAndPush: true,
       createGhRelease: false,
+      signTags: false,
     });
 
     // Tag exists locally and on the remote.
@@ -220,9 +221,11 @@ describe("release lifecycle integration — gitflow finish merge conflict", () =
       finishRelease({ cwd, tagAndPush: false, createGhRelease: false }),
     ).rejects.toMatchObject({
       code: "FINISH_MERGE_CONFLICT",
-      target: "develop",
-      source: "release/1.1.0",
-      newVersion: "1.1.0",
+      details: {
+        target: "develop",
+        source: "release/1.1.0",
+        newVersion: "1.1.0",
+      },
     });
 
     // ADR-003 invariant: the plan file is gone before merges begin, so a
@@ -292,7 +295,7 @@ describe("release lifecycle integration — github-flow prepare → finish", () 
     // FINISH — manifest bump now happens here. Bare-origin lets finishRelease's
     // tagAndPush=true path complete without needing a real remote.
     originDir = await addOrigin(cwd);
-    await finishRelease({ cwd, tagAndPush: true, createGhRelease: false });
+    await finishRelease({ cwd, tagAndPush: true, createGhRelease: false, signTags: false });
 
     const pkgAfterFinish = JSON.parse(
       await readFile(join(cwd, "package.json"), "utf-8"),
@@ -357,7 +360,7 @@ describe("release lifecycle integration — edited notes survive into finish", (
     await writeFile(join(cwd, ".gitwise/release-1.1.0.md"), editedBody, "utf-8");
 
     originDir = await addOrigin(cwd);
-    await finishRelease({ cwd, tagAndPush: true, createGhRelease: true });
+    await finishRelease({ cwd, tagAndPush: true, createGhRelease: true, signTags: false });
 
     // Tag annotation reflects the edited notes.
     const { stdout: annotation } = await exec(
@@ -419,7 +422,7 @@ describe("release lifecycle integration — finish falls back to plan.notes when
 
     originDir = await addOrigin(cwd);
     await expect(
-      finishRelease({ cwd, tagAndPush: true, createGhRelease: false }),
+      finishRelease({ cwd, tagAndPush: true, createGhRelease: false, signTags: false }),
     ).resolves.toBeUndefined();
 
     // Tag annotation reflects the in-memory plan.notes — no raw ENOENT.
@@ -594,7 +597,7 @@ describe("release lifecycle integration — successive prepares survive prior no
       provider: planMock("minor"),
       strategy: "gitflow",
     });
-    await finishRelease({ cwd, tagAndPush: true, createGhRelease: false });
+    await finishRelease({ cwd, tagAndPush: true, createGhRelease: false, signTags: false });
 
     // Notes file from round 1 should still be on disk per ADR-003.
     expect(await pathExists(join(cwd, ".gitwise/release-1.1.0.md"))).toBe(true);
@@ -648,7 +651,7 @@ describe("release lifecycle integration — successive prepares survive prior no
     // commit, so no manual gitignore commit is needed here.
     originDir = await addOrigin(cwd);
     await prepareRelease({ cwd, provider: planMock("minor") });
-    await finishRelease({ cwd, tagAndPush: true, createGhRelease: false });
+    await finishRelease({ cwd, tagAndPush: true, createGhRelease: false, signTags: false });
 
     // The release commit must include the .gitignore change, and the working
     // tree must be clean afterward (notes file is gitignored by the fix).

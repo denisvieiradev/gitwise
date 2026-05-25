@@ -130,7 +130,7 @@ describe("applyPr()", () => {
 
     await expect(applyPrMocked(draft, { cwd: tempDir })).rejects.toMatchObject({
       code: "GH_UNAVAILABLE",
-      draft,
+      details: { draft },
     });
 
     jest.dontMock("../../../src/infra/github.js");

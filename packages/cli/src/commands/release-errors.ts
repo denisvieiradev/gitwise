@@ -27,10 +27,11 @@ export function formatReleaseError(err: unknown): FormattedReleaseError {
         message,
         hint: "Create the develop branch (e.g. `git checkout -b develop`) or switch `releaseStrategy` to `github-flow` in `.gitwise.json`.",
       };
+    case "RELEASE_BRANCH_CONFLICT":
     case "STRATEGY_RELEASE_BRANCH_EXISTS":
       return {
         message,
-        hint: "Delete the existing release branch (`git branch -D release/<version>`) or pick a different version with `--bump`.",
+        hint: "Delete the existing release branch (`git branch -D release/<version>`) or pick a different version with `--bump`. If a prior `gw release prepare` crashed mid-way, see docs/recovery.md.",
       };
     case "STALE_PLAN_TAG_EXISTS":
       return {

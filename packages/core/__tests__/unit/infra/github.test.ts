@@ -1,6 +1,4 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from "@jest/globals";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { describe, it, expect, jest, afterEach } from "@jest/globals";
 
 // We test isGhAvailable and openPr behavior by mocking child_process.execFile
 describe("github infra (core)", () => {
@@ -42,6 +40,77 @@ describe("github infra (core)", () => {
       const { getGhVersion } = await import("../../../src/infra/github.js");
       const version = await getGhVersion();
       expect(version === null || typeof version === "string").toBe(true);
+    });
+  });
+
+  describe("GH_FAILED on empty subprocess output", () => {
+    afterEach(() => {
+      jest.dontMock("node:child_process");
+      jest.resetModules();
+    });
+
+    it("createPR throws GitwiseError code GH_FAILED when gh returns empty stdout", async () => {
+      jest.resetModules();
+      jest.unstable_mockModule("node:child_process", () => ({
+        execFile: (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, result: { stdout: string; stderr: string }) => void,
+        ): void => {
+          cb(null, { stdout: "   \n", stderr: "" });
+        },
+      }));
+      const { createPR } = await import("../../../src/infra/github.js");
+      const { GitwiseError: GE } = await import("../../../src/errors.js");
+      const err = await createPR({ title: "t", body: "b", cwd: "/tmp" }).catch(
+        (e: unknown) => e,
+      );
+      expect(err).toBeInstanceOf(GE);
+      expect(err).toMatchObject({ code: "GH_FAILED" });
+    });
+
+    it("getPrUrl throws GitwiseError code GH_FAILED on empty stdout", async () => {
+      jest.resetModules();
+      jest.unstable_mockModule("node:child_process", () => ({
+        execFile: (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, result: { stdout: string; stderr: string }) => void,
+        ): void => {
+          cb(null, { stdout: "", stderr: "" });
+        },
+      }));
+      const { getPrUrl } = await import("../../../src/infra/github.js");
+      const { GitwiseError: GE } = await import("../../../src/errors.js");
+      const err = await getPrUrl(42, "/tmp").catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(GE);
+      expect(err).toMatchObject({ code: "GH_FAILED" });
+    });
+
+    it("createGitHubRelease throws GitwiseError code GH_FAILED on empty stdout", async () => {
+      jest.resetModules();
+      jest.unstable_mockModule("node:child_process", () => ({
+        execFile: (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, result: { stdout: string; stderr: string }) => void,
+        ): void => {
+          cb(null, { stdout: "", stderr: "" });
+        },
+      }));
+      const { createGitHubRelease } = await import("../../../src/infra/github.js");
+      const { GitwiseError: GE } = await import("../../../src/errors.js");
+      const err = await createGitHubRelease({
+        tag: "v1.2.3",
+        title: "v1.2.3",
+        body: "notes",
+        cwd: "/tmp",
+      }).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(GE);
+      expect(err).toMatchObject({ code: "GH_FAILED" });
     });
   });
 });

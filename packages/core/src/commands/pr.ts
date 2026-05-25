@@ -7,6 +7,7 @@ import { interpolate } from "../template/interpolate.js";
 import type { LLMProvider } from "../providers/types.js";
 import { resolveModelTier } from "../providers/model-router.js";
 import { debug } from "../infra/logger.js";
+import { EXIT_CODES, GitwiseError } from "../errors.js";
 
 const exec = promisify(execFile);
 
@@ -88,10 +89,11 @@ export async function pr(opts: PrOptions): Promise<PrDraft> {
   const commits = await git.getLog(cwd, `${baseBranch}..HEAD`);
 
   if (!commits) {
-    throw Object.assign(
-      new Error(`No commits found on this branch relative to ${baseBranch}`),
-      { code: "NO_COMMITS" },
-    );
+    throw new GitwiseError({
+      code: "NO_COMMITS",
+      message: `No commits found on this branch relative to ${baseBranch}`,
+      exitCode: EXIT_CODES.RELEASE_PLAN_STALE,
+    });
   }
 
   // Load PR template or use built-in
@@ -146,10 +148,12 @@ export async function applyPr(draft: PrDraft, opts: ApplyPrOptions): Promise<App
 
   const ghAvailable = await isGhAvailable();
   if (!ghAvailable) {
-    throw Object.assign(
-      new Error("gh CLI is not installed — cannot create or update a PR"),
-      { code: "GH_UNAVAILABLE", draft },
-    );
+    throw new GitwiseError({
+      code: "GH_UNAVAILABLE",
+      message: "gh CLI is not installed — cannot create or update a PR",
+      exitCode: EXIT_CODES.GH_FAILED,
+      details: { draft },
+    });
   }
 
   if (draft.existingPrNumber !== undefined) {

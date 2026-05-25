@@ -8,6 +8,7 @@ import {
   commit,
   applyCommitPlan,
   git,
+  GitwiseError,
 } from "@denisvieiradev/gitwise-core";
 import type { SplitMode, LLMProvider } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
@@ -34,7 +35,7 @@ export function formatCommitErrorCancel(err: unknown): string {
   if (code === "NOTHING_STAGED") {
     return "No staged changes. Use `git add` to stage files first.";
   }
-  if (code === "SENSITIVE_FILE_STAGED") {
+  if (code === "SENSITIVE_FILE_BLOCKED") {
     return `Sensitive file detected: ${msg}`;
   }
   return `Error: ${msg}`;
@@ -101,9 +102,12 @@ export function makeCommitCommand(): Command {
       let config;
       try {
         config = await getMergedConfig({ cwd, homeDir });
-      } catch {
-        console.error(chalk.red("Error: Could not load gitwise config. Run `gw config` to set up."));
-        process.exit(1);
+      } catch (err) {
+        throw new GitwiseError({
+          code: "CONFIG_INVALID",
+          message: "Could not load gitwise config. Run `gw config` to set up.",
+          cause: err,
+        });
       }
 
       // --message bypasses the LLM by stubbing the provider with a fixed single-commit
@@ -122,6 +126,13 @@ export function makeCommitCommand(): Command {
         };
       } else {
         const apiKey = await getApiKey(homeDir);
+        if (config.provider === "api" && !apiKey) {
+          throw new GitwiseError({
+            code: "API_KEY_MISSING",
+            message:
+              "ANTHROPIC_API_KEY is not configured. Set it in the environment or run `gw config` to add it to ~/.gitwise/.env.",
+          });
+        }
         provider = createProvider({
           kind: config.provider,
           models: config.models,
@@ -163,14 +174,12 @@ export function makeCommitCommand(): Command {
           code === "NOTHING_STAGED" && !skipConfirm && process.stdin.isTTY === true;
         if (!canPromptStage) {
           spinner.stop("Failed");
-          p.cancel(formatCommitErrorCancel(err));
-          process.exit(1);
+          throw err;
         }
         spinner.stop("No staged changes");
         const staged = await promptInteractiveStage(cwd);
         if (staged !== "staged") {
-          p.cancel(formatCommitErrorCancel(err));
-          process.exit(1);
+          throw err;
         }
         const retrySpinner = p.spinner();
         retrySpinner.start("Analyzing staged changes…");
@@ -179,8 +188,7 @@ export function makeCommitCommand(): Command {
           retrySpinner.stop(opts.message ? "Ready" : "Analysis complete");
         } catch (retryErr: unknown) {
           retrySpinner.stop("Failed");
-          p.cancel(formatCommitErrorCancel(retryErr));
-          process.exit(1);
+          throw retryErr;
         }
       }
 
@@ -216,9 +224,7 @@ export function makeCommitCommand(): Command {
         await applyCommitPlan(plan, { cwd });
       } catch (err: unknown) {
         applySpinner.stop("Failed");
-        const msg = err instanceof Error ? err.message : String(err);
-        p.cancel(`Commit failed: ${msg}`);
-        process.exit(1);
+        throw err;
       }
 
       if (opts.push) {

@@ -63,7 +63,7 @@ describe("AnthropicProvider (core)", () => {
     );
   });
 
-  it("retries up to 3 times on 429 then throws PROVIDER_UNAVAILABLE", async () => {
+  it("retries up to 3 times on 429 then throws API_RATE_LIMITED", async () => {
     const apiError = new Anthropic.APIError(429, undefined, "Rate limited", {});
     mockCreate
       .mockRejectedValueOnce(apiError)
@@ -76,10 +76,10 @@ describe("AnthropicProvider (core)", () => {
       tier: "fast",
     }).catch((e: unknown) => e);
     expect(mockCreate).toHaveBeenCalledTimes(3);
-    expect(err).toMatchObject({ code: "PROVIDER_UNAVAILABLE" });
+    expect(err).toMatchObject({ code: "API_RATE_LIMITED" });
   }, 30000);
 
-  it("retries up to 3 times on 529 then throws PROVIDER_UNAVAILABLE", async () => {
+  it("retries up to 3 times on 529 then throws API_RATE_LIMITED", async () => {
     const apiError = new Anthropic.APIError(529, undefined, "Overloaded", {});
     mockCreate
       .mockRejectedValueOnce(apiError)
@@ -92,7 +92,7 @@ describe("AnthropicProvider (core)", () => {
       tier: "fast",
     }).catch((e: unknown) => e);
     expect(mockCreate).toHaveBeenCalledTimes(3);
-    expect(err).toMatchObject({ code: "PROVIDER_UNAVAILABLE" });
+    expect(err).toMatchObject({ code: "API_RATE_LIMITED" });
   }, 30000);
 
   it("does not retry on non-retryable errors", async () => {

@@ -4,26 +4,51 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (e.g. v1.2.3) — required when triggered manually"
+        required: true
+        type: string
+      use_npm_token:
+        description: "Emergency: use NPM_TOKEN instead of OIDC (for OIDC misconfiguration only)"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      attestations: write
+    env:
+      RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
         with:
           fetch-depth: 0
 
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
           node-version: 20
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
-          always-auth: true
+
+      - name: Import GPG key
+        id: import-gpg
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec  # v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_tag_gpgsign: true
 
       - name: Install dependencies
         run: npm ci
@@ -34,20 +59,58 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Publish workspaces to npm
-        run: npm publish --workspaces --access public
+      - name: Set VERSION
+        run: echo "VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
+
+      - name: Sign release tag
+        run: |
+          git config gpg.program gpg
+          git tag -s -f "${RELEASE_TAG}" \
+            -m "chore(release): ${RELEASE_TAG}" \
+            --local-user "${{ steps.import-gpg.outputs.fingerprint }}"
+          git push origin -f "refs/tags/${RELEASE_TAG}"
+
+      - name: Publish packages/core (OIDC)
+        if: ${{ inputs.use_npm_token != true }}
+        run: npm publish -w packages/core --provenance --access public
+
+      - name: Publish packages/cli (OIDC)
+        if: ${{ inputs.use_npm_token != true }}
+        run: npm publish -w packages/cli --provenance --access public
+
+      - name: Publish packages/skills (OIDC)
+        if: ${{ inputs.use_npm_token != true }}
+        run: npm publish -w packages/skills --provenance --access public
+
+      - name: Publish packages/core (emergency NPM_TOKEN)
+        if: ${{ inputs.use_npm_token == true }}
+        run: npm publish -w packages/core --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish packages/cli (emergency NPM_TOKEN)
+        if: ${{ inputs.use_npm_token == true }}
+        run: npm publish -w packages/cli --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish packages/skills (emergency NPM_TOKEN)
+        if: ${{ inputs.use_npm_token == true }}
+        run: npm publish -w packages/skills --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Generate SBOM
+        run: npx @cyclonedx/cdxgen -t npm -o "sbom-${VERSION}.cdx.json" .
 
       - name: Extract release notes from CHANGELOG.md
         id: notes
         run: |
           set -euo pipefail
           notes_file="$(mktemp)"
-          version="${GITHUB_REF_NAME#v}"
           # Print the "## [<version>]" section (Keep a Changelog entry for this tag) without its heading.
           # Fails loudly if the changelog has no section for the tag being released.
-          awk -v v="$version" '
+          awk -v v="$VERSION" '
             $0 ~ "^## \\[" v "\\]" {
               in_section = 1
               next
@@ -56,7 +119,7 @@ jobs:
             in_section { print }
           ' CHANGELOG.md > "$notes_file"
           if [ ! -s "$notes_file" ]; then
-            echo "::error::No CHANGELOG.md section found for version ${version} (tag ${GITHUB_REF_NAME}). Refusing to publish release with stale or missing notes." >&2
+            echo "::error::No CHANGELOG.md section found for version ${VERSION} (tag ${RELEASE_TAG}). Refusing to publish release with stale or missing notes." >&2
             exit 1
           fi
           # Trim leading and trailing blank lines for cleaner release bodies.
@@ -70,6 +133,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            --title "${GITHUB_REF_NAME}" \
+          gh release create "${RELEASE_TAG}" \
+            --title "${RELEASE_TAG}" \
             --notes-file "${{ steps.notes.outputs.path }}"
+
+      - name: Upload SBOM to GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${RELEASE_TAG}" "sbom-${VERSION}.cdx.json"
+
+      - name: Attest SBOM
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be  # v2
+        with:
+          subject-path: "sbom-${{ env.VERSION }}.cdx.json"

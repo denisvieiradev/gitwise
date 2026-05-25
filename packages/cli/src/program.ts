@@ -23,7 +23,15 @@ export function createProgram(): Command {
     .description("AI-powered git toolbelt")
     .version(pkg.version)
     .option("--no-color", "Disable ANSI color output")
-    .option("--api-key <key>", "Anthropic API key (bypasses interactive prompt on first run)");
+    .option(
+      "--json",
+      "Emit machine-readable JSON output (errors as {\"error\":{code,message,exitCode,details?}})",
+    )
+    .option("--debug", "Show full stack traces on error")
+    .option(
+      "--api-key <key>",
+      "[DEPRECATED — removal planned for v0.next+1] Anthropic API key (bypasses interactive prompt on first run). Prefer the ANTHROPIC_API_KEY env var or the interactive first-run prompt; passing keys on the command line leaks into process listings and shell history.",
+    );
 
   program.hook("preAction", (thisCommand) => {
     if (thisCommand.opts().color === false) {

@@ -11,6 +11,7 @@ describe("formatReleaseError", () => {
   const cases: Array<{ code: string; hintIncludes: string }> = [
     { code: "STRATEGY_DEVELOP_MISSING", hintIncludes: "develop branch" },
     { code: "STRATEGY_RELEASE_BRANCH_EXISTS", hintIncludes: "Delete the existing release branch" },
+    { code: "RELEASE_BRANCH_CONFLICT", hintIncludes: "Delete the existing release branch" },
     { code: "STALE_PLAN_TAG_EXISTS", hintIncludes: "gw release abort" },
     { code: "STALE_PLAN_BRANCH_MISMATCH", hintIncludes: "Check out the branch the plan targets" },
     { code: "NO_RELEASE_PLAN", hintIncludes: "gw release prepare" },

@@ -5,7 +5,10 @@ import { tmpdir } from "node:os";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { MockLLMProvider } from "../../../src/testing/mock-llm-provider.js";
-import { release, prepareRelease, applyRelease, finishRelease, abortRelease, runReleaseInProcess, bumpVersion, heuristicBump, detectWorkspaceRoot } from "../../../src/commands/release.js";
+import { release, prepareRelease, applyRelease, finishRelease, abortRelease, runReleaseInProcess, bumpVersion, heuristicBump, detectWorkspaceRoot, propagateVersionToWorkspaces, writeWorkspaceVersionStep } from "../../../src/commands/release.js";
+import { Transaction } from "../../../src/infra/transaction.js";
+import { GitwiseError } from "../../../src/errors.js";
+import { acquireRepoLock } from "../../../src/infra/lockfile.js";
 import { loadReleasePlan, saveReleasePlan } from "../../../src/commands/release-plan.js";
 
 const exec = promisify(execFile);
@@ -695,7 +698,7 @@ describe("prepareRelease()", () => {
       expect(mock.getCallCount()).toBe(0);
     });
 
-    it("rejects with STRATEGY_RELEASE_BRANCH_EXISTS when release/<v> already exists (no plan written)", async () => {
+    it("rejects with RELEASE_BRANCH_CONFLICT when release/<v> already exists (no plan written)", async () => {
       await initGitflowRepo(tempDir);
       // Pre-create the branch prepareRelease would try to create. From develop's HEAD.
       await exec("git", ["branch", "release/1.1.0"], { cwd: tempDir });
@@ -703,7 +706,10 @@ describe("prepareRelease()", () => {
       const mock = makePrepareMock("minor");
       await expect(
         prepareRelease({ cwd: tempDir, provider: mock, strategy: "gitflow" }),
-      ).rejects.toMatchObject({ code: "STRATEGY_RELEASE_BRANCH_EXISTS" });
+      ).rejects.toMatchObject({
+        code: "RELEASE_BRANCH_CONFLICT",
+        exitCode: 61,
+      });
 
       expect(await pathExists(join(tempDir, ".gitwise/release-plan.json"))).toBe(false);
     });
@@ -948,7 +954,7 @@ describe("finishRelease()", () => {
       }));
       const { finishRelease: finish2 } = await import("../../../src/commands/release.js");
 
-      await finish2({ cwd: tempDir, tagAndPush: true, createGhRelease: false });
+      await finish2({ cwd: tempDir, tagAndPush: true, createGhRelease: false, signTags: false });
 
       const { stdout: tags } = await exec("git", ["tag", "-l"], { cwd: tempDir });
       expect(tags.trim()).toBe("v1.1.0");
@@ -1004,7 +1010,7 @@ describe("finishRelease()", () => {
       }));
       const { finishRelease: finish2 } = await import("../../../src/commands/release.js");
 
-      await finish2({ cwd: tempDir, tagAndPush: true, createGhRelease: false });
+      await finish2({ cwd: tempDir, tagAndPush: true, createGhRelease: false, signTags: false });
 
       // Remote received the tag.
       const { stdout: remoteTags } = await exec("git", ["ls-remote", "--tags", "origin"], { cwd: tempDir });
@@ -1146,7 +1152,7 @@ describe("finishRelease()", () => {
       }));
       const { finishRelease: finish2 } = await import("../../../src/commands/release.js");
 
-      await finish2({ cwd: tempDir, tagAndPush: true, createGhRelease: true });
+      await finish2({ cwd: tempDir, tagAndPush: true, createGhRelease: true, signTags: false });
 
       expect(capturedTag).toBe("v1.1.0");
       expect(capturedBody).toBe(editedNotes);
@@ -1179,7 +1185,7 @@ describe("finishRelease()", () => {
       const { finishRelease: finish2 } = await import("../../../src/commands/release.js");
 
       await expect(
-        finish2({ cwd: tempDir, tagAndPush: true, createGhRelease: true }),
+        finish2({ cwd: tempDir, tagAndPush: true, createGhRelease: true, signTags: false }),
       ).resolves.toBeUndefined();
 
       // Tag remains created/pushed despite the gh failure.
@@ -1523,7 +1529,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
       }));
       const { applyRelease: apply2 } = await import("../../../src/commands/release.js");
 
-      await apply2(fixedPlan, { cwd: tempDir, tagAndPush: true, createGhRelease: false });
+      await apply2(fixedPlan, { cwd: tempDir, tagAndPush: true, createGhRelease: false, signTags: false });
 
       const { stdout: tags } = await exec("git", ["tag", "-l"], { cwd: tempDir });
       expect(tags.trim()).toBe("v1.0.1");
@@ -1569,7 +1575,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
       }));
       const { applyRelease: apply2 } = await import("../../../src/commands/release.js");
 
-      await apply2(fixedPlan, { cwd: tempDir, tagAndPush: true, createGhRelease: true });
+      await apply2(fixedPlan, { cwd: tempDir, tagAndPush: true, createGhRelease: true, signTags: false });
 
       expect(captured).not.toBeNull();
       expect(captured!.tag).toBe("v1.1.0");
@@ -1843,5 +1849,230 @@ describe("detectWorkspaceRoot", () => {
   it("returns false when package.json is unparseable JSON and no packages/ fallback exists", async () => {
     await writeFile(join(tempDir, "package.json"), "{ this is not json");
     expect(await detectWorkspaceRoot(tempDir)).toBe(false);
+  });
+});
+
+describe("writeWorkspaceVersionStep", () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await mkdtemp(join(tmpdir(), "gitwise-write-step-"));
+  });
+
+  afterEach(async () => {
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it("apply writes the new version into the manifest", async () => {
+    const pkgPath = join(tempDir, "package.json");
+    await writeFile(
+      pkgPath,
+      JSON.stringify({ name: "a", version: "1.0.0" }, null, 2) + "\n",
+    );
+
+    const step = writeWorkspaceVersionStep(pkgPath, "1.2.3");
+    const prior = await step.apply();
+
+    expect(prior).toBeInstanceOf(Buffer);
+    const parsed = JSON.parse(await readFile(pkgPath, "utf-8")) as { version: string };
+    expect(parsed.version).toBe("1.2.3");
+  });
+
+  it("apply writes the canonical pretty-printed JSON with a trailing newline", async () => {
+    const pkgPath = join(tempDir, "package.json");
+    await writeFile(
+      pkgPath,
+      JSON.stringify({ name: "a", version: "1.0.0" }, null, 2) + "\n",
+    );
+
+    await writeWorkspaceVersionStep(pkgPath, "2.0.0").apply();
+
+    const onDisk = await readFile(pkgPath, "utf-8");
+    expect(onDisk).toBe(
+      JSON.stringify({ name: "a", version: "2.0.0" }, null, 2) + "\n",
+    );
+  });
+
+  it("compensate restores prior bytes byte-for-byte (preserving formatting)", async () => {
+    const pkgPath = join(tempDir, "package.json");
+    // Intentionally use an unusual formatting that writeJSON would NOT produce
+    // (tabs + trailing whitespace + no trailing newline) so we can prove the
+    // compensate path restores the original bytes verbatim instead of
+    // re-serializing through writeJSON.
+    const original = '{\n\t"name": "a",\n\t"version": "1.0.0"\n}   ';
+    await writeFile(pkgPath, original, "utf-8");
+
+    const step = writeWorkspaceVersionStep(pkgPath, "9.9.9");
+    const prior = await step.apply();
+
+    // After apply, the file is rewritten in canonical form (and the bytes
+    // certainly do not equal `original` any more).
+    expect(await readFile(pkgPath, "utf-8")).not.toBe(original);
+
+    await step.compensate(prior);
+
+    expect(await readFile(pkgPath, "utf-8")).toBe(original);
+  });
+
+  it("preserves sequential ordering across 3 mock workspaces", async () => {
+    const order: string[] = [];
+    const stepFor = (label: string) => ({
+      name: label,
+      apply: async () => {
+        order.push(`apply:${label}`);
+        return label;
+      },
+      compensate: async () => {
+        order.push(`compensate:${label}`);
+      },
+    });
+
+    const tx = new Transaction();
+    await tx.run(stepFor("ws0"));
+    await tx.run(stepFor("ws1"));
+    await tx.run(stepFor("ws2"));
+
+    expect(order).toEqual(["apply:ws0", "apply:ws1", "apply:ws2"]);
+
+    await tx.rollback(
+      new GitwiseError({ code: "GIT_FAILED", message: "x" }),
+      { warn: () => {} },
+    );
+
+    expect(order).toEqual([
+      "apply:ws0",
+      "apply:ws1",
+      "apply:ws2",
+      // LIFO compensate order matches ADR-004 §Decision.
+      "compensate:ws2",
+      "compensate:ws1",
+      "compensate:ws0",
+    ]);
+  });
+});
+
+describe("propagateVersionToWorkspaces (rollback boundary + lock)", () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await mkdtemp(join(tmpdir(), "gitwise-propagate-"));
+  });
+
+  afterEach(async () => {
+    // Best-effort: chmod everything back so rm can remove read-only fixtures.
+    try {
+      await chmod(tempDir, 0o755);
+    } catch {}
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  async function seedWorkspaces(
+    versions: Array<{ name: string; version: string }>,
+  ): Promise<string[]> {
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({ name: "root", version: "1.0.0", workspaces: ["packages/*"] }, null, 2) + "\n",
+    );
+    const pkgPaths: string[] = [];
+    for (const w of versions) {
+      const dir = join(tempDir, "packages", w.name);
+      await mkdir(dir, { recursive: true });
+      const pkgPath = join(dir, "package.json");
+      await writeFile(
+        pkgPath,
+        JSON.stringify({ name: w.name, version: w.version }, null, 2) + "\n",
+      );
+      pkgPaths.push(pkgPath);
+    }
+    return pkgPaths;
+  }
+
+  it("happy path: writes new version to every workspace and returns relative manifest paths", async () => {
+    const pkgPaths = await seedWorkspaces([
+      { name: "a", version: "1.0.0" },
+      { name: "b", version: "1.0.0" },
+      { name: "c", version: "1.0.0" },
+    ]);
+
+    const modified = await propagateVersionToWorkspaces(tempDir, "1.2.3");
+
+    expect(modified.sort()).toEqual(
+      [
+        "packages/a/package.json",
+        "packages/b/package.json",
+        "packages/c/package.json",
+      ].sort(),
+    );
+    for (const p of pkgPaths) {
+      const parsed = JSON.parse(await readFile(p, "utf-8")) as { version: string };
+      expect(parsed.version).toBe("1.2.3");
+    }
+  });
+
+  it("rolls back already-written manifests when a mid-loop write fails", async () => {
+    const pkgPaths = await seedWorkspaces([
+      { name: "a", version: "1.0.0" },
+      { name: "b", version: "1.0.0" },
+      { name: "c", version: "1.0.0" },
+    ]);
+    const priorContents = await Promise.all(
+      pkgPaths.map((p) => readFile(p, "utf-8")),
+    );
+
+    // Make packages/b/package.json read-only so the second write fails with EACCES.
+    await chmod(pkgPaths[1]!, 0o444);
+
+    await expect(
+      propagateVersionToWorkspaces(tempDir, "2.0.0"),
+    ).rejects.toBeInstanceOf(GitwiseError);
+
+    // workspaces[0] (a) was written, then must have been reverted.
+    expect(await readFile(pkgPaths[0]!, "utf-8")).toBe(priorContents[0]);
+    // workspaces[1] (b) was the failing write — it should still hold the
+    // pre-flow bytes (chmod kept it read-only; the write was blocked before
+    // any partial mutation).
+    expect(await readFile(pkgPaths[1]!, "utf-8")).toBe(priorContents[1]);
+    // workspaces[2] (c) was never reached.
+    expect(await readFile(pkgPaths[2]!, "utf-8")).toBe(priorContents[2]);
+  });
+
+  it("releases the lock on the success path", async () => {
+    await seedWorkspaces([{ name: "a", version: "1.0.0" }]);
+    await propagateVersionToWorkspaces(tempDir, "1.2.3");
+
+    // After success the lock file must be gone — a fresh acquire should succeed.
+    const release = await acquireRepoLock(tempDir, { command: "test" });
+    await release();
+  });
+
+  it("releases the lock on the failure path", async () => {
+    const pkgPaths = await seedWorkspaces([
+      { name: "a", version: "1.0.0" },
+      { name: "b", version: "1.0.0" },
+    ]);
+    await chmod(pkgPaths[1]!, 0o444);
+
+    await expect(
+      propagateVersionToWorkspaces(tempDir, "2.0.0"),
+    ).rejects.toBeInstanceOf(GitwiseError);
+
+    const release = await acquireRepoLock(tempDir, { command: "test" });
+    await release();
+  });
+
+  it("rejects a concurrent invocation while the lock is held with REPO_LOCKED", async () => {
+    await seedWorkspaces([{ name: "a", version: "1.0.0" }]);
+
+    // Hold the lock externally so the propagate call races against it.
+    const release = await acquireRepoLock(tempDir, {
+      command: "test-holder",
+    });
+    try {
+      await expect(
+        propagateVersionToWorkspaces(tempDir, "1.2.3"),
+      ).rejects.toMatchObject({ code: "REPO_LOCKED" });
+    } finally {
+      await release();
+    }
   });
 });

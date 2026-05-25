@@ -4,6 +4,7 @@ import { interpolate } from "../template/interpolate.js";
 import type { LLMProvider } from "../providers/types.js";
 import { resolveModelTier } from "../providers/model-router.js";
 import { debug } from "../infra/logger.js";
+import { EXIT_CODES, GitwiseError } from "../errors.js";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -141,18 +142,21 @@ export async function review(opts: ReviewOptions): Promise<ReviewResult> {
       diff = await git.getDiff(cwd);
     } else {
       const reason = errorMessage(err);
-      throw Object.assign(
-        new Error(`Failed to compute diff against ${baseBranch}: ${reason}`),
-        { code: "DIFF_FAILED", cause: err },
-      );
+      throw new GitwiseError({
+        code: "DIFF_FAILED",
+        message: `Failed to compute diff against ${baseBranch}: ${reason}`,
+        exitCode: EXIT_CODES.GIT_FAILED,
+        cause: err,
+      });
     }
   }
 
   if (!diff) {
-    throw Object.assign(
-      new Error(`No changes found between current branch and ${baseBranch}`),
-      { code: "EMPTY_DIFF" },
-    );
+    throw new GitwiseError({
+      code: "EMPTY_DIFF",
+      message: `No changes found between current branch and ${baseBranch}`,
+      exitCode: EXIT_CODES.NOTHING_STAGED,
+    });
   }
 
   // Load review template, falling back to the embedded default when the

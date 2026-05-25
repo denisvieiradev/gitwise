@@ -71,13 +71,13 @@ describe("formatCommitErrorCancel", () => {
     );
   });
 
-  it("returns the sensitive-file message for SENSITIVE_FILE_STAGED code", () => {
+  it("returns the sensitive-file message for SENSITIVE_FILE_BLOCKED code", () => {
     const err = Object.assign(
-      new Error("SENSITIVE_FILE_STAGED: 1 file(s) matched sensitive patterns."),
-      { code: "SENSITIVE_FILE_STAGED" },
+      new Error("SENSITIVE_FILE_BLOCKED: 1 file(s) matched sensitive patterns."),
+      { code: "SENSITIVE_FILE_BLOCKED" },
     );
     expect(formatCommitErrorCancel(err)).toBe(
-      "Sensitive file detected: SENSITIVE_FILE_STAGED: 1 file(s) matched sensitive patterns.",
+      "Sensitive file detected: SENSITIVE_FILE_BLOCKED: 1 file(s) matched sensitive patterns.",
     );
   });
 
