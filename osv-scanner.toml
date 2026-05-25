@@ -1,0 +1,9 @@
+# OSV-Scanner ignore list
+# Add entries below to acknowledge unfixable vulnerabilities with a mandatory expiry date.
+# The CI workflow fails when any entry's ignoreUntil date is in the past.
+#
+# Example:
+# [[IgnoredVulns]]
+# id = "GHSA-xxxx-xxxx-xxxx"
+# ignoreUntil = 2026-12-31T00:00:00Z
+# reason = "No upstream fix available; revisit before expiry."

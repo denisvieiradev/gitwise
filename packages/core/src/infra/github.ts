@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { debug } from "./logger.js";
+import { GitwiseError } from "../errors.js";
 
 const exec = promisify(execFile);
 
@@ -47,7 +48,11 @@ export async function createPR(params: CreatePRParams): Promise<PRResult> {
   const result = await exec("gh", args, { cwd: params.cwd });
   const url = result.stdout?.trim();
   if (!url) {
-    throw new Error("gh pr create returned empty output — check gh auth status");
+    throw new GitwiseError({
+      code: "GH_FAILED",
+      message: "gh pr create returned empty output — check gh auth status",
+      details: { command: "gh pr create" },
+    });
   }
   return { url };
 }
@@ -77,7 +82,11 @@ export async function getPrUrl(prNumber: string | number, cwd: string): Promise<
   );
   const url = result.stdout?.trim();
   if (!url) {
-    throw new Error(`gh pr view ${prNumber} returned empty output — check gh auth status`);
+    throw new GitwiseError({
+      code: "GH_FAILED",
+      message: `gh pr view ${prNumber} returned empty output — check gh auth status`,
+      details: { command: `gh pr view ${prNumber}` },
+    });
   }
   return url;
 }
@@ -105,7 +114,11 @@ export async function createGitHubRelease(
   const result = await exec("gh", args, { cwd: params.cwd });
   const url = result.stdout?.trim();
   if (!url) {
-    throw new Error("gh release create returned empty output — check gh auth status");
+    throw new GitwiseError({
+      code: "GH_FAILED",
+      message: "gh release create returned empty output — check gh auth status",
+      details: { command: "gh release create" },
+    });
   }
   return { url };
 }

@@ -2,7 +2,10 @@ import * as git from "../infra/git.js";
 import { loadTemplate } from "../template/loader.js";
 import type { LLMProvider } from "../providers/types.js";
 import { resolveModelTier } from "../providers/model-router.js";
-import { debug } from "../infra/logger.js";
+import { debug, warn as logWarn } from "../infra/logger.js";
+import { EXIT_CODES, GitwiseError } from "../errors.js";
+import { Transaction, type Logger, type Step } from "../infra/transaction.js";
+import { acquireRepoLock } from "../infra/lockfile.js";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -195,7 +198,10 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan> {
   const diff = await git.getStagedDiff(cwd);
 
   if (!diff) {
-    throw Object.assign(new Error("No staged changes to commit"), { code: "NOTHING_STAGED" });
+    throw new GitwiseError({
+      code: "NOTHING_STAGED",
+      message: "No staged changes to commit",
+    });
   }
 
   // Sensitive file guard.
@@ -207,12 +213,11 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan> {
   const sensitiveFiles = stagedFiles.filter(isSensitiveFile);
   if (sensitiveFiles.length > 0) {
     debug("Sensitive files blocked from commit", { files: sensitiveFiles });
-    throw Object.assign(
-      new Error(
-        `SENSITIVE_FILE_STAGED: ${sensitiveFiles.length} file(s) matched sensitive patterns (env/pem/credentials). Set GITWISE_DEBUG=1 to see which files were flagged.`,
-      ),
-      { code: "SENSITIVE_FILE_STAGED", files: sensitiveFiles },
-    );
+    throw new GitwiseError({
+      code: "SENSITIVE_FILE_BLOCKED",
+      message: `SENSITIVE_FILE_BLOCKED: ${sensitiveFiles.length} file(s) matched sensitive patterns (env/pem/credentials). Set GITWISE_DEBUG=1 to see which files were flagged.`,
+      details: { files: sensitiveFiles },
+    });
   }
 
   // Load template (or use built-in system prompt)
@@ -269,10 +274,11 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan> {
   }
 
   if (split === "always" && parsed.type !== "plan") {
-    throw Object.assign(
-      new Error("split: 'always' requested but LLM returned a single-context plan"),
-      { code: "NO_SPLIT_POSSIBLE" },
-    );
+    throw new GitwiseError({
+      code: "NO_SPLIT_POSSIBLE",
+      message: "split: 'always' requested but LLM returned a single-context plan",
+      exitCode: EXIT_CODES.INVALID_INTENT,
+    });
   }
 
   // Single commit
@@ -281,6 +287,74 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan> {
     kind: "single",
     commits: [{ message, files: stagedFiles }],
     tokens,
+  };
+}
+
+// ─── Step factories ──────────────────────────────────────────────────────────
+
+export interface CommitStepResult {
+  priorSha: string;
+  newSha: string;
+}
+
+/**
+ * Transaction step that saves a named git stash as a backup of the pre-split
+ * working tree, then immediately re-applies the stash so the normal flow can
+ * continue with the same staged state.  The predictable stash name
+ * (`gitwise/split-<ISO8601>`) lets `docs/recovery.md` guide manual recovery
+ * when the compensate fires.
+ *
+ * compensate: resets the index and working tree to HEAD (no-data-loss because
+ * the stash is still present), then pops the named stash to restore the exact
+ * pre-split state.
+ */
+export function takeNamedStashStep(cwd: string, stashName: string): Step<void> {
+  return {
+    name: `takeNamedStash(${stashName})`,
+    async apply(): Promise<void> {
+      await git.stashPushNamed(cwd, stashName);
+      await git.stashApplyNamed(cwd, stashName);
+    },
+    async compensate(): Promise<void> {
+      // Hard-reset + clean to reach a pristine HEAD state before popping.
+      // reset --hard clears tracked/staged changes; clean -fd removes
+      // untracked files that were restored by stashApplyNamed and would
+      // otherwise conflict with the pop. The stash (taken with
+      // --include-untracked) will restore those files during pop.
+      // If pop fails, the stash is still in the list under its predictable
+      // name so the user can recover manually.
+      await git.resetHard(cwd, "HEAD");
+      await git.cleanForced(cwd);
+      await git.stashPopNamed(cwd, stashName);
+    },
+  };
+}
+
+/**
+ * Transaction step that stages the given files and creates one commit.
+ * apply  — records the prior HEAD SHA (for compensate) and the new HEAD SHA
+ *           (as evidence of the created commit) in the result.
+ * compensate — runs `git reset --soft <priorSha>` to undo only this commit
+ *              while preserving the staged delta for potential retry.
+ */
+export function applyOneCommitStep(
+  entry: CommitEntry,
+  cwd: string,
+): Step<CommitStepResult> {
+  const msg = entry.description
+    ? `${entry.message}\n\n${entry.description}`
+    : entry.message;
+  return {
+    name: `applyCommit(${entry.message})`,
+    async apply(): Promise<CommitStepResult> {
+      const priorSha = await git.headSha(cwd);
+      await git.applyCommit({ message: msg, files: entry.files, cwd });
+      const newSha = await git.headSha(cwd);
+      return { priorSha, newSha };
+    },
+    async compensate({ priorSha }: CommitStepResult): Promise<void> {
+      await git.resetSoft(cwd, priorSha);
+    },
   };
 }
 
@@ -293,13 +367,49 @@ export async function applyCommitPlan(
   const { cwd, push: shouldPush = false, remote = "origin" } = opts;
 
   if (plan.kind === "split") {
-    // For split plans, reset staging area and commit each group
-    await git.resetStaged(cwd);
-    for (const entry of plan.commits) {
-      const msg = entry.description
-        ? `${entry.message}\n\n${entry.description}`
-        : entry.message;
-      await git.applyCommit({ message: msg, files: entry.files, cwd });
+    if (plan.commits.length === 0) {
+      throw new GitwiseError({
+        code: "INVALID_INTENT",
+        message: "Commit split plan has zero commits; cannot apply",
+      });
+    }
+
+    const stashName = `gitwise/split-${new Date().toISOString()}`;
+    const releaseLock = await acquireRepoLock(cwd, { command: "commit-split" });
+
+    try {
+      const tx = new Transaction();
+      const logger: Logger = { warn: logWarn };
+
+      try {
+        // Root step: save pre-split state as a named stash backup,
+        // then immediately re-apply so the staged files are still visible.
+        await tx.run(takeNamedStashStep(cwd, stashName));
+
+        // Unstage all files so per-commit git-add can re-stage each group.
+        await git.resetStaged(cwd);
+
+        for (const entry of plan.commits) {
+          await tx.run(applyOneCommitStep(entry, cwd));
+        }
+
+        // Happy path: drop the backup stash — it's no longer needed.
+        await git.stashDropNamed(cwd, stashName);
+      } catch (err) {
+        const wrapped =
+          err instanceof GitwiseError
+            ? err
+            : new GitwiseError({
+                code: "GIT_FAILED",
+                message: err instanceof Error ? err.message : String(err),
+                cause: err,
+                details: { stderr: err instanceof Error ? err.message : String(err) },
+              });
+        await tx.rollback(wrapped, logger);
+        throw wrapped;
+      }
+    } finally {
+      await releaseLock();
     }
   } else {
     // Single commit — entry.files mirrors `git diff --cached --name-only`, so

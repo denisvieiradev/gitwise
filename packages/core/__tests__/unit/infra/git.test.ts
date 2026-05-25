@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import * as git from "../../../src/infra/git.js";
+import { GitwiseError } from "../../../src/errors.js";
 
 const exec = promisify(execFile);
 
@@ -49,9 +50,31 @@ describe("git infra (core)", () => {
       const branch = await git.getBranch(tempDir);
       // Rename to something else
       await exec("git", ["branch", "-m", branch, "trunk"], { cwd: tempDir });
-      await expect(git.detectBaseBranch(tempDir)).rejects.toMatchObject({
-        code: "NO_BASE_BRANCH",
-      });
+      const err = await git.detectBaseBranch(tempDir).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(GitwiseError);
+      expect(err).toMatchObject({ code: "NO_BASE_BRANCH" });
+    });
+  });
+
+  describe("subprocess wrapper error envelope", () => {
+    it("non-zero git exit throws GitwiseError with code GIT_FAILED, cause, and details.command", async () => {
+      const bogus = join(tempDir, "no-such-repo");
+      const err = await git
+        .getBranch(bogus)
+        .catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(GitwiseError);
+      const ge = err as GitwiseError;
+      expect(ge.code).toBe("GIT_FAILED");
+      expect(ge.cause).toBeDefined();
+      expect(ge.details).toBeDefined();
+      expect(String(ge.details?.["command"] ?? "")).toContain("git ");
+    });
+
+    it("parseStatus failure on missing directory surfaces GIT_FAILED with details", async () => {
+      const bogus = join(tempDir, "no-such-dir");
+      const err = await git.parseStatus(bogus).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(GitwiseError);
+      expect(err).toMatchObject({ code: "GIT_FAILED" });
     });
   });
 
@@ -80,9 +103,15 @@ describe("git infra (core)", () => {
 
     it("surfaces a typed COMMIT_HOOK_FAILURE error when nothing to commit", async () => {
       // With nothing staged, git commit will fail → should get COMMIT_HOOK_FAILURE code
-      await expect(
-        git.applyCommit({ message: "fail commit", files: [], cwd: tempDir })
-      ).rejects.toMatchObject({ code: "COMMIT_HOOK_FAILURE" });
+      const err = await git
+        .applyCommit({ message: "fail commit", files: [], cwd: tempDir })
+        .catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(GitwiseError);
+      const ge = err as GitwiseError;
+      expect(ge.code).toBe("COMMIT_HOOK_FAILURE");
+      expect(ge.cause).toBeDefined();
+      // Override maps COMMIT_HOOK_FAILURE → EXIT_CODES.GIT_FAILED (20).
+      expect(ge.exitCode).toBe(20);
     });
   });
 

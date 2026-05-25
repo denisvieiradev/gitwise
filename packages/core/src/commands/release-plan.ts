@@ -2,6 +2,7 @@ import { readFile, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileExists, writeJSON } from "../infra/filesystem.js";
 import { info } from "../infra/logger.js";
+import { EXIT_CODES, GitwiseError } from "../errors.js";
 import type { ReleaseStrategyName } from "../strategies/release.js";
 import type { BumpType } from "./release.js";
 
@@ -46,33 +47,31 @@ export async function loadReleasePlan(cwd: string): Promise<PersistedReleasePlan
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    throw Object.assign(
-      new Error(
-        `Release plan at ${filePath} is not valid JSON: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
-      ),
-      { code: "INVALID_PLAN_JSON" },
-    );
+    throw new GitwiseError({
+      code: "INVALID_PLAN_JSON",
+      message: `Release plan at ${filePath} is not valid JSON: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+      exitCode: EXIT_CODES.CONFIG_INVALID,
+      cause: err,
+    });
   }
 
   const schema = (parsed as { schema?: unknown } | null)?.schema;
   if (schema !== 1) {
-    throw Object.assign(
-      new Error(
-        `Release plan schema ${String(schema)} is not supported by this gitwise binary (expected 1).`,
-      ),
-      { code: "INVALID_PLAN_SCHEMA" },
-    );
+    throw new GitwiseError({
+      code: "INVALID_PLAN_SCHEMA",
+      message: `Release plan schema ${String(schema)} is not supported by this gitwise binary (expected 1).`,
+      exitCode: EXIT_CODES.CONFIG_INVALID,
+    });
   }
 
   if (!isPersistedReleasePlan(parsed)) {
-    throw Object.assign(
-      new Error(
-        `Release plan at ${filePath} is missing or has wrong-typed required fields for schema 1.`,
-      ),
-      { code: "INVALID_PLAN_SCHEMA" },
-    );
+    throw new GitwiseError({
+      code: "INVALID_PLAN_SCHEMA",
+      message: `Release plan at ${filePath} is missing or has wrong-typed required fields for schema 1.`,
+      exitCode: EXIT_CODES.CONFIG_INVALID,
+    });
   }
 
   return parsed;

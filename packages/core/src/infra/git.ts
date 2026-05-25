@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { debug } from "./logger.js";
+import { EXIT_CODES, GitwiseError } from "../errors.js";
 
 const exec = promisify(execFile);
 const GIT_TIMEOUT_MS = 30_000;
@@ -11,6 +12,12 @@ interface ExecResult {
   stderr: string;
 }
 
+function execStderr(err: unknown): string | undefined {
+  const stderr = (err as { stderr?: unknown } | null)?.stderr;
+  if (typeof stderr === "string" && stderr.length > 0) return stderr;
+  return undefined;
+}
+
 async function run(args: string[], cwd: string): Promise<string> {
   debug("git command", { args, cwd });
   try {
@@ -18,9 +25,23 @@ async function run(args: string[], cwd: string): Promise<string> {
     return result.stdout.trim();
   } catch (err: unknown) {
     if (err instanceof Error && "killed" in err && (err as { killed: boolean }).killed) {
-      throw new Error(`Git command timed out after ${GIT_TIMEOUT_MS / 1000}s: git ${args.join(" ")}`);
+      throw new GitwiseError({
+        code: "GIT_FAILED",
+        message: `Git command timed out after ${GIT_TIMEOUT_MS / 1000}s: git ${args.join(" ")}`,
+        cause: err,
+        details: { command: `git ${args.join(" ")}`, timedOut: true },
+      });
     }
-    throw err;
+    const stderr = execStderr(err);
+    throw new GitwiseError({
+      code: "GIT_FAILED",
+      message: err instanceof Error ? err.message : String(err),
+      cause: err,
+      details: {
+        command: `git ${args.join(" ")}`,
+        ...(stderr !== undefined ? { stderr } : {}),
+      },
+    });
   }
 }
 
@@ -40,6 +61,17 @@ export async function createBranch(
 
 export async function checkout(cwd: string, branchName: string): Promise<void> {
   await run(["checkout", branchName], cwd);
+}
+
+export async function checkoutForce(
+  cwd: string,
+  branchName: string,
+): Promise<void> {
+  await run(["checkout", "-f", branchName], cwd);
+}
+
+export async function resetHard(cwd: string, ref: string): Promise<void> {
+  await run(["reset", "--hard", ref], cwd);
 }
 
 export async function getDiff(cwd: string, base?: string): Promise<string> {
@@ -85,9 +117,23 @@ export async function status(cwd: string): Promise<string> {
     return result.stdout.replace(/\n+$/, "");
   } catch (err: unknown) {
     if (err instanceof Error && "killed" in err && (err as { killed: boolean }).killed) {
-      throw new Error(`Git command timed out after ${GIT_TIMEOUT_MS / 1000}s: git status --porcelain`);
+      throw new GitwiseError({
+        code: "GIT_FAILED",
+        message: `Git command timed out after ${GIT_TIMEOUT_MS / 1000}s: git status --porcelain`,
+        cause: err,
+        details: { command: "git status --porcelain", timedOut: true },
+      });
     }
-    throw err;
+    const stderr = execStderr(err);
+    throw new GitwiseError({
+      code: "GIT_FAILED",
+      message: err instanceof Error ? err.message : String(err),
+      cause: err,
+      details: {
+        command: "git status --porcelain",
+        ...(stderr !== undefined ? { stderr } : {}),
+      },
+    });
   }
 }
 
@@ -119,9 +165,16 @@ export async function parseStatus(cwd: string): Promise<ChangedFile[]> {
   try {
     result = await exec("git", ["status", "--porcelain"], { cwd, timeout: GIT_TIMEOUT_MS, maxBuffer: GIT_MAX_BUFFER });
   } catch (err) {
-    throw new Error(
-      `Failed to read git status: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    const stderr = execStderr(err);
+    throw new GitwiseError({
+      code: "GIT_FAILED",
+      message: `Failed to read git status: ${err instanceof Error ? err.message : String(err)}`,
+      cause: err,
+      details: {
+        command: "git status --porcelain",
+        ...(stderr !== undefined ? { stderr } : {}),
+      },
+    });
   }
   // Use raw stdout (no trim) — leading spaces in porcelain format are meaningful
   const output = result.stdout;
@@ -181,8 +234,10 @@ export async function createTag(
   cwd: string,
   tag: string,
   message: string,
+  options?: { signed?: boolean },
 ): Promise<void> {
-  await run(["tag", "-a", tag, "-m", message], cwd);
+  const flag = options?.signed === true ? "-s" : "-a";
+  await run(["tag", flag, tag, "-m", message], cwd);
 }
 
 export async function tagExists(cwd: string, tag: string): Promise<boolean> {
@@ -224,6 +279,65 @@ export async function branchExists(cwd: string, branch: string): Promise<boolean
 
 export async function headSha(cwd: string): Promise<string> {
   return run(["rev-parse", "HEAD"], cwd);
+}
+
+export async function resetSoft(cwd: string, ref: string): Promise<void> {
+  await run(["reset", "--soft", ref], cwd);
+}
+
+export async function stashPushNamed(cwd: string, message: string): Promise<void> {
+  await run(["stash", "push", "--include-untracked", "-m", message], cwd);
+}
+
+export async function stashList(cwd: string): Promise<string> {
+  return run(["stash", "list"], cwd);
+}
+
+async function findStashRef(cwd: string, stashName: string): Promise<string> {
+  const list = await stashList(cwd);
+  const line = list.split("\n").find((l) => l.includes(stashName));
+  if (!line) {
+    throw new GitwiseError({
+      code: "GIT_FAILED",
+      message: `Named stash not found in stash list: ${stashName}`,
+      details: { stashName },
+    });
+  }
+  const match = /^(stash@\{\d+\})/.exec(line);
+  if (!match?.[1]) {
+    throw new GitwiseError({
+      code: "GIT_FAILED",
+      message: `Cannot parse stash ref from stash list line: ${line}`,
+      details: { stashName, line },
+    });
+  }
+  return match[1];
+}
+
+export async function stashApplyNamed(cwd: string, stashName: string): Promise<void> {
+  const ref = await findStashRef(cwd, stashName);
+  // Do not use --index: stashes created with --include-untracked are incompatible
+  // with --index restoration for newly-staged (never committed) files.
+  await run(["stash", "apply", ref], cwd);
+}
+
+export async function stashPopNamed(cwd: string, stashName: string): Promise<void> {
+  const ref = await findStashRef(cwd, stashName);
+  await run(["stash", "pop", ref], cwd);
+}
+
+export async function stashDropNamed(cwd: string, stashName: string): Promise<void> {
+  const ref = await findStashRef(cwd, stashName);
+  await run(["stash", "drop", ref], cwd);
+}
+
+/**
+ * Force-remove all untracked files and directories from the working tree.
+ * Used before stash pop in compensate paths to avoid "would be overwritten"
+ * conflicts from files that were left untracked after reset --hard.
+ */
+export async function cleanForced(cwd: string): Promise<void> {
+  await run(["clean", "-fd"], cwd);
 }
 
 /**
@@ -298,8 +412,10 @@ export async function detectBaseBranch(cwd: string): Promise<string> {
   } catch {
     // master doesn't exist either
   }
-  throw Object.assign(new Error("No base branch found: neither main nor master exists"), {
+  throw new GitwiseError({
     code: "NO_BASE_BRANCH",
+    message: "No base branch found: neither main nor master exists",
+    exitCode: EXIT_CODES.REPO_STATE_INVALID,
   });
 }
 
@@ -322,9 +438,13 @@ export async function applyCommit(params: ApplyCommitParams): Promise<void> {
     await commit(cwd, message);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    throw Object.assign(
-      new Error(`Git commit failed: ${msg}`),
-      { code: "COMMIT_HOOK_FAILURE", cause: err },
-    );
+    const stderr = execStderr(err);
+    throw new GitwiseError({
+      code: "COMMIT_HOOK_FAILURE",
+      message: `Git commit failed: ${msg}`,
+      exitCode: EXIT_CODES.GIT_FAILED,
+      cause: err,
+      details: stderr !== undefined ? { stderr } : undefined,
+    });
   }
 }

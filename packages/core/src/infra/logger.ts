@@ -32,6 +32,17 @@ export function error(
   }
 }
 
+export function warn(
+  message: string,
+  context?: Record<string, unknown>,
+): void {
+  if (context) {
+    console.warn(message, context);
+  } else {
+    console.warn(message);
+  }
+}
+
 export function debug(
   message: string,
   context?: Record<string, unknown>,

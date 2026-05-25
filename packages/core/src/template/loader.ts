@@ -5,6 +5,7 @@ import os from "node:os";
 import { fileExists } from "../infra/filesystem.js";
 import { debug } from "../infra/logger.js";
 import { interpolate } from "./interpolate.js";
+import { EXIT_CODES, GitwiseError } from "../errors.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // Bundled templates live at packages/core/templates/. The relative ascent
@@ -20,10 +21,11 @@ const BUNDLED_TEMPLATES_CANDIDATES = [
 
 function validateTemplateName(name: string): void {
   if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-    throw Object.assign(
-      new Error(`Invalid template name: '${name}'. Only alphanumeric characters, hyphens, and underscores are allowed.`),
-      { code: "TEMPLATE_INVALID_NAME" },
-    );
+    throw new GitwiseError({
+      code: "TEMPLATE_INVALID_NAME",
+      message: `Invalid template name: '${name}'. Only alphanumeric characters, hyphens, and underscores are allowed.`,
+      exitCode: EXIT_CODES.CONFIG_INVALID,
+    });
   }
 }
 
@@ -75,10 +77,11 @@ export async function loadTemplate(
     }
   }
 
-  throw Object.assign(
-    new Error(`Template '${name}' not found`),
-    { code: "TEMPLATE_NOT_FOUND" },
-  );
+  throw new GitwiseError({
+    code: "TEMPLATE_NOT_FOUND",
+    message: `Template '${name}' not found`,
+    exitCode: EXIT_CODES.CONFIG_INVALID,
+  });
 }
 
 /**

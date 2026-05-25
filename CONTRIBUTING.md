@@ -222,3 +222,77 @@ Use [GitHub Issues](https://github.com/denisvieiradev/gitwise/issues) to report 
 - Steps to reproduce
 - Expected vs actual behavior
 - Your environment (Node.js version, OS, gitwise version)
+
+## Writing a Transactional Flow
+
+Multi-step git flows that mutate repository state must use the `Transaction` primitive from `@denisvieiradev/gitwise-core` so that a mid-flow failure leaves the repository in its pre-command state rather than a partial state.
+
+**Pattern** (see `core/src/infra/transaction.ts`):
+
+```ts
+const tx = new Transaction();
+try {
+  const result = await tx.run({
+    name: "my-step",
+    apply: async () => { /* perform the mutation */ },
+    compensate: async (result) => { /* undo the mutation */ },
+  });
+  // ... more steps
+} catch (err) {
+  await tx.rollback(wrapError(err), logger);
+  throw err;
+}
+```
+
+Key rules:
+- Call `tx.run(step)` for every side-effectful step. Steps are rolled back in LIFO order.
+- Each `compensate` must undo exactly what its paired `apply` did. Test both paths in isolation.
+- If `compensate` itself can fail, log the failure but do not throw — the transaction surfaces a `ROLLBACK_PARTIAL` warning automatically.
+- Acquire the repo lock (`acquireRepoLock`) before the first `tx.run` call and release it in `finally`.
+
+**Worked example**: `core/src/commands/release.ts` → `prepareRelease()` is the canonical reference implementation. It wraps branch creation, gitignore mutation, CHANGELOG, manifest writes, notes, and plan file as individual steps with compensating actions. See [ADR-004](https://github.com/denisvieiradev/gitwise/blob/main/.compozy/tasks/deliver-community/adrs/adr-004.md) for the architectural rationale.
+
+If a flow produces `ROLLBACK_PARTIAL`, users are directed to [docs/recovery.md](https://denisvieiradev.github.io/gitwise/recovery/) for manual recovery steps.
+
+## Hotfix Exception
+
+CodeQL and OSV-Scanner run on every PR and block merge on findings. In rare cases, a security scanner may block a release-critical hotfix.
+
+**Single-PR exception**: a hotfix PR may be merged with an active CodeQL or OSV-Scanner finding **only when all of the following are true**:
+
+1. The finding is confirmed to be a false positive or an unfixable transitive dependency issue (not a code defect in gitwise itself).
+2. The maintainer explicitly labels the PR `hotfix-exception` and documents the justification in the PR description.
+3. A follow-up issue or PR is filed within 24 hours to resolve or suppress the finding with proper context (a `# nosec` comment with explanation, or an `osv-scanner.toml` ignore entry with an expiry date — see [Adding an OSV Ignore Entry](#adding-an-osv-ignore-entry)).
+
+The follow-up must be addressed within the next release cycle. A hotfix that closes without a follow-up is a policy violation. The maintainer is responsible for tracking it.
+
+## Security Test Expectations
+
+Every PR that touches subprocess invocation or file-path handling must maintain two categories of security tests:
+
+**Subprocess argument safety** (`packages/core/__tests__/unit/infra/`): assert that `execFile` is always called with an **array** of arguments, never a shell-interpolated string. A future refactor that introduces `shell: true` or string concatenation in argument position must fail this test. The tests cover all wrappers in `git.ts`, `github.ts`, and `claude-code.ts`.
+
+**Sensitive-file blocklist** (`packages/core/__tests__/unit/`): assert that every pattern in the blocklist matches representative sensitive paths (`.env`, `id_rsa`, `*.pem`, `*.key`, etc.) and that legitimate paths are not blocked. Changes to the blocklist require corresponding test updates to maintain coverage of both blocked and allowed path patterns.
+
+If you add a new subprocess wrapper or extend the sensitive-file blocklist, add matching tests in the same PR. CI enforces an 80% coverage threshold; a new untested wrapper will cause the coverage gate to fail.
+
+## Adding an OSV Ignore Entry
+
+When OSV-Scanner surfaces a HIGH or CRITICAL finding that has no available fix (e.g., a transitive dependency with an unfixed CVE), you may acknowledge it via `osv-scanner.toml`. This file is checked in and reviewed as code.
+
+**Required fields** for every ignore entry:
+
+```toml
+[[IgnoredVulns]]
+id = "GHSA-xxxx-xxxx-xxxx"          # the exact OSV/GHSA identifier
+ignoreUntil = "2026-09-01"          # REQUIRED expiry date — no open-ended ignores
+reason = "No fix available upstream; tracking in #<issue-number>."
+```
+
+**Rules**:
+- `ignoreUntil` is mandatory. The workflow fails the build when this date passes, forcing review.
+- Set the expiry to no more than 90 days out unless a longer upstream fix timeline is documented in `reason`.
+- Include a GitHub issue number in `reason` so the finding can be tracked.
+- Entries that expire and are not renewed cause CI failures — resolve the underlying issue or file a new justified entry.
+
+The OSV-Scanner ignore list is reviewed at each release cycle. Stale entries (past their `ignoreUntil` date) must be either renewed with fresh justification or removed as the dependency is updated.

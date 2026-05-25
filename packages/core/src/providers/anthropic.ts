@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { debug } from "../infra/logger.js";
+import { GitwiseError } from "../errors.js";
 import type { LLMChatRequest, LLMChatResponse, LLMProvider, ModelConfig, ModelTier } from "./types.js";
 
 const DEFAULT_MAX_TOKENS = 4096;
@@ -44,10 +45,11 @@ export class AnthropicProvider implements LLMProvider {
         throw lastError;
       }
     }
-    throw Object.assign(
-      lastError ?? new Error("Max retries exceeded"),
-      { code: "PROVIDER_UNAVAILABLE" },
-    );
+    throw new GitwiseError({
+      code: "API_RATE_LIMITED",
+      message: lastError?.message ?? "Max retries exceeded",
+      cause: lastError,
+    });
   }
 
   private async callApi(

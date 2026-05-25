@@ -7,6 +7,10 @@ export const version: string = packageJson.version;
 
 export const __placeholder__ = Symbol.for("@denisvieiradev/gitwise-core#placeholder");
 
+// Error exports
+export { GitwiseError, EXIT_CODES, wrapError } from "./errors.js";
+export type { GitwiseErrorArgs } from "./errors.js";
+
 // Infra exports
 export * from "./infra/logger.js";
 export * from "./infra/filesystem.js";
@@ -14,7 +18,17 @@ export { git } from "./infra/index.js";
 export { github } from "./infra/index.js";
 export { env } from "./infra/index.js";
 export type { ChangedFile, ApplyCommitParams } from "./infra/git.js";
+export { stashList } from "./infra/git.js";
 export type { CreatePRParams, PRResult, UpdatePRParams, CreateReleaseParams } from "./infra/github.js";
+export { Transaction } from "./infra/transaction.js";
+export type {
+  Step,
+  Logger,
+  RollbackFailure,
+  RollbackResult,
+} from "./infra/transaction.js";
+export { acquireRepoLock, STALE_LOCK_MS } from "./infra/lockfile.js";
+export type { LockPayload, AcquireRepoLockOptions } from "./infra/lockfile.js";
 // Export resolveClaudeBinary for CLI use
 export { resolveClaudeBinary } from "./providers/claude-code.js";
 
@@ -31,7 +45,13 @@ export { loadTemplate, loadAndInterpolate, interpolate } from "./template/index.
 export type { LoadTemplateOptions } from "./template/index.js";
 
 // Command exports
-export { commit, applyCommitPlan, parseCommitResponse } from "./commands/commit.js";
+export {
+  commit,
+  applyCommitPlan,
+  parseCommitResponse,
+  takeNamedStashStep,
+  applyOneCommitStep,
+} from "./commands/commit.js";
 export { review } from "./commands/review.js";
 export { pr, applyPr } from "./commands/pr.js";
 export {
@@ -44,6 +64,8 @@ export {
   bumpVersion,
   heuristicBump,
   detectWorkspaceRoot,
+  propagateVersionToWorkspaces,
+  writeWorkspaceVersionStep,
 } from "./commands/release.js";
 export type {
   ReleaseOptions,
@@ -66,7 +88,7 @@ export {
 export type { PersistedReleasePlan } from "./commands/release-plan.js";
 export type { PrOptions, PrDraft, ApplyPrOptions, ApplyPrResult } from "./commands/pr.js";
 export type { ReviewOptions, ReviewResult, ReviewFinding } from "./commands/review.js";
-export type { CommitOptions, CommitPlan, CommitEntry, SplitMode, ApplyCommitPlanOptions } from "./commands/commit.js";
+export type { CommitOptions, CommitPlan, CommitEntry, SplitMode, ApplyCommitPlanOptions, CommitStepResult } from "./commands/commit.js";
 
 // Provider exports — ModelConfig here is the provider-layer version
 export type { LLMProvider, LLMChatRequest, LLMChatResponse, ModelTier, ModelConfig, ProviderConfig } from "./providers/types.js";

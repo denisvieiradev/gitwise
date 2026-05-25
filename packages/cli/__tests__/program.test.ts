@@ -24,10 +24,29 @@ describe("program (cli)", () => {
     expect(colorOpt).toBeDefined();
   });
 
-  it("registers --api-key flag", () => {
+  it("registers --api-key flag (kept this release; deprecated)", () => {
     const program = createProgram();
     const apiKeyOpt = program.options.find((o) => o.long === "--api-key");
     expect(apiKeyOpt).toBeDefined();
+  });
+
+  it("marks --api-key as DEPRECATED in its help text (visible in --help output)", () => {
+    const program = createProgram();
+    const apiKeyOpt = program.options.find((o) => o.long === "--api-key");
+    expect(apiKeyOpt?.description).toMatch(/DEPRECATED/);
+    expect(apiKeyOpt?.description).toMatch(/v0\.next\+1/);
+  });
+
+  it("registers --json global flag", () => {
+    const program = createProgram();
+    const jsonOpt = program.options.find((o) => o.long === "--json");
+    expect(jsonOpt).toBeDefined();
+  });
+
+  it("registers --debug global flag", () => {
+    const program = createProgram();
+    const debugOpt = program.options.find((o) => o.long === "--debug");
+    expect(debugOpt).toBeDefined();
   });
 
   describe("--no-color handling", () => {

@@ -2,6 +2,11 @@
 
 **Ship cleaner commits, reviews, PRs, and releases — with AI.** `gitwise` is an AI-powered git assistant that covers the full pre-ship surface: smart commits (with multi-context splitting), pre-push review, drafted pull requests, and versioned releases.
 
+[![CI](https://github.com/denisvieiradev/gitwise/actions/workflows/ci.yml/badge.svg)](https://github.com/denisvieiradev/gitwise/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/denisvieiradev/gitwise/actions/workflows/codeql.yml/badge.svg)](https://github.com/denisvieiradev/gitwise/actions/workflows/codeql.yml)
+[![OSV-Scanner](https://github.com/denisvieiradev/gitwise/actions/workflows/osv-scanner.yml/badge.svg)](https://github.com/denisvieiradev/gitwise/actions/workflows/osv-scanner.yml)
+[![npm provenance](https://img.shields.io/badge/npm-provenance-blue)](https://docs.npmjs.com/generating-provenance-statements)
+[![npm version](https://img.shields.io/npm/v/%40denisvieiradev%2Fgitwise)](https://www.npmjs.com/package/@denisvieiradev/gitwise)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js >= 18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org)
@@ -211,7 +216,41 @@ Contributions are welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup, r
 
 ## Security
 
-To report a vulnerability, see [`SECURITY.md`](SECURITY.md). For day-to-day security posture, see the [Privacy](#privacy) section above.
+`gitwise` is designed with security as a first-class concern. Every release is signed and attested — see [Supply Chain](#supply-chain) for verification details.
+
+- **Vulnerability reports**: use the private reporting path in [`SECURITY.md`](SECURITY.md) — do not open a public issue.
+- **Day-to-day posture**: API key handling, sensitive-file filter, and no-telemetry guarantees are in the [Privacy](#privacy) section above.
+- **Conduct concerns**: see [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for the reporting process.
+
+## Supply Chain
+
+Every `gitwise` release publishes three independently verifiable supply-chain artifacts: npm provenance (via Sigstore), a GPG-signed git tag, and a CycloneDX 1.5 SBOM. Full verification procedures are in [`docs/src/content/docs/supply-chain.md`](docs/src/content/docs/supply-chain.md).
+
+**Quick provenance check:**
+
+```sh
+npm view @denisvieiradev/gitwise --json | jq .dist.attestations
+```
+
+The maintainer's GPG public key is at [`KEYS.asc`](KEYS.asc). Import it with `gpg --import KEYS.asc` and run `git tag -v v<version>` to verify a signed release tag.
+
+## Governance
+
+`gitwise` operates under a **Benevolent Dictator For Life (BDFL)** model. Denis Vieira holds final decision-making authority. The full decision process, response SLAs, and path to co-maintainership are in [`GOVERNANCE.md`](GOVERNANCE.md).
+
+Community behavior is governed by [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) (Contributor Covenant 2.1). Review requests are automatically routed to the maintainer via `.github/CODEOWNERS`.
+
+## Exit Codes
+
+`gw` terminates with a stable, machine-readable exit code on every invocation. The full contract — code table, category ranges, and shell-scripting examples — is in [`docs/src/content/docs/exit-codes.md`](docs/src/content/docs/exit-codes.md).
+
+For richer automation, pass `--json` to receive a structured `{ "error": { "code", "message", "exitCode", "details?" } }` envelope on stdout alongside the numeric exit code.
+
+## Reporting Issues
+
+Open a [GitHub Issue](https://github.com/denisvieiradev/gitwise/issues) to report a bug, request a feature, or ask a question. Review requests are automatically routed to the maintainer via `.github/CODEOWNERS` — no manual assignment needed.
+
+For security vulnerabilities, follow the private reporting path in [`SECURITY.md`](SECURITY.md) instead.
 
 ## Support the developer
 

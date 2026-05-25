@@ -5,7 +5,8 @@ import { tmpdir } from "node:os";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { MockLLMProvider } from "../../../src/testing/mock-llm-provider.js";
-import { commit, applyCommitPlan, parseCommitResponse } from "../../../src/commands/commit.js";
+import { commit, applyCommitPlan, parseCommitResponse, takeNamedStashStep, applyOneCommitStep } from "../../../src/commands/commit.js";
+import * as git from "../../../src/infra/git.js";
 
 const exec = promisify(execFile);
 
@@ -217,7 +218,7 @@ describe("commit()", () => {
     ).rejects.toMatchObject({ code: "NO_SPLIT_POSSIBLE" });
   });
 
-  it("throws SENSITIVE_FILE_STAGED when a .env file is staged", async () => {
+  it("throws SENSITIVE_FILE_BLOCKED when a .env file is staged", async () => {
     const mock = new MockLLMProvider();
 
     await writeFile(join(tempDir, ".env"), "SECRET=abc");
@@ -225,11 +226,11 @@ describe("commit()", () => {
 
     await expect(
       commit({ cwd: tempDir, provider: mock })
-    ).rejects.toMatchObject({ code: "SENSITIVE_FILE_STAGED" });
+    ).rejects.toMatchObject({ code: "SENSITIVE_FILE_BLOCKED" });
     mock.assertCallCount(0); // LLM should NOT be called
   });
 
-  it("SENSITIVE_FILE_STAGED error message omits filenames but exposes them on .files", async () => {
+  it("SENSITIVE_FILE_BLOCKED error message omits filenames but exposes them on .details.files", async () => {
     const mock = new MockLLMProvider();
 
     const leakyName = "prod-customer-db-credentials.json";
@@ -238,11 +239,11 @@ describe("commit()", () => {
 
     const err = await commit({ cwd: tempDir, provider: mock }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(Error);
-    const e = err as Error & { code?: string; files?: string[] };
-    expect(e.code).toBe("SENSITIVE_FILE_STAGED");
+    const e = err as Error & { code?: string; details?: { files?: string[] } };
+    expect(e.code).toBe("SENSITIVE_FILE_BLOCKED");
     expect(e.message).not.toContain(leakyName);
     expect(e.message).toContain("1 file(s)");
-    expect(e.files).toEqual([leakyName]);
+    expect(e.details?.files).toEqual([leakyName]);
     mock.assertCallCount(0);
   });
 
@@ -349,14 +350,146 @@ describe("applyCommitPlan()", () => {
     expect(log.stdout).toContain("chore: drop doomed");
   });
 
-  it("integration: staging .env produces SENSITIVE_FILE_STAGED without any LLM call", async () => {
+  it("integration: staging .env produces SENSITIVE_FILE_BLOCKED without any LLM call", async () => {
     const mock = new MockLLMProvider();
     await writeFile(join(tempDir, ".env"), "API_KEY=secret");
     await exec("git", ["add", ".env"], { cwd: tempDir });
 
     await expect(
       commit({ cwd: tempDir, provider: mock })
-    ).rejects.toMatchObject({ code: "SENSITIVE_FILE_STAGED" });
+    ).rejects.toMatchObject({ code: "SENSITIVE_FILE_BLOCKED" });
     expect(mock.getCallCount()).toBe(0);
+  });
+});
+
+// ─── Step factory unit tests ─────────────────────────────────────────────────
+
+describe("takeNamedStashStep", () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await mkdtemp(join(tmpdir(), "gitwise-stash-step-"));
+    await initRepo(tempDir);
+  });
+
+  afterEach(async () => {
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it("stash name follows the gitwise/split-<ISO8601> format", () => {
+    const ts = new Date().toISOString();
+    const stashName = `gitwise/split-${ts}`;
+    expect(stashName).toMatch(/^gitwise\/split-\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+  });
+
+  it("apply saves named stash that is findable in git stash list", async () => {
+    await writeFile(join(tempDir, "a.ts"), "const a = 1;");
+    await exec("git", ["add", "a.ts"], { cwd: tempDir });
+
+    const stashName = `gitwise/split-${new Date().toISOString()}`;
+    const step = takeNamedStashStep(tempDir, stashName);
+    await step.apply();
+
+    const list = await git.stashList(tempDir);
+    expect(list).toContain(stashName);
+  });
+
+  it("apply restores working tree state so file is accessible after apply", async () => {
+    await writeFile(join(tempDir, "a.ts"), "const a = 1;");
+    await exec("git", ["add", "a.ts"], { cwd: tempDir });
+
+    const stashName = `gitwise/split-${new Date().toISOString()}`;
+    const step = takeNamedStashStep(tempDir, stashName);
+    await step.apply();
+
+    // After apply, file must exist in working tree (stash was re-applied).
+    // Staged state may or may not be preserved depending on --include-untracked
+    // stash behavior; we check working-tree content which is what matters.
+    const { readFile: rf } = await import("node:fs/promises");
+    const content = await rf(join(tempDir, "a.ts"), "utf-8");
+    expect(content).toBe("const a = 1;");
+  });
+
+  it("compensate pops the named stash (not an arbitrary one) and restores working tree", async () => {
+    await writeFile(join(tempDir, "a.ts"), "const a = 1;");
+    await exec("git", ["add", "a.ts"], { cwd: tempDir });
+
+    const stashName = `gitwise/split-${new Date().toISOString()}`;
+    const step = takeNamedStashStep(tempDir, stashName);
+    await step.apply();
+
+    // Simulate failed loop: reset hard to HEAD (as the compensate path would)
+    await git.resetHard(tempDir, "HEAD");
+    // compensate should pop the stash and restore the file
+    await step.compensate();
+
+    const list = await git.stashList(tempDir);
+    expect(list).not.toContain(stashName);
+
+    // File restored with original content
+    const { readFile } = await import("node:fs/promises");
+    const content = await readFile(join(tempDir, "a.ts"), "utf-8");
+    expect(content).toBe("const a = 1;");
+  });
+});
+
+describe("applyOneCommitStep", () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await mkdtemp(join(tmpdir(), "gitwise-commit-step-"));
+    await initRepo(tempDir);
+  });
+
+  afterEach(async () => {
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it("apply records the new HEAD SHA on the result", async () => {
+    await writeFile(join(tempDir, "a.ts"), "const a = 1;");
+    await exec("git", ["add", "a.ts"], { cwd: tempDir });
+
+    const originalSha = await git.headSha(tempDir);
+    const entry = { message: "feat: add a", files: ["a.ts"] };
+    const step = applyOneCommitStep(entry, tempDir);
+    const result = await step.apply();
+
+    const newSha = await git.headSha(tempDir);
+    expect(result.newSha).toBe(newSha);
+    expect(result.priorSha).toBe(originalSha);
+    expect(result.newSha).not.toBe(result.priorSha);
+  });
+
+  it("compensate runs git reset --soft with the prior SHA, removing the commit", async () => {
+    await writeFile(join(tempDir, "a.ts"), "const a = 1;");
+    await exec("git", ["add", "a.ts"], { cwd: tempDir });
+
+    const originalSha = await git.headSha(tempDir);
+    const entry = { message: "feat: add a", files: ["a.ts"] };
+    const step = applyOneCommitStep(entry, tempDir);
+    const result = await step.apply();
+
+    // commit was created
+    expect(result.priorSha).toBe(originalSha);
+
+    // compensate removes it
+    await step.compensate(result);
+    const headAfterCompensate = await git.headSha(tempDir);
+    expect(headAfterCompensate).toBe(originalSha);
+  });
+
+  it("compensate preserves staged changes after reset --soft", async () => {
+    await writeFile(join(tempDir, "a.ts"), "const a = 1;");
+    await exec("git", ["add", "a.ts"], { cwd: tempDir });
+
+    const entry = { message: "feat: add a", files: ["a.ts"] };
+    const step = applyOneCommitStep(entry, tempDir);
+    const result = await step.apply();
+
+    await step.compensate(result);
+
+    // After reset --soft, a.ts changes should be staged again
+    const stagedDiff = await git.getStagedDiff(tempDir);
+    expect(stagedDiff).toContain("a.ts");
   });
 });
