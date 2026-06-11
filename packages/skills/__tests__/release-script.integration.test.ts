@@ -215,10 +215,16 @@ describe("dist/scripts/release.js — built skill runner", () => {
     await seedPlan(dir);
 
     const result = await runScript(
-      ["finish", "--no-gh-release", "--no-workspace-propagation"],
+      ["finish", "--no-gh-release", "--no-workspace-propagation", "--no-sign"],
       dir,
     );
-    expect(result.stderr).toBe("");
+    // --no-sign emits a warning to stderr; filter it out before asserting clean output
+    const stderrWithoutSignWarning = result.stderr
+      .split("\n")
+      .filter((l) => !l.includes("--no-sign"))
+      .join("\n")
+      .trim();
+    expect(stderrWithoutSignWarning).toBe("");
     expect(result.code).toBe(0);
 
     const tags = execFileSync("git", ["tag", "-l"], { cwd: dir })
@@ -279,11 +285,17 @@ describe("dist/scripts/release.js — built skill runner", () => {
     );
 
     const result = await runScript(
-      ["--bump", "patch", "--apply", "--no-gh-release"],
+      ["--bump", "patch", "--apply", "--no-gh-release", "--no-sign"],
       dir,
       home,
     );
-    expect(result.stderr).toBe("");
+    // --no-sign emits a warning to stderr; filter it out before asserting clean output
+    const stderrWithoutSignWarning = result.stderr
+      .split("\n")
+      .filter((l) => !l.includes("--no-sign"))
+      .join("\n")
+      .trim();
+    expect(stderrWithoutSignWarning).toBe("");
     expect(result.code).toBe(0);
 
     const rootPkg = JSON.parse(
