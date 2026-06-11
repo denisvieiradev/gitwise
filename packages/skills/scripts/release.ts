@@ -98,6 +98,7 @@ async function runLegacy(parsed: ParsedReleaseArgs, cwd: string): Promise<void> 
     cwd,
     createGhRelease: !parsed.noGhRelease,
     workspacePropagation,
+    signTags: parsed.noSign ? false : undefined,
   });
   process.stdout.write(`**Done.** Released ${plan.newVersion}.\n`);
 }
@@ -121,6 +122,7 @@ async function runFinish(parsed: ParsedReleaseArgs, cwd: string): Promise<void> 
     createGhRelease: !parsed.noGhRelease,
     workspacePropagation,
     deleteReleaseBranch: parsed.deleteReleaseBranch,
+    signTags: parsed.noSign ? false : undefined,
   });
   process.stdout.write("**Done.** Release finished.\n");
 }

@@ -25,6 +25,8 @@ export interface ParsedReleaseArgs {
   deleteReleaseBranch?: boolean;
   /** `--delete-branch` — `abort` only; opt in to deleting the release branch. */
   deleteBranch?: boolean;
+  /** `--no-sign` — skip GPG signing of the version tag (testing escape hatch). */
+  noSign?: boolean;
 }
 
 export class UnknownPhaseError extends Error {
@@ -92,6 +94,7 @@ export function parseReleaseArgs(argv: readonly string[]): ParsedReleaseArgs {
   }
   if (takeFlag(args, "--no-delete-branch")) result.deleteReleaseBranch = false;
   if (takeFlag(args, "--delete-branch")) result.deleteBranch = true;
+  if (takeFlag(args, "--no-sign")) result.noSign = true;
 
   return result;
 }
