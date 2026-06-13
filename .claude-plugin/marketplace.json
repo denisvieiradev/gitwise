@@ -1,0 +1,18 @@
+{
+  "name": "gitwise",
+  "owner": {
+    "name": "Denis Vieira",
+    "email": "denisvieira05@gmail.com"
+  },
+  "description": "AI-powered git toolbelt for Claude Code: commit, review, PR, and release skills.",
+  "plugins": [
+    {
+      "name": "gitwise",
+      "displayName": "gitwise",
+      "source": "./packages/skills",
+      "description": "AI commit, review, PR drafting, and versioned releases.",
+      "category": "productivity",
+      "tags": ["git", "ai", "commit", "code-review", "pull-request", "release"]
+    }
+  ]
+}
