@@ -85,15 +85,23 @@ describe("plugin.json", () => {
 // Skill markdown files
 // ---------------------------------------------------------------------------
 
-function readSkill(filename: string): string {
-  return readFileSync(join(pkgRoot, "skills", filename), "utf8");
+function readSkill(name: string): string {
+  return readFileSync(join(pkgRoot, "skills", name, "SKILL.md"), "utf8");
 }
 
-describe("skills/commit.md", () => {
-  const content = readSkill("commit.md");
+function frontmatter(content: string): string {
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match || match[1] === undefined) throw new Error("missing YAML frontmatter");
+  return match[1];
+}
 
-  it("has a trigger line", () => {
-    expect(content).toMatch(/\*\*Trigger\*\*/);
+describe("skills/commit/SKILL.md", () => {
+  const content = readSkill("commit");
+
+  it("has YAML frontmatter with name and description", () => {
+    const fm = frontmatter(content);
+    expect(fm).toMatch(/^name:\s*commit\s*$/m);
+    expect(fm).toMatch(/^description:\s*\S/m);
   });
 
   it("has --apply flag documented", () => {
@@ -104,11 +112,7 @@ describe("skills/commit.md", () => {
     expect(content).toMatch(/--split/);
   });
 
-  it("references the node runner script", () => {
-    expect(content).toMatch(/scripts\/commit\.js/);
-  });
-
-  it("anchors the runner path on ${CLAUDE_PLUGIN_ROOT} so the skill works from any user CWD", () => {
+  it("anchors the runner path on ${CLAUDE_PLUGIN_ROOT}/dist/scripts/commit.js", () => {
     expect(content).toMatch(/\$\{CLAUDE_PLUGIN_ROOT\}\/dist\/scripts\/commit\.js/);
   });
 
@@ -117,22 +121,20 @@ describe("skills/commit.md", () => {
   });
 });
 
-describe("skills/review.md", () => {
-  const content = readSkill("review.md");
+describe("skills/review/SKILL.md", () => {
+  const content = readSkill("review");
 
-  it("has a trigger line", () => {
-    expect(content).toMatch(/\*\*Trigger\*\*/);
+  it("has YAML frontmatter with name and description", () => {
+    const fm = frontmatter(content);
+    expect(fm).toMatch(/^name:\s*review\s*$/m);
+    expect(fm).toMatch(/^description:\s*\S/m);
   });
 
   it("has --base flag documented", () => {
     expect(content).toMatch(/--base/);
   });
 
-  it("references the node runner script", () => {
-    expect(content).toMatch(/scripts\/review\.js/);
-  });
-
-  it("anchors the runner path on ${CLAUDE_PLUGIN_ROOT} so the skill works from any user CWD", () => {
+  it("anchors the runner path on ${CLAUDE_PLUGIN_ROOT}/dist/scripts/review.js", () => {
     expect(content).toMatch(/\$\{CLAUDE_PLUGIN_ROOT\}\/dist\/scripts\/review\.js/);
   });
 
@@ -141,22 +143,20 @@ describe("skills/review.md", () => {
   });
 });
 
-describe("skills/pr.md", () => {
-  const content = readSkill("pr.md");
+describe("skills/pr/SKILL.md", () => {
+  const content = readSkill("pr");
 
-  it("has a trigger line", () => {
-    expect(content).toMatch(/\*\*Trigger\*\*/);
+  it("has YAML frontmatter with name and description", () => {
+    const fm = frontmatter(content);
+    expect(fm).toMatch(/^name:\s*pr\s*$/m);
+    expect(fm).toMatch(/^description:\s*\S/m);
   });
 
   it("has --apply flag documented", () => {
     expect(content).toMatch(/--apply/);
   });
 
-  it("references the node runner script", () => {
-    expect(content).toMatch(/scripts\/pr\.js/);
-  });
-
-  it("anchors the runner path on ${CLAUDE_PLUGIN_ROOT} so the skill works from any user CWD", () => {
+  it("anchors the runner path on ${CLAUDE_PLUGIN_ROOT}/dist/scripts/pr.js", () => {
     expect(content).toMatch(/\$\{CLAUDE_PLUGIN_ROOT\}\/dist\/scripts\/pr\.js/);
   });
 
@@ -165,11 +165,13 @@ describe("skills/pr.md", () => {
   });
 });
 
-describe("skills/release.md", () => {
-  const content = readSkill("release.md");
+describe("skills/release/SKILL.md", () => {
+  const content = readSkill("release");
 
-  it("has a trigger line", () => {
-    expect(content).toMatch(/\*\*Trigger\*\*/);
+  it("has YAML frontmatter with name and description", () => {
+    const fm = frontmatter(content);
+    expect(fm).toMatch(/^name:\s*release\s*$/m);
+    expect(fm).toMatch(/^description:\s*\S/m);
   });
 
   it("has --apply flag documented", () => {
@@ -196,11 +198,7 @@ describe("skills/release.md", () => {
     expect(content).toMatch(/--no-delete-branch/);
   });
 
-  it("references the node runner script", () => {
-    expect(content).toMatch(/scripts\/release\.js/);
-  });
-
-  it("anchors the runner path on ${CLAUDE_PLUGIN_ROOT} so the skill works from any user CWD", () => {
+  it("anchors the runner path on ${CLAUDE_PLUGIN_ROOT}/dist/scripts/release.js", () => {
     expect(content).toMatch(/\$\{CLAUDE_PLUGIN_ROOT\}\/dist\/scripts\/release\.js/);
   });
 
