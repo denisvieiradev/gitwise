@@ -32,6 +32,14 @@ export interface CommitOptions {
   commitConvention?: string;
   templatesPath?: string;
   repoRoot?: string;
+  feedbackHint?: string;
+  generateAlternatives?: boolean;
+}
+
+export interface CommitAlternatives {
+  kind: "alternatives";
+  options: string[];
+  tokens: { input: number; output: number };
 }
 
 export interface ApplyCommitPlanOptions {
@@ -158,6 +166,23 @@ export function parseCommitResponse(raw: string): LLMCommitResponse {
   return { type: "single", message: raw.trim() };
 }
 
+function parseAlternativesResponse(raw: string): string[] | null {
+  const strategies = [
+    raw.trim(),
+    (() => { const m = raw.match(/```(?:json)?\s*([\s\S]*?)```/); return m?.[1]?.trim() ?? ""; })(),
+    (() => { const m = raw.match(/\{[\s\S]*\}/); return m?.[0] ?? ""; })(),
+  ];
+  for (const s of strategies) {
+    try {
+      const parsed = JSON.parse(s);
+      if (parsed?.type === "alternatives" && Array.isArray(parsed.options) && parsed.options.length > 0) {
+        return parsed.options as string[];
+      }
+    } catch { /* try next strategy */ }
+  }
+  return null;
+}
+
 const MAX_DIFF_CHARS = 80_000;
 
 function truncateDiff(diff: string): string {
@@ -190,7 +215,7 @@ Rules for plan:
 - "files" lists only the files belonging to that commit
 - Only return a plan when there are clearly separate concerns. Do not split for minor differences.`;
 
-export async function commit(opts: CommitOptions): Promise<CommitPlan> {
+export async function commit(opts: CommitOptions): Promise<CommitPlan | CommitAlternatives> {
   const { cwd, provider, prompt, split = "auto" } = opts;
 
   // Get staged files and diff
@@ -240,6 +265,8 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan> {
     `Staged files:\n${stagedFiles.join("\n")}`,
     `\nDiff:\n${truncateDiff(diff)}`,
     prompt ? `\nUser intent: ${prompt}` : "",
+    opts.feedbackHint ? `\nUser feedback on previous suggestion: ${opts.feedbackHint}` : "",
+    opts.generateAlternatives ? `\nIMPORTANT: Generate exactly 3 different alternative commit messages. Return JSON only: {"type": "alternatives", "options": ["message1", "message2", "message3"]}` : "",
   ].join("");
 
   debug("Calling LLM for commit analysis", { tier: "fast", fileCount: stagedFiles.length });
@@ -249,6 +276,24 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan> {
 
   const parsed = parseCommitResponse(response.content);
   const tokens = { input: response.tokens.input, output: response.tokens.output };
+
+  if (opts.generateAlternatives) {
+    const options = parseAlternativesResponse(response.content);
+    if (options && options.length > 0) {
+      return {
+        kind: "alternatives",
+        options,
+        tokens: { input: response.tokens.input, output: response.tokens.output },
+      } satisfies CommitAlternatives;
+    }
+    // Fallback: wrap whatever was parsed as a single-option alternative
+    const fallbackMsg = parsed.type === "single" ? parsed.message : parsed.commits[0]?.message ?? response.content.trim();
+    return {
+      kind: "alternatives",
+      options: [fallbackMsg],
+      tokens: { input: response.tokens.input, output: response.tokens.output },
+    } satisfies CommitAlternatives;
+  }
 
   // Handle split modes
   if (split === "never") {
