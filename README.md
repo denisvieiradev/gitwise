@@ -37,7 +37,14 @@ The first time you run a command, `gw` checks for an installed Claude Code binar
 
 ### Claude Code plugin
 
-Install the `gitwise` plugin from the Claude Code plugin marketplace, or via Claude Code's discover-plugins flow. Once installed, four skills become available in the conversation:
+Add the marketplace and install the plugin from inside Claude Code:
+
+```text
+/plugin marketplace add denisvieiradev/gitwise
+/plugin install gitwise@gitwise
+```
+
+Once installed, four skills become available in the conversation:
 
 - `gitwise:commit`
 - `gitwise:review`
