@@ -1,5 +1,10 @@
 node_modules/
 dist/
+# The Claude Code plugin ships its built runner scripts (installed via git-clone,
+# no `npm install` runs). Track packages/skills/dist; keep sourcemaps out.
+!packages/skills/dist/
+!packages/skills/dist/**
+packages/skills/dist/**/*.map
 coverage/
 *.tsbuildinfo
 .DS_Store
