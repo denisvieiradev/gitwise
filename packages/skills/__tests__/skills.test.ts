@@ -45,39 +45,33 @@ describe("package.json", () => {
 });
 
 // ---------------------------------------------------------------------------
-// plugin.json
+// .claude-plugin/plugin.json (Claude Code plugin manifest)
 // ---------------------------------------------------------------------------
 
-describe("plugin.json", () => {
-  const raw = readFileSync(join(pkgRoot, "plugin.json"), "utf8");
+describe(".claude-plugin/plugin.json", () => {
+  const raw = readFileSync(join(pkgRoot, ".claude-plugin", "plugin.json"), "utf8");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const manifest = JSON.parse(raw) as Record<string, any>;
 
   it("has required top-level fields", () => {
-    expect(manifest).toHaveProperty("name");
-    expect(manifest).toHaveProperty("version");
-    expect(manifest).toHaveProperty("skills");
-    expect(Array.isArray(manifest.skills)).toBe(true);
+    expect(typeof manifest.name).toBe("string");
+    expect(typeof manifest.description).toBe("string");
+    expect(typeof manifest.version).toBe("string");
   });
 
-  it("declares exactly four skills", () => {
-    expect(manifest.skills).toHaveLength(4);
+  it("is named gitwise so skills namespace as gitwise:<skill>", () => {
+    expect(manifest.name).toBe("gitwise");
   });
 
-  it("each skill entry has name and path", () => {
-    for (const skill of manifest.skills as Array<{ name: string; path: string }>) {
-      expect(typeof skill.name).toBe("string");
-      expect(typeof skill.path).toBe("string");
-      expect(skill.path.startsWith("skills/")).toBe(true);
-    }
+  it("relies on skills/ auto-discovery (no legacy skills array)", () => {
+    expect(manifest).not.toHaveProperty("skills");
   });
 
-  it("skill names match expected set", () => {
-    const names = (manifest.skills as Array<{ name: string }>).map((s) => s.name);
-    expect(names).toContain("gitwise-commit");
-    expect(names).toContain("gitwise-review");
-    expect(names).toContain("gitwise-pr");
-    expect(names).toContain("gitwise-release");
+  it("keeps the manifest version in lockstep with package.json", () => {
+    const pkg = JSON.parse(readFileSync(join(pkgRoot, "package.json"), "utf8")) as {
+      version: string;
+    };
+    expect(manifest.version).toBe(pkg.version);
   });
 });
 
