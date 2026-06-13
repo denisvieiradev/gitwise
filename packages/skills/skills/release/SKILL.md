@@ -1,9 +1,9 @@
-# gitwise-release
+---
+name: release
+description: Use when the user asks to create a release, bump the version, publish a new version, or step through release prepare / finish / abort. Suggests a semantic version bump, generates a changelog entry and release notes, tags the commit, and optionally creates a GitHub release.
+---
 
-**Trigger**: When the user asks to create a release, bump the version, publish a new version, or step through `release prepare` / `release finish` / `release abort`.
-
-## Description
-Drives the gitwise release lifecycle. Suggests a semantic version bump, generates a changelog entry and release notes, then tags the commit and optionally creates a GitHub release. Supports both the legacy one-shot flow and the explicit two-phase lifecycle (`prepare` → `finish`, with `abort` to discard a saved plan).
+# Release
 
 ## Tool allowlist
 - Bash: `node "${CLAUDE_PLUGIN_ROOT}/dist/scripts/release.js"`

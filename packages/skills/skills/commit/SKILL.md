@@ -1,9 +1,9 @@
-# gitwise-commit
+---
+name: commit
+description: Use when the user asks to commit changes, generate a commit message, or stage and commit files. Analyzes the staged git diff with AI and produces a Conventional Commits message, detecting whether the diff is one logical change or multiple contexts and offering an interactive commit-split when it is multiple.
+---
 
-**Trigger**: When the user asks to commit changes, generate a commit message, or stage and commit files.
-
-## Description
-Analyzes staged git changes using AI and generates a conventional commit message. Supports multi-context splitting into separate commits.
+# Commit
 
 ## Tool allowlist
 - Bash: `node "${CLAUDE_PLUGIN_ROOT}/dist/scripts/commit.js"`

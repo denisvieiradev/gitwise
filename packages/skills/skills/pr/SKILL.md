@@ -1,9 +1,9 @@
-# gitwise-pr
+---
+name: pr
+description: Use when the user asks to open a pull request, draft a PR, or create a PR from the current branch. Generates a PR title and body from the diff between the current branch and the base branch, then creates or updates the GitHub PR via gh.
+---
 
-**Trigger**: When the user asks to open a pull request, draft a PR, or create a PR from the current branch.
-
-## Description
-Generates a PR title and body from the diff between the current branch and the base branch. Creates or updates the GitHub PR using `gh`.
+# PR
 
 ## Tool allowlist
 - Bash: `node "${CLAUDE_PLUGIN_ROOT}/dist/scripts/pr.js"`

@@ -1,9 +1,9 @@
-# gitwise-review
+---
+name: review
+description: Use when the user asks for a code review, wants feedback on changes, or asks to review a diff. Performs an AI code review of the diff between the current branch and the base branch, returning findings categorized as Critical, Suggestions, and Nitpicks.
+---
 
-**Trigger**: When the user asks for a code review, wants feedback on changes, or asks to review a diff.
-
-## Description
-Performs an AI-powered code review of the diff between the current branch and the base branch. Returns findings categorized as Critical, Suggestions, and Nitpicks.
+# Review
 
 ## Tool allowlist
 - Bash: `node "${CLAUDE_PLUGIN_ROOT}/dist/scripts/review.js"`
