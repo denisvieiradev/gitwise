@@ -167,39 +167,19 @@ export function parseCommitResponse(raw: string): LLMCommitResponse {
 }
 
 function parseAlternativesResponse(raw: string): string[] | null {
-  const isValidAlternatives = (parsed: unknown): parsed is { type: string; options: string[] } =>
-    typeof parsed === "object" &&
-    parsed !== null &&
-    (parsed as Record<string, unknown>)["type"] === "alternatives" &&
-    Array.isArray((parsed as Record<string, unknown>)["options"]) &&
-    ((parsed as Record<string, unknown>)["options"] as unknown[]).length > 0 &&
-    ((parsed as Record<string, unknown>)["options"] as unknown[]).every((o) => typeof o === "string");
-
-  // Strategy 1: direct JSON parse
-  try {
-    const p = JSON.parse(raw.trim());
-    if (isValidAlternatives(p)) return p.options;
-  } catch { /* fall through */ }
-
-  // Strategy 2: extract from fenced code block
-  const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fence?.[1]) {
+  const strategies = [
+    raw.trim(),
+    (() => { const m = raw.match(/```(?:json)?\s*([\s\S]*?)```/); return m?.[1]?.trim() ?? ""; })(),
+    (() => { const m = raw.match(/\{[\s\S]*\}/); return m?.[0] ?? ""; })(),
+  ];
+  for (const s of strategies) {
     try {
-      const p = JSON.parse(fence[1].trim());
-      if (isValidAlternatives(p)) return p.options;
-    } catch { /* fall through */ }
+      const parsed = JSON.parse(s);
+      if (parsed?.type === "alternatives" && Array.isArray(parsed.options) && parsed.options.length > 0) {
+        return parsed.options as string[];
+      }
+    } catch { /* try next strategy */ }
   }
-
-  // Strategy 3: find JSON object on a single line
-  for (const line of raw.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith("{")) continue;
-    try {
-      const p = JSON.parse(trimmed);
-      if (isValidAlternatives(p)) return p.options;
-    } catch { /* skip */ }
-  }
-
   return null;
 }
 
@@ -291,15 +271,8 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan | CommitAl
 
   debug("Calling LLM for commit analysis", { tier: "fast", fileCount: stagedFiles.length });
 
-  const systemPromptForAlternatives = `${systemPrompt}
-
-When asked to generate alternatives, you must return ONLY this JSON format (no other text):
-{"type": "alternatives", "options": ["message1", "message2", "message3"]}`;
-
-  const effectiveSystemPrompt = opts.generateAlternatives ? systemPromptForAlternatives : systemPrompt;
-
   const tier = resolveModelTier("commit");
-  const response = await provider.chat({ systemPrompt: effectiveSystemPrompt, userMessage, tier });
+  const response = await provider.chat({ systemPrompt, userMessage, tier });
 
   const parsed = parseCommitResponse(response.content);
   const tokens = { input: response.tokens.input, output: response.tokens.output };
@@ -310,16 +283,15 @@ When asked to generate alternatives, you must return ONLY this JSON format (no o
       return {
         kind: "alternatives",
         options,
-        tokens,
+        tokens: { input: response.tokens.input, output: response.tokens.output },
       } satisfies CommitAlternatives;
     }
     // Fallback: wrap whatever was parsed as a single-option alternative
-    const rawFallback = response.content.trim().slice(0, 100);
-    const fallbackMsg = parsed.type === "single" ? parsed.message : parsed.commits[0]?.message ?? rawFallback;
+    const fallbackMsg = parsed.type === "single" ? parsed.message : parsed.commits[0]?.message ?? response.content.trim();
     return {
       kind: "alternatives",
       options: [fallbackMsg],
-      tokens,
+      tokens: { input: response.tokens.input, output: response.tokens.output },
     } satisfies CommitAlternatives;
   }
 
