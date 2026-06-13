@@ -1,7 +1,6 @@
-import { createRequire } from "node:module";
-
-const requireFromHere = createRequire(import.meta.url);
-const packageJson = requireFromHere("../package.json") as { version: string };
+// Inline the version so bundled runner scripts don't need a package.json on disk.
+// (createRequire("../package.json") would fail after git-clone with no node_modules.)
+import packageJson from "../package.json" with { type: "json" };
 
 export const version: string = packageJson.version;
 

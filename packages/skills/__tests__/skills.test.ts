@@ -316,3 +316,37 @@ describe("scripts/release.ts", () => {
     expect(content).toMatch(/process\.exit\(1\)/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Bundled runner scripts must be self-contained (Claude Code installs the
+// plugin via git-clone; no `npm install` runs, so there is no node_modules to
+// resolve external imports against).
+// ---------------------------------------------------------------------------
+
+describe("dist/scripts self-containment", () => {
+  const runners = ["commit", "review", "pr", "release"] as const;
+
+  function readDistRunner(name: string): string {
+    return readFileSync(join(pkgRoot, "dist", "scripts", `${name}.js`), "utf8");
+  }
+
+  for (const name of runners) {
+    describe(`dist/scripts/${name}.js`, () => {
+      const content = readDistRunner(name);
+
+      it("starts with the node shebang", () => {
+        expect(content.startsWith("#!/usr/bin/env node")).toBe(true);
+      });
+
+      it("does not import @denisvieiradev/gitwise-core at runtime (must be bundled in)", () => {
+        expect(content).not.toMatch(/from\s+["']@denisvieiradev\/gitwise-core["']/);
+        expect(content).not.toMatch(/require\(\s*["']@denisvieiradev\/gitwise-core["']\s*\)/);
+      });
+
+      it("does not import @anthropic-ai/sdk at runtime (must be bundled in)", () => {
+        expect(content).not.toMatch(/from\s+["']@anthropic-ai\/sdk["']/);
+        expect(content).not.toMatch(/require\(\s*["']@anthropic-ai\/sdk["']\s*\)/);
+      });
+    });
+  }
+});
