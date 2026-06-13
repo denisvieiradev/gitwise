@@ -6,19 +6,19 @@
   "skills": [
     {
       "name": "gitwise-commit",
-      "path": "skills/commit.md"
+      "path": "skills/commit/SKILL.md"
     },
     {
       "name": "gitwise-review",
-      "path": "skills/review.md"
+      "path": "skills/review/SKILL.md"
     },
     {
       "name": "gitwise-pr",
-      "path": "skills/pr.md"
+      "path": "skills/pr/SKILL.md"
     },
     {
       "name": "gitwise-release",
-      "path": "skills/release.md"
+      "path": "skills/release/SKILL.md"
     }
   ]
 }
