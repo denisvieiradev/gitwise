@@ -33,5 +33,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Verify committed plugin dist is up to date
+        run: |
+          if ! git diff --exit-code -- packages/skills/dist; then
+            echo "::error::packages/skills/dist is stale. Run 'npm run build -w @denisvieiradev/gitwise-skills' and commit the result."
+            exit 1
+          fi
+
       - name: Test
         run: npm test
