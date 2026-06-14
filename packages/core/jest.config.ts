@@ -12,6 +12,7 @@ const config: Config = {
       {
         useESM: true,
         tsconfig: "<rootDir>/tsconfig.test.json",
+        diagnostics: { ignoreCodes: [1343] },
       },
     ],
   },
