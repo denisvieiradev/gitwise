@@ -351,6 +351,9 @@ export function makeCommitCommand(): Command {
           p.outro(chalk.yellow("Committed but push failed. Run `git push` manually."));
           return;
         }
+        applySpinner.stop("Committed and pushed");
+        p.outro(chalk.green("Committed and pushed successfully!"));
+        return;
       }
 
       applySpinner.stop("Done");
