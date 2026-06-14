@@ -70,7 +70,7 @@ async function main(): Promise<void> {
     `**Tokens used:** ${plan.tokens.input} in / ${plan.tokens.output} out\n\n`
   );
 
-  if (!apply) {
+  if (!apply && !push) {
     process.stdout.write(
       "_Run with `--apply` to stage files and commit._\n"
     );
