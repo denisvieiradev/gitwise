@@ -11706,7 +11706,7 @@ async function main() {
 
 `
   );
-  if (!apply) {
+  if (!apply && !push2) {
     process.stdout.write(
       "_Run with `--apply` to stage files and commit._\n"
     );
