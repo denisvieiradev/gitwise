@@ -10,7 +10,7 @@ import {
   git,
   GitwiseError,
 } from "@denisvieiradev/gitwise-core";
-import type { SplitMode, LLMProvider, CommitPlan, CommitAlternatives } from "@denisvieiradev/gitwise-core";
+import type { SplitMode, LLMProvider } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
 
 interface CommitCommandOptions {
@@ -82,135 +82,6 @@ async function promptInteractiveStage(cwd: string): Promise<"staged" | null> {
 
   await git.add(cwd, picked);
   return "staged";
-}
-
-function displayPlan(plan: CommitPlan): void {
-  if (plan.kind === "single") {
-    const [c] = plan.commits;
-    console.log(chalk.bold("\nProposed commit:"));
-    console.log(chalk.cyan(`  ${c!.message}`));
-    if (c!.description) console.log(chalk.dim(`  ${c!.description}`));
-  } else {
-    console.log(chalk.bold(`\nProposed ${plan.commits.length} commits:`));
-    plan.commits.forEach((c, i) => {
-      console.log(chalk.cyan(`  ${i + 1}. ${c.message}`));
-    });
-  }
-  console.log(chalk.dim(`\n  Tokens: ${plan.tokens.input} in / ${plan.tokens.output} out`));
-}
-
-function alternativeToPlan(alts: CommitAlternatives, index: number): CommitPlan {
-  const message = alts.options[index] ?? alts.options[0]!;
-  return {
-    kind: "single",
-    commits: [{ message, files: [] }],
-    tokens: alts.tokens,
-  };
-}
-
-async function runRefinementLoop(
-  initialPlan: CommitPlan,
-  runCommit: (opts?: { feedbackHint?: string; generateAlternatives?: boolean }) => Promise<CommitPlan | CommitAlternatives>,
-): Promise<CommitPlan | null> {
-  let plan: CommitPlan = initialPlan;
-
-  while (true) {
-    displayPlan(plan);
-
-    const action = await p.select({
-      message: "What would you like to do?",
-      options: [
-        { value: "apply", label: "Apply this commit plan" },
-        { value: "think", label: "Think again — show alternatives" },
-        { value: "describe", label: "Describe what I want" },
-        { value: "cancel", label: "Cancel" },
-      ],
-    });
-
-    if (p.isCancel(action) || action === "cancel") return null;
-    if (action === "apply") return plan;
-
-    if (action === "describe") {
-      const hint = await p.text({ message: "Describe what you want in the commit message:" });
-      if (p.isCancel(hint) || !hint) return null;
-
-      const spinner = p.spinner();
-      spinner.start("Generating new suggestion…");
-      try {
-        const result = await runCommit({ feedbackHint: String(hint) });
-        spinner.stop("Done");
-        plan = result.kind === "alternatives"
-          ? alternativeToPlan(result as CommitAlternatives, 0)
-          : result as CommitPlan;
-      } catch {
-        spinner.stop("Failed");
-        throw new Error("Failed to generate new suggestion");
-      }
-      continue;
-    }
-
-    if (action === "think") {
-      const spinner = p.spinner();
-      spinner.start("Thinking of alternatives…");
-      let alts: CommitAlternatives;
-      try {
-        const result = await runCommit({ generateAlternatives: true });
-        spinner.stop("Done");
-        if (result.kind !== "alternatives") {
-          plan = result as CommitPlan;
-          continue;
-        }
-        alts = result as CommitAlternatives;
-      } catch {
-        spinner.stop("Failed");
-        throw new Error("Failed to generate alternatives");
-      }
-
-      console.log(chalk.bold("\nAlternatives:"));
-      alts.options.forEach((opt: string, i: number) => {
-        console.log(chalk.cyan(`  ${i + 1}. ${opt}`));
-      });
-      console.log(chalk.dim(`\n  Tokens: ${alts.tokens.input} in / ${alts.tokens.output} out`));
-
-      const pickOptions = [
-        ...alts.options.map((opt: string, i: number) => ({ value: `pick:${i}`, label: `Use: ${opt}` })),
-        { value: "describe", label: "Describe what I want" },
-        { value: "think", label: "Try again" },
-        { value: "cancel", label: "Cancel" },
-      ];
-
-      const pick = await p.select({ message: "Pick an option:", options: pickOptions });
-      if (p.isCancel(pick) || pick === "cancel") return null;
-
-      if (typeof pick === "string" && pick.startsWith("pick:")) {
-        const idx = parseInt(pick.slice(5), 10);
-        plan = alternativeToPlan(alts, idx);
-        continue;
-      }
-
-      if (pick === "describe") {
-        const hint = await p.text({ message: "Describe what you want in the commit message:" });
-        if (p.isCancel(hint) || !hint) return null;
-
-        const s2 = p.spinner();
-        s2.start("Generating new suggestion…");
-        try {
-          const result = await runCommit({ feedbackHint: String(hint) });
-          s2.stop("Done");
-          plan = result.kind === "alternatives"
-            ? alternativeToPlan(result as CommitAlternatives, 0)
-            : result as CommitPlan;
-        } catch {
-          s2.stop("Failed");
-          throw new Error("Failed to generate new suggestion");
-        }
-        continue;
-      }
-
-      // pick === "think": loop back
-      continue;
-    }
-  }
 }
 
 export function makeCommitCommand(): Command {
@@ -285,18 +156,17 @@ export function makeCommitCommand(): Command {
       const spinner = p.spinner();
       spinner.start(opts.message ? "Preparing commit…" : "Analyzing staged changes…");
 
-      const runCommit = (refinement?: { feedbackHint?: string; generateAlternatives?: boolean }) =>
+      const runCommit = () =>
         commit({
           prompt: augmentedIntent,
           split: splitMode,
           provider,
           cwd,
-          ...refinement,
         });
 
-      let plan: CommitPlan;
+      let plan;
       try {
-        plan = (await runCommit()) as CommitPlan;
+        plan = await runCommit();
         spinner.stop(opts.message ? "Ready" : "Analysis complete");
       } catch (err: unknown) {
         const code = (err as { code?: unknown } | null)?.code;
@@ -314,7 +184,7 @@ export function makeCommitCommand(): Command {
         const retrySpinner = p.spinner();
         retrySpinner.start("Analyzing staged changes…");
         try {
-          plan = (await runCommit()) as CommitPlan;
+          plan = await runCommit();
           retrySpinner.stop(opts.message ? "Ready" : "Analysis complete");
         } catch (retryErr: unknown) {
           retrySpinner.stop("Failed");
@@ -322,16 +192,28 @@ export function makeCommitCommand(): Command {
         }
       }
 
-      let confirmed = skipConfirm;
-      if (skipConfirm) {
-        displayPlan(plan);
+      if (plan.kind === "single") {
+        const [c] = plan.commits;
+        console.log(chalk.bold("\nProposed commit:"));
+        console.log(chalk.cyan(`  ${c!.message}`));
+        if (c!.description) console.log(chalk.dim(`  ${c!.description}`));
       } else {
-        const refined = await runRefinementLoop(plan, runCommit);
-        if (!refined) {
+        console.log(chalk.bold(`\nProposed ${plan.commits.length} commits:`));
+        plan.commits.forEach((c, i) => {
+          console.log(chalk.cyan(`  ${i + 1}. ${c.message}`));
+        });
+      }
+      if (!opts.message) {
+        console.log(chalk.dim(`\n  Tokens: ${plan.tokens.input} in / ${plan.tokens.output} out`));
+      }
+
+      let confirmed = skipConfirm;
+      if (!confirmed) {
+        const answer = await p.confirm({ message: "Apply this commit plan?" });
+        if (p.isCancel(answer) || !answer) {
           p.cancel("Cancelled.");
           process.exit(0);
         }
-        plan = refined;
         confirmed = true;
       }
 
