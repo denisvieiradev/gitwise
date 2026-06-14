@@ -32,6 +32,14 @@ export interface CommitOptions {
   commitConvention?: string;
   templatesPath?: string;
   repoRoot?: string;
+  feedbackHint?: string;
+  generateAlternatives?: boolean;
+}
+
+export interface CommitAlternatives {
+  kind: "alternatives";
+  options: string[];
+  tokens: { input: number; output: number };
 }
 
 export interface ApplyCommitPlanOptions {
@@ -131,6 +139,43 @@ function extractBalancedJsonCandidates(raw: string): string[] {
   return candidates;
 }
 
+function parseAlternativesResponse(raw: string): string[] | null {
+  const isValid = (p: unknown): p is { type: string; options: string[] } =>
+    typeof p === "object" &&
+    p !== null &&
+    (p as Record<string, unknown>)["type"] === "alternatives" &&
+    Array.isArray((p as Record<string, unknown>)["options"]) &&
+    ((p as Record<string, unknown>)["options"] as unknown[]).length > 0 &&
+    ((p as Record<string, unknown>)["options"] as unknown[]).every((o) => typeof o === "string");
+
+  // Strategy 1: direct JSON
+  try {
+    const parsed = JSON.parse(raw.trim());
+    if (isValid(parsed)) return parsed.options;
+  } catch { /* fall through */ }
+
+  // Strategy 2: fenced code block
+  const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence?.[1]) {
+    try {
+      const parsed = JSON.parse(fence[1].trim());
+      if (isValid(parsed)) return parsed.options;
+    } catch { /* fall through */ }
+  }
+
+  // Strategy 3: first line starting with {
+  for (const line of raw.split("\n")) {
+    const t = line.trim();
+    if (!t.startsWith("{")) continue;
+    try {
+      const parsed = JSON.parse(t);
+      if (isValid(parsed)) return parsed.options;
+    } catch { /* skip */ }
+  }
+
+  return null;
+}
+
 export function parseCommitResponse(raw: string): LLMCommitResponse {
   // Strategy 1: pure JSON
   const direct = tryParseJson(raw);
@@ -190,7 +235,7 @@ Rules for plan:
 - "files" lists only the files belonging to that commit
 - Only return a plan when there are clearly separate concerns. Do not split for minor differences.`;
 
-export async function commit(opts: CommitOptions): Promise<CommitPlan> {
+export async function commit(opts: CommitOptions): Promise<CommitPlan | CommitAlternatives> {
   const { cwd, provider, prompt, split = "auto" } = opts;
 
   // Get staged files and diff
@@ -235,20 +280,42 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan> {
     // Use built-in prompt if template not found
   }
 
+  // When generating alternatives, extend the system prompt to include the third format.
+  const effectiveSystemPrompt = opts.generateAlternatives
+    ? `${systemPrompt}\n\nWhen asked to generate alternatives, return ONLY this JSON (no other text):\n{"type": "alternatives", "options": ["message1", "message2", "message3"]}`
+    : systemPrompt;
+
   // Build user message
   const userMessage = [
     `Staged files:\n${stagedFiles.join("\n")}`,
     `\nDiff:\n${truncateDiff(diff)}`,
     prompt ? `\nUser intent: ${prompt}` : "",
+    opts.feedbackHint ? `\nUser feedback on previous suggestion: ${opts.feedbackHint}` : "",
+    opts.generateAlternatives
+      ? `\nIMPORTANT: Generate exactly 3 different alternative commit messages. Return JSON only: {"type": "alternatives", "options": ["message1", "message2", "message3"]}`
+      : "",
   ].join("");
 
   debug("Calling LLM for commit analysis", { tier: "fast", fileCount: stagedFiles.length });
 
   const tier = resolveModelTier("commit");
-  const response = await provider.chat({ systemPrompt, userMessage, tier });
+  const response = await provider.chat({ systemPrompt: effectiveSystemPrompt, userMessage, tier });
 
   const parsed = parseCommitResponse(response.content);
   const tokens = { input: response.tokens.input, output: response.tokens.output };
+
+  // Alternatives mode: return up to 3 options instead of a plan
+  if (opts.generateAlternatives) {
+    const options = parseAlternativesResponse(response.content);
+    if (options && options.length > 0) {
+      return { kind: "alternatives", options, tokens } satisfies CommitAlternatives;
+    }
+    // Fallback: wrap whatever was parsed as a single-option list
+    const fallbackMsg = parsed.type === "single"
+      ? parsed.message
+      : parsed.commits[0]?.message ?? response.content.trim().slice(0, 100);
+    return { kind: "alternatives", options: [fallbackMsg], tokens } satisfies CommitAlternatives;
+  }
 
   // Handle split modes
   if (split === "never") {

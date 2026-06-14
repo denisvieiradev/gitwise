@@ -87,7 +87,7 @@ export {
 export type { PersistedReleasePlan } from "./commands/release-plan.js";
 export type { PrOptions, PrDraft, ApplyPrOptions, ApplyPrResult } from "./commands/pr.js";
 export type { ReviewOptions, ReviewResult, ReviewFinding } from "./commands/review.js";
-export type { CommitOptions, CommitPlan, CommitEntry, SplitMode, ApplyCommitPlanOptions, CommitStepResult } from "./commands/commit.js";
+export type { CommitOptions, CommitPlan, CommitEntry, SplitMode, ApplyCommitPlanOptions, CommitStepResult, CommitAlternatives } from "./commands/commit.js";
 
 // Provider exports — ModelConfig here is the provider-layer version
 export type { LLMProvider, LLMChatRequest, LLMChatResponse, ModelTier, ModelConfig, ProviderConfig } from "./providers/types.js";
