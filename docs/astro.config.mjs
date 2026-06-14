@@ -18,6 +18,7 @@ export default defineConfig({
         { label: "Exit Codes", link: "/exit-codes/" },
         { label: "Recovery", link: "/recovery/" },
         { label: "Supply Chain", link: "/supply-chain/" },
+        { label: "Publishing a Release", link: "/releasing/" },
       ],
     }),
   ],
