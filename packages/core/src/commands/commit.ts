@@ -32,14 +32,6 @@ export interface CommitOptions {
   commitConvention?: string;
   templatesPath?: string;
   repoRoot?: string;
-  feedbackHint?: string;
-  generateAlternatives?: boolean;
-}
-
-export interface CommitAlternatives {
-  kind: "alternatives";
-  options: string[];
-  tokens: { input: number; output: number };
 }
 
 export interface ApplyCommitPlanOptions {
@@ -198,8 +190,8 @@ Rules for plan:
 - "files" lists only the files belonging to that commit
 - Only return a plan when there are clearly separate concerns. Do not split for minor differences.`;
 
-export async function commit(opts: CommitOptions): Promise<CommitPlan | CommitAlternatives> {
-  const { cwd, provider, prompt, split = "auto", feedbackHint, generateAlternatives } = opts;
+export async function commit(opts: CommitOptions): Promise<CommitPlan> {
+  const { cwd, provider, prompt, split = "auto" } = opts;
 
   // Get staged files and diff
   const stagedFiles = await git.getStagedFilesList(cwd);
@@ -248,44 +240,15 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan | CommitAl
     `Staged files:\n${stagedFiles.join("\n")}`,
     `\nDiff:\n${truncateDiff(diff)}`,
     prompt ? `\nUser intent: ${prompt}` : "",
-    feedbackHint ? `\nUser feedback: ${feedbackHint}` : "",
-    generateAlternatives
-      ? "\nGenerate exactly 3 different alternative commit messages. Return JSON only: {\"alternatives\": [\"msg1\", \"msg2\", \"msg3\"]}"
-      : "",
   ].join("");
 
   debug("Calling LLM for commit analysis", { tier: "fast", fileCount: stagedFiles.length });
 
   const tier = resolveModelTier("commit");
   const response = await provider.chat({ systemPrompt, userMessage, tier });
-  const tokens = { input: response.tokens.input, output: response.tokens.output };
-
-  // Handle alternatives mode
-  if (generateAlternatives) {
-    let options: string[] = [];
-    try {
-      const raw = response.content.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
-      const parsed = JSON.parse(raw) as { alternatives?: unknown };
-      if (Array.isArray(parsed.alternatives)) {
-        options = (parsed.alternatives as unknown[]).filter((v): v is string => typeof v === "string");
-      }
-    } catch {
-      // Fall back to extracting lines that look like commit messages
-    }
-    if (options.length === 0) {
-      // Attempt to parse as normal commit plan and use the message as the sole option
-      try {
-        const parsed = parseCommitResponse(response.content);
-        const msg = parsed.type === "single" ? parsed.message : parsed.commits[0]?.message ?? "chore: update";
-        options = [msg];
-      } catch {
-        options = ["chore: update"];
-      }
-    }
-    return { kind: "alternatives", options, tokens } satisfies CommitAlternatives;
-  }
 
   const parsed = parseCommitResponse(response.content);
+  const tokens = { input: response.tokens.input, output: response.tokens.output };
 
   // Handle split modes
   if (split === "never") {
