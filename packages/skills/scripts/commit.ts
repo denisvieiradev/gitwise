@@ -41,7 +41,9 @@ async function main(): Promise<void> {
   const apiKey = await getApiKey();
   const provider = createProvider({ kind: config.provider, models: config.models, apiKey, claudeCliPath: config.claudeCliPath });
 
-  const plan = await commit({ prompt: intent, split: splitMode, provider, cwd });
+  const result = await commit({ prompt: intent, split: splitMode, provider, cwd });
+  if (result.kind === "alternatives") throw new Error("Unexpected alternatives result from commit()");
+  const plan = result;
 
   // Emit markdown plan
   if (plan.kind === "single") {
