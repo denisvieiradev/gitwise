@@ -5,7 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — two-phase release lifecycle
+## [Unreleased]
+
+## [0.1.0] - 2026-06-11 — gitwise initial release
+
+`gitwise` is a focused AI git toolbelt — `commit`, `review`, `pr`, `release` —
+distributed as both a CLI (`gw`) and a Claude Code plugin. The locked-version
+monorepo (`@denisvieiradev/gitwise-core`, `@denisvieiradev/gitwise`,
+`@denisvieiradev/gitwise-skills`) starts at `0.1.0`.
 
 ### Added
 - `gw release prepare [version]` and `gw release finish` subcommands split the
@@ -23,20 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `STRATEGY_DEVELOP_MISSING`, `STRATEGY_RELEASE_BRANCH_EXISTS`,
   `STALE_PLAN_TAG_EXISTS`, `STALE_PLAN_BRANCH_MISMATCH`, `NO_RELEASE_PLAN`,
   `INVALID_PLAN_SCHEMA`, `INVALID_PLAN_JSON`, `RELEASE_BRANCH_UNMERGED`.
-
-### Changed
-- `gw release` (no subcommand) keeps today's one-shot UX but now drives the
-  unified `prepare → confirm → finish` path internally; behavior on a
-  single-branch repo is unchanged.
-
-## [0.1.0] - 2026-05-16 — gitwise initial release
-
-`gitwise` is a focused AI git toolbelt — `commit`, `review`, `pr`, `release` —
-distributed as both a CLI (`gw`) and a Claude Code plugin. The locked-version
-monorepo (`@denisvieiradev/gitwise-core`, `@denisvieiradev/gitwise`,
-`@denisvieiradev/gitwise-skills`) starts at `0.1.0`.
-
-### Added
 - Monorepo with three publishable packages (`core`, `cli`, `skills`); locked
   versions across all three.
 - `~/.gitwise/config.json` + optional per-repo `<repo>/.gitwise.json` config
@@ -48,6 +41,9 @@ monorepo (`@denisvieiradev/gitwise-core`, `@denisvieiradev/gitwise`,
   `gw review "<intent>"`, ...).
 
 ### Changed
+- `gw release` (no subcommand) keeps today's one-shot UX but now drives the
+  unified `prepare → confirm → finish` path internally; behavior on a
+  single-branch repo is unchanged.
 - User-global config layout: `~/.gitwise/` with optional `<repo>/.gitwise.json`
   overrides.
 - `review` no longer loads a techspec; it operates on the current branch diff
