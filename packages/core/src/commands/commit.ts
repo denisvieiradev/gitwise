@@ -233,6 +233,7 @@ Rules for plan:
 - "message" is the commit title (max 72 chars, imperative, lowercase)
 - "description" is a brief one-line explanation of the change purpose
 - "files" lists only the files belonging to that commit
+- Every staged file must appear in exactly one commit — do not leave any file unassigned
 - Only return a plan when there are clearly separate concerns. Do not split for minor differences.`;
 
 export async function commit(opts: CommitOptions): Promise<CommitPlan | CommitAlternatives> {
@@ -332,6 +333,11 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan | CommitAl
 
   if (parsed.type === "plan" && parsed.commits.length > 1) {
     if (split === "always" || split === "auto") {
+      const assignedFiles = new Set(parsed.commits.flatMap(c => c.files));
+      const missing = stagedFiles.filter(f => !assignedFiles.has(f));
+      if (missing.length > 0) {
+        parsed.commits[parsed.commits.length - 1]!.files.push(...missing);
+      }
       return {
         kind: "split",
         commits: parsed.commits,

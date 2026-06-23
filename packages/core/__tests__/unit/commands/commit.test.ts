@@ -271,6 +271,60 @@ describe("commit()", () => {
     expect(plan.tokens.input).toBe(42);
     expect(plan.tokens.output).toBe(15);
   });
+
+  it("split plan: appends staged files omitted by the LLM to the last commit", async () => {
+    const mock = new MockLLMProvider();
+    // LLM mentions only a.ts and b.ts but c.ts is also staged
+    mock.queueByIndex({
+      content: JSON.stringify({
+        type: "plan",
+        commits: [
+          { message: "feat: add a", files: ["a.ts"] },
+          { message: "feat: add b", files: ["b.ts"] },
+        ],
+      }),
+    });
+
+    await writeFile(join(tempDir, "a.ts"), "const a = 1;");
+    await writeFile(join(tempDir, "b.ts"), "const b = 2;");
+    await writeFile(join(tempDir, "c.ts"), "const c = 3;");
+    await exec("git", ["add", "a.ts", "b.ts", "c.ts"], { cwd: tempDir });
+
+    const plan = await commit({ cwd: tempDir, provider: mock });
+
+    expect(plan.kind).toBe("split");
+    if (plan.kind !== "split") return;
+    const allAssigned = plan.commits.flatMap(c => c.files);
+    expect(allAssigned).toContain("c.ts");
+    // Missing file appended to last commit
+    expect(plan.commits[plan.commits.length - 1]!.files).toContain("c.ts");
+  });
+
+  it("split plan: all staged files covered when LLM assigns empty files list to an entry", async () => {
+    const mock = new MockLLMProvider();
+    // LLM returns a commit with an empty files array
+    mock.queueByIndex({
+      content: JSON.stringify({
+        type: "plan",
+        commits: [
+          { message: "feat: add a", files: ["a.ts"] },
+          { message: "chore: misc", files: [] },
+        ],
+      }),
+    });
+
+    await writeFile(join(tempDir, "a.ts"), "const a = 1;");
+    await writeFile(join(tempDir, "b.ts"), "const b = 2;");
+    await exec("git", ["add", "a.ts", "b.ts"], { cwd: tempDir });
+
+    const plan = await commit({ cwd: tempDir, provider: mock });
+
+    expect(plan.kind).toBe("split");
+    if (plan.kind !== "split") return;
+    const allAssigned = plan.commits.flatMap(c => c.files);
+    expect(allAssigned).toContain("a.ts");
+    expect(allAssigned).toContain("b.ts");
+  });
 });
 
 describe("applyCommitPlan()", () => {

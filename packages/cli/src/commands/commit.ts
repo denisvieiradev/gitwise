@@ -380,9 +380,10 @@ export function makeCommitCommand(): Command {
         applySpinner.message("Pushing…");
         try {
           await git.push(cwd, "origin", "HEAD");
-        } catch {
-          applySpinner.stop("Committed (push failed — check remote)");
-          p.outro(chalk.yellow("Committed but push failed. Run `git push` manually."));
+        } catch (pushErr: unknown) {
+          const reason = pushErr instanceof Error ? pushErr.message : String(pushErr);
+          applySpinner.stop("Committed (push failed)");
+          p.outro(chalk.yellow(`Committed but push failed: ${reason}\nRun \`git push\` manually.`));
           return;
         }
         applySpinner.stop("Committed and pushed");
