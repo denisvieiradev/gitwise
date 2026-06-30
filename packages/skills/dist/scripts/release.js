@@ -305,7 +305,7 @@ var init_version = __esm({
   "../../node_modules/@anthropic-ai/sdk/version.mjs"() {
     "use strict";
     init_esm_shims();
-    VERSION = "0.109.0";
+    VERSION = "0.106.0";
   }
 });
 
@@ -2100,7 +2100,7 @@ var init_streaming = __esm({
                   throw e;
                 }
               }
-              if (sse.event === "message_start" || sse.event === "message_delta" || sse.event === "message_stop" || sse.event === "content_block_start" || sse.event === "content_block_delta" || sse.event === "content_block_stop" || sse.event === "message" || sse.event === "user.message" || sse.event === "user.interrupt" || sse.event === "user.tool_confirmation" || sse.event === "user.custom_tool_result" || sse.event === "user.tool_result" || sse.event === "agent.message" || sse.event === "agent.thinking" || sse.event === "agent.tool_use" || sse.event === "agent.tool_result" || sse.event === "agent.mcp_tool_use" || sse.event === "agent.mcp_tool_result" || sse.event === "agent.custom_tool_use" || sse.event === "agent.thread_context_compacted" || sse.event === "session.status_running" || sse.event === "session.status_idle" || sse.event === "session.status_rescheduled" || sse.event === "session.status_terminated" || sse.event === "session.error" || sse.event === "session.deleted" || sse.event === "session.updated" || sse.event === "span.model_request_start" || sse.event === "span.model_request_end" || sse.event === "span.outcome_evaluation_start" || sse.event === "span.outcome_evaluation_ongoing" || sse.event === "span.outcome_evaluation_end" || sse.event === "user.define_outcome" || sse.event === "agent.thread_message_received" || sse.event === "agent.thread_message_sent" || sse.event === "agent.session_thread_message_received" || sse.event === "agent.session_thread_message_sent" || sse.event === "session.thread_created" || sse.event === "session.thread_status_created" || sse.event === "session.thread_status_running" || sse.event === "session.thread_status_idle" || sse.event === "session.thread_status_rescheduled" || sse.event === "session.thread_status_terminated" || sse.event === "event_start" || sse.event === "event_delta" || sse.event === "system.message") {
+              if (sse.event === "message_start" || sse.event === "message_delta" || sse.event === "message_stop" || sse.event === "content_block_start" || sse.event === "content_block_delta" || sse.event === "content_block_stop" || sse.event === "message" || sse.event === "user.message" || sse.event === "user.interrupt" || sse.event === "user.tool_confirmation" || sse.event === "user.custom_tool_result" || sse.event === "user.tool_result" || sse.event === "agent.message" || sse.event === "agent.thinking" || sse.event === "agent.tool_use" || sse.event === "agent.tool_result" || sse.event === "agent.mcp_tool_use" || sse.event === "agent.mcp_tool_result" || sse.event === "agent.custom_tool_use" || sse.event === "agent.thread_context_compacted" || sse.event === "session.status_running" || sse.event === "session.status_idle" || sse.event === "session.status_rescheduled" || sse.event === "session.status_terminated" || sse.event === "session.error" || sse.event === "session.deleted" || sse.event === "session.updated" || sse.event === "span.model_request_start" || sse.event === "span.model_request_end" || sse.event === "span.outcome_evaluation_start" || sse.event === "span.outcome_evaluation_ongoing" || sse.event === "span.outcome_evaluation_end" || sse.event === "user.define_outcome" || sse.event === "agent.thread_message_received" || sse.event === "agent.thread_message_sent" || sse.event === "agent.session_thread_message_received" || sse.event === "agent.session_thread_message_sent" || sse.event === "session.thread_created" || sse.event === "session.thread_status_created" || sse.event === "session.thread_status_running" || sse.event === "session.thread_status_idle" || sse.event === "session.thread_status_rescheduled" || sse.event === "session.thread_status_terminated" || sse.event === "system.message") {
                 try {
                   yield JSON.parse(sse.data);
                 } catch (e) {
@@ -2507,7 +2507,7 @@ var init_api_promise = __esm({
 });
 
 // ../../node_modules/@anthropic-ai/sdk/core/pagination.mjs
-var _AbstractPage_client, AbstractPage, PagePromise, Page, PageCursor, BidirectionalPageCursor;
+var _AbstractPage_client, AbstractPage, PagePromise, Page, PageCursor;
 var init_pagination = __esm({
   "../../node_modules/@anthropic-ai/sdk/core/pagination.mjs"() {
     "use strict";
@@ -2621,30 +2621,6 @@ var init_pagination = __esm({
         super(client, response, body, options);
         this.data = body.data || [];
         this.next_page = body.next_page || null;
-      }
-      getPaginatedItems() {
-        return this.data ?? [];
-      }
-      nextPageRequestOptions() {
-        const cursor = this.next_page;
-        if (!cursor) {
-          return null;
-        }
-        return {
-          ...this.options,
-          query: {
-            ...maybeObj(this.options.query),
-            page: cursor
-          }
-        };
-      }
-    };
-    BidirectionalPageCursor = class extends AbstractPage {
-      constructor(client, response, body, options) {
-        super(client, response, body, options);
-        this.data = body.data || [];
-        this.next_page = body.next_page || null;
-        this.prev_page = body.prev_page || null;
       }
       getPaginatedItems() {
         return this.data ?? [];
@@ -3116,9 +3092,7 @@ var init_deployments = __esm({
        * @example
        * ```ts
        * const betaManagedAgentsDeployment =
-       *   await client.beta.deployments.retrieve(
-       *     'depl_011CZkZcDH3vPqd7xnEfwTai',
-       *   );
+       *   await client.beta.deployments.retrieve('deployment_id');
        * ```
        */
       retrieve(deploymentID, params = {}, options) {
@@ -3137,9 +3111,7 @@ var init_deployments = __esm({
        * @example
        * ```ts
        * const betaManagedAgentsDeployment =
-       *   await client.beta.deployments.update(
-       *     'depl_011CZkZcDH3vPqd7xnEfwTai',
-       *   );
+       *   await client.beta.deployments.update('deployment_id');
        * ```
        */
       update(deploymentID, params, options) {
@@ -3181,9 +3153,7 @@ var init_deployments = __esm({
        * @example
        * ```ts
        * const betaManagedAgentsDeployment =
-       *   await client.beta.deployments.archive(
-       *     'depl_011CZkZcDH3vPqd7xnEfwTai',
-       *   );
+       *   await client.beta.deployments.archive('deployment_id');
        * ```
        */
       archive(deploymentID, params = {}, options) {
@@ -3202,9 +3172,7 @@ var init_deployments = __esm({
        * @example
        * ```ts
        * const betaManagedAgentsDeployment =
-       *   await client.beta.deployments.pause(
-       *     'depl_011CZkZcDH3vPqd7xnEfwTai',
-       *   );
+       *   await client.beta.deployments.pause('deployment_id');
        * ```
        */
       pause(deploymentID, params = {}, options) {
@@ -3223,9 +3191,7 @@ var init_deployments = __esm({
        * @example
        * ```ts
        * const betaManagedAgentsDeploymentRun =
-       *   await client.beta.deployments.run(
-       *     'depl_011CZkZcDH3vPqd7xnEfwTai',
-       *   );
+       *   await client.beta.deployments.run('deployment_id');
        * ```
        */
       run(deploymentID, params = {}, options) {
@@ -3244,9 +3210,7 @@ var init_deployments = __esm({
        * @example
        * ```ts
        * const betaManagedAgentsDeployment =
-       *   await client.beta.deployments.unpause(
-       *     'depl_011CZkZcDH3vPqd7xnEfwTai',
-       *   );
+       *   await client.beta.deployments.unpause('deployment_id');
        * ```
        */
       unpause(deploymentID, params = {}, options) {
@@ -5352,7 +5316,6 @@ async function realpathOrSelf(p) {
 async function canonicalize(abs) {
   const tail = [];
   let prefix = abs;
-  let hops = 0;
   for (; ; ) {
     let real;
     try {
@@ -5364,9 +5327,6 @@ async function canonicalize(abs) {
       } catch {
       }
       if (isLink) {
-        if (++hops > 40) {
-          throw new ToolError(`path ${JSON.stringify(abs)} has too many levels of symbolic links`);
-        }
         prefix = path5.resolve(path5.dirname(prefix), await fs2.readlink(prefix));
         continue;
       }
@@ -5382,12 +5342,19 @@ async function canonicalize(abs) {
 }
 async function confineToRoot(root, p, opts) {
   const allowOutside = opts?.allowOutside ?? false;
+  if (path5.isAbsolute(p)) {
+    if (!allowOutside) {
+      throw new ToolError(`absolute path ${JSON.stringify(p)} not permitted`);
+    }
+    return path5.resolve(p);
+  }
   const realRoot = await realpathOrSelf(path5.resolve(root));
   const abs = path5.resolve(realRoot, p);
   if (allowOutside)
     return abs;
   const real = await canonicalize(abs);
-  if (real !== realRoot && !real.startsWith(realRoot + path5.sep)) {
+  const rootSep = realRoot.endsWith(path5.sep) ? realRoot : realRoot + path5.sep;
+  if (real !== realRoot && !real.startsWith(rootSep)) {
     throw new ToolError(`path ${JSON.stringify(p)} escapes workdir`);
   }
   return real;
@@ -5452,8 +5419,8 @@ var init_fs_util = __esm({
 import * as fs3 from "fs/promises";
 import * as fssync from "fs";
 import * as path6 from "path";
-import { execFile as execFile4 } from "child_process";
-import { promisify as promisify4 } from "util";
+import { execFile as execFile5 } from "child_process";
+import { promisify as promisify5 } from "util";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 async function setupSkills(ctx) {
@@ -5541,7 +5508,7 @@ function assertNoSpecialMembers(verboseListing) {
 }
 async function runArchiveTool(cmd, args) {
   try {
-    const { stdout } = await execFileAsync(cmd, args);
+    const { stdout } = await execFileAsync2(cmd, args);
     return stdout;
   } catch (e) {
     if (e != null && typeof e === "object" && e.code === "ENOENT") {
@@ -5603,7 +5570,7 @@ async function readHead(file, n) {
     await handle.close();
   }
 }
-var execFileAsync;
+var execFileAsync2;
 var init_skills = __esm({
   "../../node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs"() {
     "use strict";
@@ -5611,7 +5578,7 @@ var init_skills = __esm({
     init_error();
     init_log();
     init_fs_util();
-    execFileAsync = promisify4(execFile4);
+    execFileAsync2 = promisify5(execFile5);
   }
 });
 
@@ -5875,7 +5842,6 @@ function betaGlobTool(ctx) {
       if (!ctx.unrestrictedPaths && pat.split(/[\\/]/).includes("..")) {
         throw new ToolError('glob: ".." is not permitted in the pattern');
       }
-      const realRoot = ctx.unrestrictedPaths ? root : await fs4.realpath(root).catch(() => root);
       const matches = [];
       try {
         for await (const entry of fsGlob(pat, {
@@ -5886,16 +5852,8 @@ function betaGlobTool(ctx) {
           if (!entry.isFile())
             continue;
           const full = path7.join(entry.parentPath, entry.name);
-          if (!ctx.unrestrictedPaths) {
-            let real;
-            try {
-              real = await fs4.realpath(full);
-            } catch {
-              continue;
-            }
-            if (!isWithin(realRoot, real))
-              continue;
-          }
+          if (!ctx.unrestrictedPaths && !isWithin(root, full))
+            continue;
           let mtime = 0;
           try {
             mtime = (await fs4.stat(full)).mtimeMs;
@@ -7291,7 +7249,7 @@ var init_batches = __esm({
        * can take up to 24 hours to complete.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -7332,7 +7290,7 @@ var init_batches = __esm({
        * `results_url` field in the response.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -7357,7 +7315,7 @@ var init_batches = __esm({
        * returned first.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -7385,7 +7343,7 @@ var init_batches = __esm({
        * like to delete an in-progress batch, you must first cancel it.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -7417,7 +7375,7 @@ var init_batches = __esm({
        * non-interruptible.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -7445,7 +7403,7 @@ var init_batches = __esm({
        * requests. Use the `custom_id` field to match results to requests.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -8990,7 +8948,7 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
        * including tools, images, and documents, without creating it.
        *
        * Learn more about token counting in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/token-counting)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/token-counting)
        *
        * @example
        * ```ts
@@ -9003,15 +8961,12 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
        */
       countTokens(params, options) {
         const modifiedParams = transformOutputFormat(params);
-        const { betas, user_profile_id, ...body } = modifiedParams;
+        const { betas, ...body } = modifiedParams;
         return this._client.post("/v1/messages/count_tokens?beta=true", {
           body,
           ...options,
           headers: buildHeaders([
-            {
-              "anthropic-beta": [...betas ?? [], "token-counting-2024-11-01"].toString(),
-              ...user_profile_id != null ? { "anthropic-user-profile-id": user_profile_id } : void 0
-            },
+            { "anthropic-beta": [...betas ?? [], "token-counting-2024-11-01"].toString() },
             options?.headers
           ])
         });
@@ -9110,9 +9065,8 @@ var init_events = __esm({
        * ```
        */
       stream(sessionID, params = {}, options) {
-        const { betas, ...query } = params ?? {};
+        const { betas } = params ?? {};
         return this._client.get(path4`/v1/sessions/${sessionID}/events/stream?beta=true`, {
-          query,
           ...options,
           headers: buildHeaders([
             { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
@@ -9538,7 +9492,7 @@ var init_sessions = __esm({
        */
       list(params = {}, options) {
         const { betas, ...query } = params ?? {};
-        return this._client.getAPIList("/v1/sessions?beta=true", BidirectionalPageCursor, {
+        return this._client.getAPIList("/v1/sessions?beta=true", PageCursor, {
           query,
           ...options,
           headers: buildHeaders([
@@ -10922,7 +10876,7 @@ var init_batches2 = __esm({
        * can take up to 24 hours to complete.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -10959,7 +10913,7 @@ var init_batches2 = __esm({
        * `results_url` field in the response.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -10976,7 +10930,7 @@ var init_batches2 = __esm({
        * returned first.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -10996,7 +10950,7 @@ var init_batches2 = __esm({
        * like to delete an in-progress batch, you must first cancel it.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -11019,7 +10973,7 @@ var init_batches2 = __esm({
        * non-interruptible.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -11039,7 +10993,7 @@ var init_batches2 = __esm({
        * requests. Use the `custom_id` field to match results to requests.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -11161,7 +11115,7 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
        * including tools, images, and documents, without creating it.
        *
        * Learn more about token counting in our
-       * [user guide](https://platform.claude.com/docs/en/build-with-claude/token-counting)
+       * [user guide](https://docs.claude.com/en/docs/build-with-claude/token-counting)
        *
        * @example
        * ```ts
@@ -11172,16 +11126,8 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
        *   });
        * ```
        */
-      countTokens(params, options) {
-        const { user_profile_id, ...body } = params;
-        return this._client.post("/v1/messages/count_tokens", {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { ...user_profile_id != null ? { "anthropic-user-profile-id": user_profile_id } : void 0 },
-            options?.headers
-          ])
-        });
+      countTokens(body, options) {
+        return this._client.post("/v1/messages/count_tokens", { body, ...options });
       }
     };
     DEPRECATED_MODELS2 = {
@@ -12091,7 +12037,7 @@ init_esm_shims();
 // ../core/package.json
 var package_default = {
   name: "@denisvieiradev/gitwise-core",
-  version: "1.1.0",
+  version: "0.1.0",
   description: "Shared logic for gitwise: non-interactive commit/review/pr/release commands, LLM providers, git/github primitives, prompt templates.",
   type: "module",
   main: "./dist/index.js",
@@ -12141,10 +12087,10 @@ var package_default = {
   },
   homepage: "https://github.com/denisvieiradev/gitwise#readme",
   engines: {
-    node: ">=22.12.0"
+    node: ">=18"
   },
   dependencies: {
-    "@anthropic-ai/sdk": "^0.109.0"
+    "@anthropic-ai/sdk": "^0.106.0"
   }
 };
 
@@ -12597,7 +12543,7 @@ async function acquireRepoLock(repoPath, options = {}) {
     command,
     acquiredAt: now().toISOString()
   };
-  await tryAcquire(lockPath, payload, staleMs, isAlive, now, 0, options.onReclaim);
+  await tryAcquire(lockPath, payload, staleMs, isAlive, now, 0);
   let released = false;
   return async () => {
     if (released) return;
@@ -12609,7 +12555,7 @@ async function acquireRepoLock(repoPath, options = {}) {
     }
   };
 }
-async function tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt, onReclaim) {
+async function tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt) {
   try {
     const handle = await open2(lockPath, "wx");
     try {
@@ -12641,8 +12587,7 @@ async function tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt, onR
   } catch (unlinkErr) {
     if (unlinkErr.code !== "ENOENT") throw unlinkErr;
   }
-  if (onReclaim) await onReclaim();
-  return tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt + 1, onReclaim);
+  return tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt + 1);
 }
 async function readExisting(lockPath) {
   try {
@@ -12683,10 +12628,12 @@ function defaultIsProcessAlive(pid) {
 
 // ../core/src/providers/claude-code.ts
 init_esm_shims();
-import { execSync, spawn } from "child_process";
+import { execFile as execFile3, execSync, spawn } from "child_process";
 import fs from "fs";
 import os from "os";
 import path3 from "path";
+import { promisify as promisify3 } from "util";
+var execFileAsync = promisify3(execFile3);
 var LARGE_PROMPT_THRESHOLD = 1e5;
 var DEFAULT_TIMEOUT_MS = 12e4;
 var COMMON_CLAUDE_PATHS = [
@@ -12764,12 +12711,35 @@ var ClaudeCodeProvider = class {
     return args;
   }
   async callViaCli(args) {
-    return this.spawnClaude(args, "");
+    try {
+      const { stdout } = await execFileAsync(this.claudeBinaryPath, args, {
+        timeout: DEFAULT_TIMEOUT_MS,
+        maxBuffer: 10 * 1024 * 1024,
+        ...{ input: "" }
+      });
+      return this.parseResponse(stdout);
+    } catch (err) {
+      const execErr = err;
+      if (execErr.stdout) {
+        try {
+          const parsed = JSON.parse(execErr.stdout);
+          if (parsed.is_error) {
+            throw new Error(`Claude CLI error: ${parsed.result}`);
+          }
+        } catch (parseErr) {
+          if (parseErr instanceof Error && parseErr.message.startsWith("Claude CLI error:")) {
+            throw parseErr;
+          }
+        }
+      }
+      const stderr = execErr.stderr?.replace(/Warning: no stdin data.*\n?/g, "").trim();
+      if (stderr) {
+        throw new Error(`Claude CLI failed: ${stderr}`);
+      }
+      throw this.wrapError(err);
+    }
   }
   async callViaStdin(args, input) {
-    return this.spawnClaude(args, input);
-  }
-  async spawnClaude(args, input) {
     return new Promise((resolve4, reject) => {
       const child = spawn(this.claudeBinaryPath, args, {
         stdio: ["pipe", "pipe", "pipe"],
@@ -13021,7 +12991,8 @@ var COMMAND_TIER_MAP = {
   commit: "fast",
   review: "powerful",
   pr: "fast",
-  release: "fast"
+  release: "fast",
+  issue: "fast"
 };
 function resolveModelTier(command) {
   return COMMAND_TIER_MAP[command] ?? "balanced";
@@ -13033,9 +13004,12 @@ init_esm_shims();
 
 // ../core/src/commands/pr.ts
 init_esm_shims();
-import { execFile as execFile3 } from "child_process";
-import { promisify as promisify3 } from "util";
-var exec3 = promisify3(execFile3);
+import { execFile as execFile4 } from "child_process";
+import { promisify as promisify4 } from "util";
+var exec3 = promisify4(execFile4);
+
+// ../core/src/commands/issue.ts
+init_esm_shims();
 
 // ../core/src/commands/release.ts
 init_esm_shims();
@@ -13652,28 +13626,6 @@ ${dirty}`,
   await saveReleasePlan(cwd, persistedPlan);
   await finishRelease({ cwd, tagAndPush, createGhRelease, workspacePropagation, signTags });
 }
-function finishPushFailure(opts) {
-  const { stage, tag, mainBranch, developBranch, newVersion, err } = opts;
-  const cause = err instanceof Error ? err.message : String(err);
-  const action = stage === "tag" ? `create the tag "${tag}"` : stage === "push-main" ? `push "${mainBranch}" (with tags) to origin` : `push "${developBranch}" to origin`;
-  const recoverySteps = stage === "tag" ? [
-    `git tag -a ${tag} -F .gitwise/release-${newVersion}.md`,
-    `git push origin ${mainBranch} --follow-tags`
-  ] : [
-    `git ls-remote --tags origin ${tag}  # check whether the tag already reached origin`,
-    `git fetch origin`,
-    `git merge origin/${mainBranch}  # do NOT rebase \u2014 that changes the hash ${tag} points to`,
-    `git push origin ${mainBranch} --follow-tags`
-  ];
-  return new GitwiseError({
-    code: "FINISH_PUSH_FAILED",
-    message: `Failed to ${action} while finishing v${newVersion}: ${cause}. The release plan file has already been deleted, so "gw release finish" cannot be re-run, and the release commit already exists locally, so "gw release prepare" will refuse with NO_COMMITS. Recover manually:
-${recoverySteps.map((s) => `  ${s}`).join("\n")}`,
-    exitCode: EXIT_CODES.GIT_FAILED,
-    cause: err,
-    details: { stage, tag, mainBranch, developBranch, newVersion }
-  });
-}
 async function finishRelease(opts) {
   const {
     cwd,
@@ -13864,27 +13816,15 @@ ${cause}`,
     await checkout(cwd, mainBranch);
   }
   if (tagAndPush) {
-    try {
-      await createTag(cwd, tag, notes, { signed: signTags !== false });
-    } catch (err) {
-      throw finishPushFailure({ stage: "tag", tag, mainBranch, newVersion: plan.newVersion, err });
-    }
-    try {
-      await pushWithTags(cwd, "origin", mainBranch);
-    } catch (err) {
-      throw finishPushFailure({ stage: "push-main", tag, mainBranch, newVersion: plan.newVersion, err });
-    }
+    await createTag(cwd, tag, notes, { signed: signTags !== false });
+    await pushWithTags(cwd, "origin", mainBranch);
     debug("release.finish.tag.pushed", {
       tag,
       branch: mainBranch,
       remote: "origin"
     });
     if (strategy.requiresDevelop()) {
-      try {
-        await push(cwd, "origin", developBranch);
-      } catch (err) {
-        throw finishPushFailure({ stage: "push-develop", tag, mainBranch, developBranch, newVersion: plan.newVersion, err });
-      }
+      await push(cwd, "origin", developBranch);
     }
   }
   if (createGhRelease) {

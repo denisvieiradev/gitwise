@@ -12027,7 +12027,7 @@ var init_sdk = __esm({
   }
 });
 
-// scripts/review.ts
+// scripts/issue.ts
 init_esm_shims();
 
 // ../core/src/index.ts
@@ -12213,26 +12213,8 @@ async function run(args2, cwd) {
     });
   }
 }
-async function getDiff(cwd, base2) {
-  const args2 = base2 ? ["diff", `${base2}...HEAD`] : ["diff"];
-  return run(args2, cwd);
-}
-async function detectBaseBranch(cwd) {
-  try {
-    await exec("git", ["rev-parse", "--verify", "main"], { cwd, timeout: GIT_TIMEOUT_MS });
-    return "main";
-  } catch {
-  }
-  try {
-    await exec("git", ["rev-parse", "--verify", "master"], { cwd, timeout: GIT_TIMEOUT_MS });
-    return "master";
-  } catch {
-  }
-  throw new GitwiseError({
-    code: "NO_BASE_BRANCH",
-    message: "No base branch found: neither main nor master exists",
-    exitCode: EXIT_CODES.REPO_STATE_INVALID
-  });
+async function getBranch(cwd) {
+  return run(["rev-parse", "--abbrev-ref", "HEAD"], cwd);
 }
 
 // ../core/src/infra/github.ts
@@ -12240,6 +12222,34 @@ init_esm_shims();
 import { execFile as execFile2 } from "child_process";
 import { promisify as promisify2 } from "util";
 var exec2 = promisify2(execFile2);
+async function isGhAvailable() {
+  try {
+    await exec2("gh", ["--version"]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+async function createIssue(params) {
+  debug("Creating issue via gh", { title: params.title });
+  const args2 = ["issue", "create", "--title", params.title, "--body", params.body];
+  for (const label of params.labels ?? []) {
+    args2.push("--label", label);
+  }
+  for (const assignee of params.assignees ?? []) {
+    args2.push("--assignee", assignee);
+  }
+  const result = await exec2("gh", args2, { cwd: params.cwd });
+  const url = result.stdout?.trim();
+  if (!url) {
+    throw new GitwiseError({
+      code: "GH_FAILED",
+      message: "gh issue create returned empty output \u2014 check gh auth status",
+      details: { command: "gh issue create" }
+    });
+  }
+  return { url };
+}
 
 // ../core/src/infra/env.ts
 init_esm_shims();
@@ -12552,9 +12562,9 @@ async function readRepoConfig(cwd) {
 }
 
 // ../core/src/config/merge.ts
-function deepMerge(base2, override) {
+function deepMerge(base, override) {
   return {
-    ...base2,
+    ...base,
     ...override.language !== void 0 && { language: override.language },
     ...override.defaultBaseBranch !== void 0 && { defaultBaseBranch: override.defaultBaseBranch },
     ...override.commitConvention !== void 0 && { commitConvention: override.commitConvention },
@@ -12562,7 +12572,7 @@ function deepMerge(base2, override) {
     ...override.releaseStrategy !== void 0 && { releaseStrategy: override.releaseStrategy },
     ...override.developBranch !== void 0 && { developBranch: override.developBranch },
     models: {
-      ...base2.models,
+      ...base.models,
       ...override.models ?? {}
     }
   };
@@ -12662,148 +12672,6 @@ var SUPPORTED_COMMANDS = Object.keys(COMMAND_TIER_MAP);
 
 // ../core/src/commands/review.ts
 init_esm_shims();
-var MAX_DIFF_CHARS = 8e4;
-var DEFAULT_REVIEW_TEMPLATE = `You are a senior code reviewer. Analyze the diff and produce a code review with findings in these categories:
-
-## Critical
-Issues that must be fixed before merging (bugs, security, data loss).
-
-## Suggestions
-Improvements worth considering (performance, readability, patterns).
-
-## Nitpicks
-Minor style or convention issues.
-
-For each finding, include:
-- File and line reference
-- Description of the issue
-- Suggested fix
-
-End with a summary: total findings count per category and overall recommendation (approve, request changes).
-
-{{diff}}
-`;
-function truncateDiff(diff) {
-  if (diff.length <= MAX_DIFF_CHARS) return diff;
-  return diff.slice(0, MAX_DIFF_CHARS) + "\n\n[diff truncated \u2014 too large for context window]";
-}
-function extractSection(markdown, heading) {
-  const headingRegex = new RegExp(`##\\s*${heading}\\b([\\s\\S]*?)(?=##|$)`, "i");
-  const match = markdown.match(headingRegex);
-  if (!match || !match[1]) return [];
-  return match[1].split("\n").map((l) => l.replace(/^[-*•]\s*/, "").trim()).filter((l) => l.length > 0);
-}
-function linesToFindings(lines) {
-  return lines.map((line) => ({
-    description: line
-  }));
-}
-function parseReviewMarkdown(text) {
-  return {
-    critical: linesToFindings(extractSection(text, "Critical")),
-    suggestions: linesToFindings(extractSection(text, "Suggestions")),
-    nitpicks: linesToFindings(extractSection(text, "Nitpicks"))
-  };
-}
-function buildMarkdown(parsed) {
-  const sections = [];
-  sections.push("## Critical");
-  if (parsed.critical.length > 0) {
-    sections.push(...parsed.critical.map((f) => `- ${f.description}`));
-  } else {
-    sections.push("_No critical issues found._");
-  }
-  sections.push("\n## Suggestions");
-  if (parsed.suggestions.length > 0) {
-    sections.push(...parsed.suggestions.map((f) => `- ${f.description}`));
-  } else {
-    sections.push("_No suggestions._");
-  }
-  sections.push("\n## Nitpicks");
-  if (parsed.nitpicks.length > 0) {
-    sections.push(...parsed.nitpicks.map((f) => `- ${f.description}`));
-  } else {
-    sections.push("_No nitpicks._");
-  }
-  return sections.join("\n");
-}
-async function review(opts) {
-  const { cwd, provider, prompt, tier: requestedTier } = opts;
-  const baseBranch = opts.baseBranch ?? await resolveBaseBranch(cwd);
-  let diff;
-  try {
-    diff = await getDiff(cwd, baseBranch);
-  } catch (err) {
-    if (isUnknownRevisionError(err)) {
-      diff = await getDiff(cwd);
-    } else {
-      const reason = errorMessage(err);
-      throw new GitwiseError({
-        code: "DIFF_FAILED",
-        message: `Failed to compute diff against ${baseBranch}: ${reason}`,
-        exitCode: EXIT_CODES.GIT_FAILED,
-        cause: err
-      });
-    }
-  }
-  if (!diff) {
-    throw new GitwiseError({
-      code: "EMPTY_DIFF",
-      message: `No changes found between current branch and ${baseBranch}`,
-      exitCode: EXIT_CODES.NOTHING_STAGED
-    });
-  }
-  let templateContent;
-  try {
-    templateContent = await loadTemplate("review", {
-      repoRoot: opts.repoRoot ?? cwd,
-      templatesPath: opts.templatesPath
-    });
-  } catch {
-    templateContent = DEFAULT_REVIEW_TEMPLATE;
-  }
-  const truncated = truncateDiff(diff);
-  const userMessage = interpolate(templateContent, { diff: truncated }) + (prompt ? `
-
-Additional context: ${prompt}` : "");
-  const systemPrompt = "You are a senior code reviewer. Analyze the provided diff carefully and return findings.";
-  const defaultTier = resolveModelTier("review");
-  const activeTier = requestedTier ?? defaultTier;
-  debug("Calling LLM for code review", { tier: activeTier, diffLength: truncated.length });
-  const response = await provider.chat({ systemPrompt, userMessage, tier: activeTier });
-  const tokens = { input: response.tokens.input, output: response.tokens.output };
-  const parsed = parseReviewMarkdown(response.content);
-  const markdown = buildMarkdown(parsed);
-  return {
-    critical: parsed.critical,
-    suggestions: parsed.suggestions,
-    nitpicks: parsed.nitpicks,
-    markdown,
-    tokens
-  };
-}
-async function resolveBaseBranch(cwd) {
-  try {
-    return await detectBaseBranch(cwd);
-  } catch {
-    return "main";
-  }
-}
-function errorMessage(err) {
-  if (err && typeof err === "object" && typeof err.message === "string") {
-    return err.message;
-  }
-  return String(err);
-}
-function isUnknownRevisionError(err) {
-  if (err === null || typeof err !== "object") return false;
-  const errObj = err;
-  const message = typeof errObj.message === "string" ? errObj.message : "";
-  const stderr = typeof errObj.stderr === "string" ? errObj.stderr : "";
-  const text = `${message}
-${stderr}`;
-  return /unknown revision|bad revision|not a valid object name|ambiguous argument/i.test(text);
-}
 
 // ../core/src/commands/pr.ts
 init_esm_shims();
@@ -12813,6 +12681,107 @@ var exec3 = promisify4(execFile4);
 
 // ../core/src/commands/issue.ts
 init_esm_shims();
+function parseIssueResponse(content) {
+  const titleMatch = content.match(/^TITLE:\s*(.+)$/m);
+  const title = titleMatch ? titleMatch[1].trim() : "Issue";
+  const separatorIdx = content.indexOf("---");
+  const body = separatorIdx >= 0 ? content.slice(separatorIdx + 3).trim() : content.trim();
+  return { title, body };
+}
+var ISSUE_SYSTEM_PROMPT = `You are a developer filing a GitHub issue. Based on the user's description, write a clear, actionable issue.
+
+Decide whether the description is a bug report or a feature request and structure the body accordingly.
+
+Output format (nothing else):
+TITLE: <concise, specific title, max 70 chars>
+---
+## Description
+<what the issue is about, in 1-3 short paragraphs>
+
+## Steps to Reproduce
+<numbered steps \u2014 for a bug; omit this section for a feature request>
+
+## Expected vs Actual
+<for a bug: expected behavior vs what happens; omit for a feature request>
+
+## Acceptance Criteria
+<for a feature request: a checklist of what "done" means; omit for a bug>
+
+## Context
+<environment, related links, or scope notes \u2014 omit if none>`;
+async function issue(opts) {
+  const { cwd, provider, description: description2, prompt } = opts;
+  if (!description2 || !description2.trim()) {
+    throw new GitwiseError({
+      code: "INVALID_INTENT",
+      message: "An issue description is required to draft an issue",
+      exitCode: EXIT_CODES.INVALID_INTENT
+    });
+  }
+  let currentBranch = "";
+  try {
+    currentBranch = await getBranch(cwd);
+  } catch {
+  }
+  let systemPrompt = ISSUE_SYSTEM_PROMPT;
+  let userMessageFromTemplate = `Description:
+${description2}`;
+  if (currentBranch) {
+    userMessageFromTemplate += `
+
+Current branch: ${currentBranch}`;
+  }
+  try {
+    const templateContent = await loadTemplate("issue", {
+      repoRoot: opts.repoRoot ?? cwd,
+      templatesPath: opts.templatesPath
+    });
+    if (templateContent && templateContent.includes("{{")) {
+      userMessageFromTemplate = interpolate(templateContent, {
+        description: description2,
+        branch: currentBranch
+      });
+    } else if (templateContent) {
+      systemPrompt = templateContent;
+    }
+  } catch {
+  }
+  const userMessage = userMessageFromTemplate + (prompt ? `
+
+Additional context: ${prompt}` : "");
+  debug("Calling LLM for issue draft", { tier: "fast", branch: currentBranch });
+  const tier = resolveModelTier("issue");
+  const response = await provider.chat({ systemPrompt, userMessage, tier });
+  const tokens = { input: response.tokens.input, output: response.tokens.output };
+  const { title, body } = parseIssueResponse(response.content);
+  return {
+    title,
+    body,
+    labels: opts.labels,
+    assignees: opts.assignees,
+    tokens
+  };
+}
+async function applyIssue(draft, opts) {
+  const { cwd } = opts;
+  const ghAvailable = await isGhAvailable();
+  if (!ghAvailable) {
+    throw new GitwiseError({
+      code: "GH_UNAVAILABLE",
+      message: "gh CLI is not installed \u2014 cannot create a GitHub issue",
+      exitCode: EXIT_CODES.GH_FAILED,
+      details: { draft }
+    });
+  }
+  const created = await createIssue({
+    title: draft.title,
+    body: draft.body,
+    labels: draft.labels,
+    assignees: draft.assignees,
+    cwd
+  });
+  return { url: created.url };
+}
 
 // ../core/src/commands/release.ts
 init_esm_shims();
@@ -12943,13 +12912,28 @@ function createProvider(config) {
 // ../core/src/index.ts
 var version = package_default.version;
 
-// scripts/review.ts
+// scripts/issue.ts
 var args = process.argv.slice(2);
-var baseIdx = args.indexOf("--base");
-var base;
-if (baseIdx !== -1) {
-  base = args[baseIdx + 1];
-  args.splice(baseIdx, 2);
+var applyIdx = args.indexOf("--apply");
+var apply = applyIdx !== -1;
+if (apply) args.splice(applyIdx, 1);
+var labelIdx = args.indexOf("--label");
+var labels;
+if (labelIdx !== -1) {
+  labels = (args[labelIdx + 1] ?? "").split(",").map((l) => l.trim()).filter(Boolean);
+  args.splice(labelIdx, 2);
+}
+var assignees = [];
+var assigneeIdx = args.indexOf("--assignee");
+while (assigneeIdx !== -1) {
+  const value = args[assigneeIdx + 1];
+  if (value) {
+    for (const a of value.split(",").map((x) => x.trim()).filter(Boolean)) {
+      assignees.push(a);
+    }
+  }
+  args.splice(assigneeIdx, 2);
+  assigneeIdx = args.indexOf("--assignee");
 }
 var promptIdx = args.indexOf("--prompt");
 var extraPrompt;
@@ -12957,47 +12941,53 @@ if (promptIdx !== -1) {
   extraPrompt = args[promptIdx + 1];
   args.splice(promptIdx, 2);
 }
+var description = args.join(" ").trim();
 async function main() {
   const cwd = process.cwd();
   const config = await getMergedConfig({ cwd });
   const apiKey = await getApiKey();
   const provider = createProvider({ kind: config.provider, models: config.models, apiKey, claudeCliPath: config.claudeCliPath });
-  const result = await review({ baseBranch: base, prompt: extraPrompt, provider, cwd });
-  process.stdout.write("## Code Review\n\n");
-  if (result.critical.length > 0) {
-    process.stdout.write("### Critical\n\n");
-    for (const f of result.critical) {
-      const prefix = f.file ? `**${f.file}** ` : "";
-      process.stdout.write(`- ${prefix}${f.description}
+  const draft = await issue({
+    description,
+    prompt: extraPrompt,
+    labels,
+    assignees: assignees.length ? assignees : void 0,
+    provider,
+    cwd
+  });
+  process.stdout.write(`## Issue Draft
+
 `);
-    }
-    process.stdout.write("\n");
-  }
-  if (result.suggestions.length > 0) {
-    process.stdout.write("### Suggestions\n\n");
-    for (const f of result.suggestions) {
-      const prefix = f.file ? `**${f.file}** ` : "";
-      process.stdout.write(`- ${prefix}${f.description}
+  process.stdout.write(`**Title:** ${draft.title}
+
 `);
-    }
-    process.stdout.write("\n");
-  }
-  if (result.nitpicks.length > 0) {
-    process.stdout.write("### Nitpicks\n\n");
-    for (const f of result.nitpicks) {
-      const prefix = f.file ? `**${f.file}** ` : "";
-      process.stdout.write(`- ${prefix}${f.description}
+  if (draft.labels?.length) {
+    process.stdout.write(`**Labels:** ${draft.labels.join(", ")}
+
 `);
-    }
-    process.stdout.write("\n");
   }
-  if (result.critical.length === 0 && result.suggestions.length === 0 && result.nitpicks.length === 0) {
-    process.stdout.write("_No findings. Looks good!_\n\n");
+  if (draft.assignees?.length) {
+    process.stdout.write(`**Assignees:** ${draft.assignees.join(", ")}
+
+`);
   }
+  process.stdout.write(`**Body:**
+
+${draft.body}
+
+`);
   process.stdout.write(
-    `**Tokens used:** ${result.tokens.input} in / ${result.tokens.output} out
+    `**Tokens used:** ${draft.tokens.input} in / ${draft.tokens.output} out
+
 `
   );
+  if (!apply) {
+    process.stdout.write("_Run with `--apply` to create the GitHub issue._\n");
+    return;
+  }
+  const result = await applyIssue(draft, { cwd });
+  process.stdout.write(`**Issue:** ${result.url}
+`);
 }
 main().catch((err) => {
   const msg = err instanceof Error ? err.message : String(err);
@@ -13005,4 +12995,4 @@ main().catch((err) => {
 `);
   process.exit(1);
 });
-//# sourceMappingURL=review.js.map
+//# sourceMappingURL=issue.js.map

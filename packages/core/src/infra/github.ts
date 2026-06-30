@@ -91,6 +91,35 @@ export async function getPrUrl(prNumber: string | number, cwd: string): Promise<
   return url;
 }
 
+export interface CreateIssueParams {
+  title: string;
+  body: string;
+  cwd: string;
+  labels?: string[];
+  assignees?: string[];
+}
+
+export async function createIssue(params: CreateIssueParams): Promise<PRResult> {
+  debug("Creating issue via gh", { title: params.title });
+  const args = ["issue", "create", "--title", params.title, "--body", params.body];
+  for (const label of params.labels ?? []) {
+    args.push("--label", label);
+  }
+  for (const assignee of params.assignees ?? []) {
+    args.push("--assignee", assignee);
+  }
+  const result = await exec("gh", args, { cwd: params.cwd });
+  const url = result.stdout?.trim();
+  if (!url) {
+    throw new GitwiseError({
+      code: "GH_FAILED",
+      message: "gh issue create returned empty output — check gh auth status",
+      details: { command: "gh issue create" },
+    });
+  }
+  return { url };
+}
+
 export interface CreateReleaseParams {
   tag: string;
   title: string;

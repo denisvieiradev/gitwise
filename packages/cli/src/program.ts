@@ -6,6 +6,7 @@ import { makeCommitCommand } from "./commands/commit.js";
 import { makeReviewCommand } from "./commands/review.js";
 import { makePrCommand } from "./commands/pr.js";
 import { makeReleaseCommand } from "./commands/release.js";
+import { makeIssueCommand } from "./commands/issue.js";
 
 const requireFromHere = createRequire(import.meta.url);
 const pkg = requireFromHere("../package.json") as { version: string };
@@ -43,6 +44,7 @@ export function createProgram(): Command {
   program.addCommand(makeReviewCommand());
   program.addCommand(makePrCommand());
   program.addCommand(makeReleaseCommand());
+  program.addCommand(makeIssueCommand());
   program.addCommand(makeConfigCommand());
 
   return program;
