@@ -7,6 +7,7 @@ export default defineGitwiseTsup({
     "scripts/review": "scripts/review.ts",
     "scripts/pr": "scripts/pr.ts",
     "scripts/release": "scripts/release.ts",
+    "scripts/issue": "scripts/issue.ts",
   },
   // Claude Code installs this plugin by git-cloning the source — no `npm install`
   // runs, so there is no node_modules. Bundle the workspace dependency and the

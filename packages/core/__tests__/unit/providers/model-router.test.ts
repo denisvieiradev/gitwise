@@ -2,8 +2,8 @@ import { describe, it, expect } from "@jest/globals";
 import { resolveModelTier, SUPPORTED_COMMANDS } from "../../../src/providers/model-router.js";
 
 describe("model-router (core)", () => {
-  it("exposes exactly the four supported command keys", () => {
-    expect(SUPPORTED_COMMANDS.sort()).toEqual(["commit", "pr", "release", "review"].sort());
+  it("exposes exactly the supported command keys", () => {
+    expect(SUPPORTED_COMMANDS.sort()).toEqual(["commit", "issue", "pr", "release", "review"].sort());
   });
 
   it("commit defaults to fast tier", () => {
@@ -20,6 +20,10 @@ describe("model-router (core)", () => {
 
   it("release defaults to fast tier", () => {
     expect(resolveModelTier("release")).toBe("fast");
+  });
+
+  it("issue defaults to fast tier", () => {
+    expect(resolveModelTier("issue")).toBe("fast");
   });
 
   it("unknown command defaults to balanced", () => {
