@@ -37,6 +37,8 @@ jest.unstable_mockModule("@denisvieiradev/gitwise-core", async () => {
     review: jest.fn(),
     pr: jest.fn(),
     applyPr: jest.fn(),
+    issue: jest.fn(),
+    applyIssue: jest.fn(),
     prepareRelease: jest.fn(),
     finishRelease: jest.fn(),
     abortRelease: jest.fn(),

@@ -18,7 +18,7 @@ export { github } from "./infra/index.js";
 export { env } from "./infra/index.js";
 export type { ChangedFile, ApplyCommitParams } from "./infra/git.js";
 export { stashList } from "./infra/git.js";
-export type { CreatePRParams, PRResult, UpdatePRParams, CreateReleaseParams } from "./infra/github.js";
+export type { CreatePRParams, PRResult, UpdatePRParams, CreateIssueParams, CreateReleaseParams } from "./infra/github.js";
 export { Transaction } from "./infra/transaction.js";
 export type {
   Step,
@@ -53,6 +53,7 @@ export {
 } from "./commands/commit.js";
 export { review } from "./commands/review.js";
 export { pr, applyPr } from "./commands/pr.js";
+export { issue, applyIssue } from "./commands/issue.js";
 export {
   release,
   prepareRelease,
@@ -86,6 +87,7 @@ export {
 } from "./commands/release-plan.js";
 export type { PersistedReleasePlan } from "./commands/release-plan.js";
 export type { PrOptions, PrDraft, ApplyPrOptions, ApplyPrResult } from "./commands/pr.js";
+export type { IssueOptions, IssueDraft, ApplyIssueOptions, ApplyIssueResult } from "./commands/issue.js";
 export type { ReviewOptions, ReviewResult, ReviewFinding } from "./commands/review.js";
 export type { CommitOptions, CommitPlan, CommitEntry, SplitMode, ApplyCommitPlanOptions, CommitStepResult, CommitAlternatives } from "./commands/commit.js";
 
