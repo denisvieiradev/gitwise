@@ -311,37 +311,26 @@ describe("acquireRepoLock", () => {
       acquiredAt: new Date("2026-05-21T08:00:00.000Z").toISOString(),
     });
 
-    let recreated = false;
     const fs = await import("node:fs");
     await expect(
       acquireRepoLock(repoPath, {
         command: "commit",
-        isProcessAlive: () => {
-          if (!recreated) {
-            recreated = true;
-            // Race: after the stale check returns 'dead', the module unlinks
-            // the file and tries to re-open with wx. Re-create the lockfile
-            // here so the second open hits EEXIST and we hit the attempt>=1
-            // REPO_LOCKED branch.
-            queueMicrotask(() => {
-              try {
-                fs.writeFileSync(
-                  join(repoPath, ".gitwise", ".lock"),
-                  JSON.stringify({
-                    pid: 88888,
-                    host: "racer",
-                    command: "racer",
-                    acquiredAt: new Date().toISOString(),
-                  }),
-                  "utf-8",
-                );
-              } catch {
-                /* ignore */
-              }
-            });
-            return false;
-          }
-          return true;
+        // The stale lock's pid is treated as dead, so it gets reclaimed.
+        isProcessAlive: () => false,
+        // Deterministic race: right after the stale lock is unlinked and
+        // before re-acquire, another process grabs the lock. The re-open with
+        // `wx` then hits EEXIST on attempt >= 1 → REPO_LOCKED.
+        onReclaim: () => {
+          fs.writeFileSync(
+            join(repoPath, ".gitwise", ".lock"),
+            JSON.stringify({
+              pid: 88888,
+              host: "racer",
+              command: "racer",
+              acquiredAt: new Date().toISOString(),
+            }),
+            "utf-8",
+          );
         },
       }),
     ).rejects.toMatchObject({ code: "REPO_LOCKED" });

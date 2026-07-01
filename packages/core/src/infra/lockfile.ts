@@ -17,6 +17,14 @@ export interface AcquireRepoLockOptions {
   staleMs?: number;
   isProcessAlive?: (pid: number) => boolean;
   now?: () => Date;
+  /**
+   * Test seam: invoked once, awaited, immediately after a stale lock is
+   * unlinked and immediately before the re-acquire attempt. Lets tests
+   * deterministically simulate another process re-creating the lock inside
+   * the reclaim window (the `EEXIST` on `attempt >= 1` → REPO_LOCKED path).
+   * Unset in production (no-op).
+   */
+  onReclaim?: () => void | Promise<void>;
 }
 
 export async function acquireRepoLock(
@@ -39,7 +47,7 @@ export async function acquireRepoLock(
     acquiredAt: now().toISOString(),
   };
 
-  await tryAcquire(lockPath, payload, staleMs, isAlive, now, 0);
+  await tryAcquire(lockPath, payload, staleMs, isAlive, now, 0, options.onReclaim);
 
   let released = false;
   return async () => {
@@ -60,6 +68,7 @@ async function tryAcquire(
   isAlive: (pid: number) => boolean,
   now: () => Date,
   attempt: number,
+  onReclaim?: () => void | Promise<void>,
 ): Promise<void> {
   try {
     const handle = await open(lockPath, "wx");
@@ -95,7 +104,10 @@ async function tryAcquire(
   } catch (unlinkErr) {
     if ((unlinkErr as NodeJS.ErrnoException).code !== "ENOENT") throw unlinkErr;
   }
-  return tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt + 1);
+  // Reclaim window: a competing process may re-create the lock here. Tests
+  // drive that deterministically via onReclaim; production leaves it unset.
+  if (onReclaim) await onReclaim();
+  return tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt + 1, onReclaim);
 }
 
 async function readExisting(lockPath: string): Promise<LockPayload | null> {
