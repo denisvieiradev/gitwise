@@ -1,0 +1,60 @@
+name: Plugin dist guard
+
+# packages/skills/dist is a committed runtime bundle (Claude Code installs the
+# plugin by git-cloning source — no build runs at install time). It inlines
+# @anthropic-ai/sdk and gitwise-core, so a Dependabot bump or a core change can
+# leave it stale on main. main has no branch protection, so a failing dist
+# check does not block auto-merge. This job self-heals main: after any push
+# that could affect the bundle, rebuild it and commit the result if it drifted.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "package-lock.json"
+      - "packages/core/**"
+      - "packages/skills/**"
+
+permissions:
+  contents: write
+
+# Never run two healers concurrently on main.
+concurrency:
+  group: plugin-dist-guard
+  cancel-in-progress: false
+
+jobs:
+  refresh-dist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+
+      - name: Use Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild plugin bundle
+        run: npm run build -w @denisvieiradev/gitwise-skills
+
+      - name: Commit rebuilt dist if it drifted
+        run: |
+          if git diff --quiet -- packages/skills/dist; then
+            echo "packages/skills/dist is up to date — nothing to do."
+            exit 0
+          fi
+          echo "::warning::packages/skills/dist was stale; committing a rebuild."
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/skills/dist
+          git commit -m "chore(skills): rebuild bundled dist [skip ci]
+
+          Auto-generated: the committed plugin bundle drifted from a fresh
+          build (usually a Dependabot bump of a bundled dependency).
+
+          Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+          git push origin HEAD:main
