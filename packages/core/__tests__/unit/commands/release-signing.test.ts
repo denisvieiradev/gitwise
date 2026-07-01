@@ -16,6 +16,11 @@ async function initRepo(dir: string, version = "1.0.0"): Promise<void> {
   await exec("git", ["init", "-b", "main"], { cwd: dir });
   await exec("git", ["config", "user.email", "test@test.com"], { cwd: dir });
   await exec("git", ["config", "user.name", "Test"], { cwd: dir });
+  // Make `git tag -s` fail fast and deterministically: point gpg.program at
+  // `false` so signing is attempted (exercising the -s path) but errors out
+  // immediately instead of blocking on an interactive pinentry passphrase
+  // prompt (which otherwise times the test out on dev machines with a key).
+  await exec("git", ["config", "gpg.program", "false"], { cwd: dir });
   await writeFile(
     join(dir, "package.json"),
     JSON.stringify({ name: "test-pkg", version }, null, 2),
