@@ -77,17 +77,17 @@ describe("dependabot.yml structure", () => {
     expect(content).toMatch(/["']?patch["']?/m);
   });
 
-  it("npm ecosystem is scheduled weekly", async () => {
+  it("npm ecosystem is scheduled monthly", async () => {
     const content = await readFile(DEPENDABOT_PATH, "utf-8");
-    expect(content).toMatch(/interval:\s+["']?weekly["']?/m);
+    expect(content).toMatch(/interval:\s+["']?monthly["']?/m);
   });
 
-  it("github-actions ecosystem is scheduled weekly", async () => {
+  it("github-actions ecosystem is scheduled monthly", async () => {
     const content = await readFile(DEPENDABOT_PATH, "utf-8");
-    // Both ecosystems use weekly; check it appears at least twice
-    const weeklyMatches = content.match(/interval:\s+["']?weekly["']?/gm);
-    expect(weeklyMatches).not.toBeNull();
-    expect((weeklyMatches ?? []).length).toBeGreaterThanOrEqual(2);
+    // Both ecosystems use monthly; check it appears at least twice
+    const monthlyMatches = content.match(/interval:\s+["']?monthly["']?/gm);
+    expect(monthlyMatches).not.toBeNull();
+    expect((monthlyMatches ?? []).length).toBeGreaterThanOrEqual(2);
   });
 });
 

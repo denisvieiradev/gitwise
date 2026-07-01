@@ -123,7 +123,7 @@ var init_errors = __esm({
 });
 
 // ../../node_modules/@anthropic-ai/sdk/core/error.mjs
-var AnthropicError, APIError, APIUserAbortError, APIConnectionError, APIConnectionTimeoutError, BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError, ConflictError, UnprocessableEntityError, RateLimitError, InternalServerError;
+var AnthropicError, APIError, APIUserAbortError, APIConnectionError, APIConnectionTimeoutError, RetryableError, BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError, ConflictError, UnprocessableEntityError, RateLimitError, InternalServerError;
 var init_error = __esm({
   "../../node_modules/@anthropic-ai/sdk/core/error.mjs"() {
     "use strict";
@@ -201,6 +201,13 @@ var init_error = __esm({
     APIConnectionTimeoutError = class extends APIConnectionError {
       constructor({ message } = {}) {
         super({ message: message ?? "Request timed out." });
+      }
+    };
+    RetryableError = class extends AnthropicError {
+      constructor(message, { cause } = {}) {
+        super(message ?? "Retryable error.");
+        if (cause !== void 0)
+          this.cause = cause;
       }
     };
     BadRequestError = class extends APIError {
@@ -298,7 +305,7 @@ var init_version = __esm({
   "../../node_modules/@anthropic-ai/sdk/version.mjs"() {
     "use strict";
     init_esm_shims();
-    VERSION = "0.98.0";
+    VERSION = "0.106.0";
   }
 });
 
@@ -451,11 +458,11 @@ function getDefaultFetch() {
   throw new Error("`fetch` is not defined as a global; Either pass `fetch` to the client, `new Anthropic({ fetch })` or polyfill the global, `globalThis.fetch = fetch`");
 }
 function makeReadableStream(...args) {
-  const ReadableStream = globalThis.ReadableStream;
-  if (typeof ReadableStream === "undefined") {
+  const ReadableStream2 = globalThis.ReadableStream;
+  if (typeof ReadableStream2 === "undefined") {
     throw new Error("`ReadableStream` is not defined as a global; You will need to polyfill it, `globalThis.ReadableStream = ReadableStream`");
   }
-  return new ReadableStream(...args);
+  return new ReadableStream2(...args);
 }
 function ReadableStreamFrom(iterable) {
   let iter = Symbol.asyncIterator in iterable ? iterable[Symbol.asyncIterator]() : iterable[Symbol.iterator]();
@@ -646,7 +653,7 @@ var init_utils = __esm({
 function is_non_nullish_primitive(v) {
   return typeof v === "string" || typeof v === "number" || typeof v === "boolean" || typeof v === "symbol" || typeof v === "bigint";
 }
-function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel) {
+function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder2, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel) {
   let obj = object;
   let tmp_sc = sideChannel;
   let step = 0;
@@ -679,19 +686,19 @@ function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, al
   }
   if (obj === null) {
     if (strictNullHandling) {
-      return encoder && !encodeValuesOnly ? (
+      return encoder2 && !encodeValuesOnly ? (
         // @ts-expect-error
-        encoder(prefix, defaults.encoder, charset, "key", format)
+        encoder2(prefix, defaults.encoder, charset, "key", format)
       ) : prefix;
     }
     obj = "";
   }
   if (is_non_nullish_primitive(obj) || is_buffer(obj)) {
-    if (encoder) {
-      const key_value = encodeValuesOnly ? prefix : encoder(prefix, defaults.encoder, charset, "key", format);
+    if (encoder2) {
+      const key_value = encodeValuesOnly ? prefix : encoder2(prefix, defaults.encoder, charset, "key", format);
       return [
         formatter?.(key_value) + "=" + // @ts-expect-error
-        formatter?.(encoder(obj, defaults.encoder, charset, "value", format))
+        formatter?.(encoder2(obj, defaults.encoder, charset, "value", format))
       ];
     }
     return [formatter?.(prefix) + "=" + formatter?.(String(obj))];
@@ -702,8 +709,8 @@ function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, al
   }
   let obj_keys;
   if (generateArrayPrefix === "comma" && isArray(obj)) {
-    if (encodeValuesOnly && encoder) {
-      obj = maybe_map(obj, encoder);
+    if (encodeValuesOnly && encoder2) {
+      obj = maybe_map(obj, encoder2);
     }
     obj_keys = [{ value: obj.length > 0 ? obj.join(",") || null : void 0 }];
   } else if (isArray(filter)) {
@@ -741,7 +748,7 @@ function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, al
       skipNulls,
       encodeDotInKeys,
       // @ts-ignore
-      generateArrayPrefix === "comma" && encodeValuesOnly && isArray(obj) ? null : encoder,
+      generateArrayPrefix === "comma" && encodeValuesOnly && isArray(obj) ? null : encoder2,
       filter,
       sort,
       allowDots,
@@ -1256,8 +1263,8 @@ function concatBytes(buffers) {
   return output;
 }
 function encodeUTF8(str) {
-  let encoder;
-  return (encodeUTF8_ ?? (encoder = new globalThis.TextEncoder(), encodeUTF8_ = encoder.encode.bind(encoder)))(str);
+  let encoder2;
+  return (encodeUTF8_ ?? (encoder2 = new globalThis.TextEncoder(), encodeUTF8_ = encoder2.encode.bind(encoder2)))(str);
 }
 function decodeUTF8(bytes) {
   let decoder;
@@ -1291,12 +1298,7 @@ function makeLogFn(fnLevel, logger, logLevel) {
     return logger[fnLevel].bind(logger);
   }
 }
-function loggerFor(client) {
-  const logger = client.logger;
-  const logLevel = client.logLevel ?? "off";
-  if (!logger) {
-    return noopLogger;
-  }
+function filterLogger(logger, logLevel) {
   const cachedLogger = cachedLoggers.get(logger);
   if (cachedLogger && cachedLogger[0] === logLevel) {
     return cachedLogger[1];
@@ -1310,12 +1312,30 @@ function loggerFor(client) {
   cachedLoggers.set(logger, [logLevel, levelLogger]);
   return levelLogger;
 }
-var levelNumbers, parseLogLevel, noopLogger, cachedLoggers, formatRequestDetails;
+function loggerFor(client) {
+  const logger = client.logger;
+  const logLevel = client.logLevel ?? "off";
+  if (!logger) {
+    return noopLogger;
+  }
+  return filterLogger(logger, logLevel);
+}
+function defaultLogger() {
+  const envLevel = readEnv("ANTHROPIC_LOG");
+  if (!cachedDefaultLogger || envLevel !== lastEnvLevel) {
+    lastEnvLevel = envLevel;
+    cachedDefaultLogger = filterLogger(console, parseLogLevel(envLevel, "process.env['ANTHROPIC_LOG']", filterLogger(console, defaultLogLevel)) ?? defaultLogLevel);
+  }
+  return cachedDefaultLogger;
+}
+var defaultLogLevel, levelNumbers, parseLogLevel, noopLogger, cachedLoggers, lastEnvLevel, cachedDefaultLogger, formatRequestDetails;
 var init_log = __esm({
   "../../node_modules/@anthropic-ai/sdk/internal/utils/log.mjs"() {
     "use strict";
     init_esm_shims();
     init_values();
+    init_env();
+    defaultLogLevel = "warn";
     levelNumbers = {
       off: 0,
       error: 200,
@@ -1323,14 +1343,14 @@ var init_log = __esm({
       info: 400,
       debug: 500
     };
-    parseLogLevel = (maybeLevel, sourceName, client) => {
+    parseLogLevel = (maybeLevel, sourceName, logger) => {
       if (!maybeLevel) {
         return void 0;
       }
       if (hasOwn(levelNumbers, maybeLevel)) {
         return maybeLevel;
       }
-      loggerFor(client).warn(`${sourceName} was set to ${JSON.stringify(maybeLevel)}, expected one of ${JSON.stringify(Object.keys(levelNumbers))}`);
+      logger.warn(`${sourceName} was set to ${JSON.stringify(maybeLevel)}, expected one of ${JSON.stringify(Object.keys(levelNumbers))}`);
       return void 0;
     };
     noopLogger = {
@@ -2049,6 +2069,17 @@ var init_streaming = __esm({
         this.controller = controller;
         __classPrivateFieldSet(this, _Stream_client, client, "f");
       }
+      /**
+       * Iterate the raw Server-Sent Events from `response` — `{event, data, raw}`
+       * objects, before any JSON parsing or event-name filtering.
+       *
+       * This reads `response.body` directly (not a clone), so the response is
+       * consumed. Use this in middleware that fully replaces the stream body; for
+       * read-only observation of parsed events, use `ctx.parse()` instead.
+       */
+      static rawEvents(response, controller = new AbortController()) {
+        return _iterSSEMessages(response, controller);
+      }
       static fromSSEResponse(response, controller, client) {
         let consumed = false;
         const logger = client ? loggerFor(client) : console;
@@ -2069,7 +2100,7 @@ var init_streaming = __esm({
                   throw e;
                 }
               }
-              if (sse.event === "message_start" || sse.event === "message_delta" || sse.event === "message_stop" || sse.event === "content_block_start" || sse.event === "content_block_delta" || sse.event === "content_block_stop" || sse.event === "message" || sse.event === "user.message" || sse.event === "user.interrupt" || sse.event === "user.tool_confirmation" || sse.event === "user.custom_tool_result" || sse.event === "user.tool_result" || sse.event === "agent.message" || sse.event === "agent.thinking" || sse.event === "agent.tool_use" || sse.event === "agent.tool_result" || sse.event === "agent.mcp_tool_use" || sse.event === "agent.mcp_tool_result" || sse.event === "agent.custom_tool_use" || sse.event === "agent.thread_context_compacted" || sse.event === "session.status_running" || sse.event === "session.status_idle" || sse.event === "session.status_rescheduled" || sse.event === "session.status_terminated" || sse.event === "session.error" || sse.event === "session.deleted" || sse.event === "session.updated" || sse.event === "span.model_request_start" || sse.event === "span.model_request_end" || sse.event === "span.outcome_evaluation_start" || sse.event === "span.outcome_evaluation_ongoing" || sse.event === "span.outcome_evaluation_end" || sse.event === "user.define_outcome" || sse.event === "agent.thread_message_received" || sse.event === "agent.thread_message_sent" || sse.event === "agent.session_thread_message_received" || sse.event === "agent.session_thread_message_sent" || sse.event === "session.thread_created" || sse.event === "session.thread_status_created" || sse.event === "session.thread_status_running" || sse.event === "session.thread_status_idle" || sse.event === "session.thread_status_rescheduled" || sse.event === "session.thread_status_terminated") {
+              if (sse.event === "message_start" || sse.event === "message_delta" || sse.event === "message_stop" || sse.event === "content_block_start" || sse.event === "content_block_delta" || sse.event === "content_block_stop" || sse.event === "message" || sse.event === "user.message" || sse.event === "user.interrupt" || sse.event === "user.tool_confirmation" || sse.event === "user.custom_tool_result" || sse.event === "user.tool_result" || sse.event === "agent.message" || sse.event === "agent.thinking" || sse.event === "agent.tool_use" || sse.event === "agent.tool_result" || sse.event === "agent.mcp_tool_use" || sse.event === "agent.mcp_tool_result" || sse.event === "agent.custom_tool_use" || sse.event === "agent.thread_context_compacted" || sse.event === "session.status_running" || sse.event === "session.status_idle" || sse.event === "session.status_rescheduled" || sse.event === "session.status_terminated" || sse.event === "session.error" || sse.event === "session.deleted" || sse.event === "session.updated" || sse.event === "span.model_request_start" || sse.event === "span.model_request_end" || sse.event === "span.outcome_evaluation_start" || sse.event === "span.outcome_evaluation_ongoing" || sse.event === "span.outcome_evaluation_end" || sse.event === "user.define_outcome" || sse.event === "agent.thread_message_received" || sse.event === "agent.thread_message_sent" || sse.event === "agent.session_thread_message_received" || sse.event === "agent.session_thread_message_sent" || sse.event === "session.thread_created" || sse.event === "session.thread_status_created" || sse.event === "session.thread_status_running" || sse.event === "session.thread_status_idle" || sse.event === "session.thread_status_rescheduled" || sse.event === "session.thread_status_terminated" || sse.event === "system.message") {
                 try {
                   yield JSON.parse(sse.data);
                 } catch (e) {
@@ -2247,9 +2278,6 @@ async function defaultParseResponse(client, props) {
   const body = await (async () => {
     if (props.options.stream) {
       loggerFor(client).debug("response", response.status, response.url, response.headers, response.body);
-      if (props.options.__streamClass) {
-        return props.options.__streamClass.fromSSEResponse(response, props.controller);
-      }
       return Stream.fromSSEResponse(response, props.controller);
     }
     if (response.status === 204) {
@@ -2296,6 +2324,114 @@ var init_parse = __esm({
     init_esm_shims();
     init_streaming();
     init_log();
+  }
+});
+
+// ../../node_modules/@anthropic-ai/sdk/core/middleware.mjs
+function isFetchOriginError(err) {
+  return typeof err === "object" && err !== null && fetchOriginErrors.has(err);
+}
+function isRetryableError(err) {
+  const seen = /* @__PURE__ */ new Set();
+  while (typeof err === "object" && err !== null && !seen.has(err)) {
+    seen.add(err);
+    if (isFetchOriginError(err) || isAbortError(err) || err instanceof APIConnectionError || err instanceof RetryableError) {
+      return true;
+    }
+    err = err.cause;
+  }
+  return false;
+}
+function wrapFetchWithMiddleware(fetchFn, middleware, options, client) {
+  return async (url, init = {}) => {
+    if (middleware.length === 0) {
+      return fetchFn.call(void 0, url, init);
+    }
+    const headers = init.headers instanceof Headers ? init.headers : new Headers(init.headers);
+    const response = await applyMiddleware(fetchFn, middleware, options, client)({
+      ...init,
+      headers,
+      url: typeof url === "string" ? url : url instanceof URL ? url.href : url.url
+    });
+    if (response.bodyUsed || response.body?.locked) {
+      throw new AnthropicError("middleware consumed the response body; use response.clone() to inspect it, or return new Response(body, response) to consume and replace it");
+    }
+    return response;
+  };
+}
+function createMiddlewareContext(options, client) {
+  const cache = /* @__PURE__ */ new WeakMap();
+  return {
+    options,
+    // Resolved per chain, so changes to the client's `logLevel`/`logger`
+    // apply to subsequent requests.
+    logger: client ? loggerFor(client) : defaultLogger(),
+    parse(response) {
+      if (options?.stream && response.ok) {
+        return parseMiddlewareResponse(response, options);
+      }
+      let parsed = cache.get(response);
+      if (!parsed) {
+        parsed = parseMiddlewareResponse(response, options);
+        cache.set(response, parsed);
+      }
+      return parsed;
+    }
+  };
+}
+async function parseMiddlewareResponse(response, options) {
+  if (response.bodyUsed || response.body?.locked) {
+    throw new AnthropicError("cannot ctx.parse() a response whose body was already consumed; call ctx.parse() instead of reading the body, or read via response.clone()");
+  }
+  if (options?.stream && response.ok) {
+    return Stream.fromSSEResponse(response.clone(), new AbortController());
+  }
+  if (response.status === 204) {
+    return null;
+  }
+  if (options?.__binaryResponse) {
+    return response;
+  }
+  const contentType = response.headers.get("content-type");
+  const mediaType = contentType?.split(";")[0]?.trim();
+  const isJSON = mediaType?.includes("application/json") || mediaType?.endsWith("+json");
+  if (isJSON) {
+    if (response.headers.get("content-length") === "0") {
+      return void 0;
+    }
+    return addRequestID(await response.clone().json(), response);
+  }
+  return await response.clone().text();
+}
+function applyMiddleware(fetchFn, middleware, options, client) {
+  let next = async ({ url, ...init }) => {
+    try {
+      return await fetchFn.call(void 0, url, init);
+    } catch (err) {
+      const error = castToError(err);
+      fetchOriginErrors.add(error);
+      throw error;
+    }
+  };
+  const ctx = createMiddlewareContext(options, client);
+  for (let i = middleware.length - 1; i >= 0; i--) {
+    const mw = middleware[i];
+    const nextInner = next;
+    next = async (request) => mw(request, nextInner, ctx);
+  }
+  return next;
+}
+var fetchOriginErrors;
+var init_middleware = __esm({
+  "../../node_modules/@anthropic-ai/sdk/core/middleware.mjs"() {
+    "use strict";
+    init_esm_shims();
+    init_errors();
+    init_parse();
+    init_log();
+    init_error();
+    init_streaming();
+    fetchOriginErrors = /* @__PURE__ */ new WeakSet();
   }
 });
 
@@ -2721,19 +2857,29 @@ function* iterateHeaders(headers) {
         continue;
       if (shouldClear && !didClear) {
         didClear = true;
-        yield [name, null];
+        yield [name, clearSentinel];
       }
       yield [name, value];
     }
   }
 }
-var brand_privateNullableHeaders, buildHeaders;
+var brand_privateNullableHeaders, clearSentinel, APPEND_HEADERS, appendHeaderValue, buildHeaders;
 var init_headers = __esm({
   "../../node_modules/@anthropic-ai/sdk/internal/headers.mjs"() {
     "use strict";
     init_esm_shims();
     init_values();
     brand_privateNullableHeaders = /* @__PURE__ */ Symbol.for("brand.privateNullableHeaders");
+    clearSentinel = /* @__PURE__ */ Symbol("clear");
+    APPEND_HEADERS = /* @__PURE__ */ new Set(["x-stainless-helper"]);
+    appendHeaderValue = (existing, addition) => {
+      const tokens = existing ? existing.split(",").map((t) => t.trim()).filter(Boolean) : [];
+      for (const tok of addition.split(",").map((t) => t.trim())) {
+        if (tok && !tokens.includes(tok))
+          tokens.push(tok);
+      }
+      return tokens.join(", ");
+    };
     buildHeaders = (newHeaders) => {
       const targetHeaders = new Headers();
       const nullHeaders = /* @__PURE__ */ new Set();
@@ -2741,9 +2887,23 @@ var init_headers = __esm({
         const seenHeaders = /* @__PURE__ */ new Set();
         for (const [name, value] of iterateHeaders(headers)) {
           const lowerName = name.toLowerCase();
-          if (!seenHeaders.has(lowerName)) {
+          if (APPEND_HEADERS.has(lowerName)) {
+            if (value === clearSentinel)
+              continue;
+            if (value === null) {
+              targetHeaders.delete(name);
+              nullHeaders.add(lowerName);
+            } else {
+              targetHeaders.set(name, appendHeaderValue(targetHeaders.get(name), value));
+              nullHeaders.delete(lowerName);
+            }
+            continue;
+          }
+          if (value === clearSentinel || !seenHeaders.has(lowerName)) {
             targetHeaders.delete(name);
             seenHeaders.add(lowerName);
+            if (value === clearSentinel)
+              continue;
           }
           if (value === null) {
             targetHeaders.delete(name);
@@ -2756,56 +2916,6 @@ var init_headers = __esm({
       }
       return { [brand_privateNullableHeaders]: true, values: targetHeaders, nulls: nullHeaders };
     };
-  }
-});
-
-// ../../node_modules/@anthropic-ai/sdk/lib/stainless-helper-header.mjs
-function wasCreatedByStainlessHelper(value) {
-  return typeof value === "object" && value !== null && SDK_HELPER_SYMBOL in value;
-}
-function collectStainlessHelpers(tools, messages) {
-  const helpers = /* @__PURE__ */ new Set();
-  if (tools) {
-    for (const tool of tools) {
-      if (wasCreatedByStainlessHelper(tool)) {
-        helpers.add(tool[SDK_HELPER_SYMBOL]);
-      }
-    }
-  }
-  if (messages) {
-    for (const message of messages) {
-      if (wasCreatedByStainlessHelper(message)) {
-        helpers.add(message[SDK_HELPER_SYMBOL]);
-      }
-      if (Array.isArray(message.content)) {
-        for (const block of message.content) {
-          if (wasCreatedByStainlessHelper(block)) {
-            helpers.add(block[SDK_HELPER_SYMBOL]);
-          }
-        }
-      }
-    }
-  }
-  return Array.from(helpers);
-}
-function stainlessHelperHeader(tools, messages) {
-  const helpers = collectStainlessHelpers(tools, messages);
-  if (helpers.length === 0)
-    return {};
-  return { "x-stainless-helper": helpers.join(", ") };
-}
-function stainlessHelperHeaderFromFile(file) {
-  if (wasCreatedByStainlessHelper(file)) {
-    return { "x-stainless-helper": file[SDK_HELPER_SYMBOL] };
-  }
-  return {};
-}
-var SDK_HELPER_SYMBOL;
-var init_stainless_helper_header = __esm({
-  "../../node_modules/@anthropic-ai/sdk/lib/stainless-helper-header.mjs"() {
-    "use strict";
-    init_esm_shims();
-    SDK_HELPER_SYMBOL = /* @__PURE__ */ Symbol("anthropic.sdk.stainlessHelper");
   }
 });
 
@@ -2869,6 +2979,307 @@ ${underline}`);
       return path9;
     };
     path4 = /* @__PURE__ */ createPathTagFunction(encodeURIPath);
+  }
+});
+
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs
+var DeploymentRuns;
+var init_deployment_runs = __esm({
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs"() {
+    "use strict";
+    init_esm_shims();
+    init_resource();
+    init_pagination();
+    init_headers();
+    init_path();
+    DeploymentRuns = class extends APIResource {
+      /**
+       * Get Deployment Run
+       *
+       * @example
+       * ```ts
+       * const betaManagedAgentsDeploymentRun =
+       *   await client.beta.deploymentRuns.retrieve(
+       *     'deployment_run_id',
+       *   );
+       * ```
+       */
+      retrieve(deploymentRunID, params = {}, options) {
+        const { betas } = params ?? {};
+        return this._client.get(path4`/v1/deployment_runs/${deploymentRunID}?beta=true`, {
+          ...options,
+          headers: buildHeaders([
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
+            options?.headers
+          ])
+        });
+      }
+      /**
+       * List Deployment Runs
+       *
+       * @example
+       * ```ts
+       * // Automatically fetches more pages as needed.
+       * for await (const betaManagedAgentsDeploymentRun of client.beta.deploymentRuns.list()) {
+       *   // ...
+       * }
+       * ```
+       */
+      list(params = {}, options) {
+        const { betas, ...query } = params ?? {};
+        return this._client.getAPIList("/v1/deployment_runs?beta=true", PageCursor, {
+          query,
+          ...options,
+          headers: buildHeaders([
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
+            options?.headers
+          ])
+        });
+      }
+    };
+  }
+});
+
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs
+var Deployments;
+var init_deployments = __esm({
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs"() {
+    "use strict";
+    init_esm_shims();
+    init_resource();
+    init_pagination();
+    init_headers();
+    init_path();
+    Deployments = class extends APIResource {
+      /**
+       * Create Deployment
+       *
+       * @example
+       * ```ts
+       * const betaManagedAgentsDeployment =
+       *   await client.beta.deployments.create({
+       *     agent: 'string',
+       *     environment_id: 'x',
+       *     initial_events: [
+       *       {
+       *         content: [
+       *           {
+       *             text: 'Where is my order #1234?',
+       *             type: 'text',
+       *           },
+       *         ],
+       *         type: 'user.message',
+       *       },
+       *     ],
+       *     name: 'x',
+       *   });
+       * ```
+       */
+      create(params, options) {
+        const { betas, ...body } = params;
+        return this._client.post("/v1/deployments?beta=true", {
+          body,
+          ...options,
+          headers: buildHeaders([
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
+            options?.headers
+          ])
+        });
+      }
+      /**
+       * Get Deployment
+       *
+       * @example
+       * ```ts
+       * const betaManagedAgentsDeployment =
+       *   await client.beta.deployments.retrieve('deployment_id');
+       * ```
+       */
+      retrieve(deploymentID, params = {}, options) {
+        const { betas } = params ?? {};
+        return this._client.get(path4`/v1/deployments/${deploymentID}?beta=true`, {
+          ...options,
+          headers: buildHeaders([
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
+            options?.headers
+          ])
+        });
+      }
+      /**
+       * Update Deployment
+       *
+       * @example
+       * ```ts
+       * const betaManagedAgentsDeployment =
+       *   await client.beta.deployments.update('deployment_id');
+       * ```
+       */
+      update(deploymentID, params, options) {
+        const { betas, ...body } = params;
+        return this._client.post(path4`/v1/deployments/${deploymentID}?beta=true`, {
+          body,
+          ...options,
+          headers: buildHeaders([
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
+            options?.headers
+          ])
+        });
+      }
+      /**
+       * List Deployments
+       *
+       * @example
+       * ```ts
+       * // Automatically fetches more pages as needed.
+       * for await (const betaManagedAgentsDeployment of client.beta.deployments.list()) {
+       *   // ...
+       * }
+       * ```
+       */
+      list(params = {}, options) {
+        const { betas, ...query } = params ?? {};
+        return this._client.getAPIList("/v1/deployments?beta=true", PageCursor, {
+          query,
+          ...options,
+          headers: buildHeaders([
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
+            options?.headers
+          ])
+        });
+      }
+      /**
+       * Archive Deployment
+       *
+       * @example
+       * ```ts
+       * const betaManagedAgentsDeployment =
+       *   await client.beta.deployments.archive('deployment_id');
+       * ```
+       */
+      archive(deploymentID, params = {}, options) {
+        const { betas } = params ?? {};
+        return this._client.post(path4`/v1/deployments/${deploymentID}/archive?beta=true`, {
+          ...options,
+          headers: buildHeaders([
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
+            options?.headers
+          ])
+        });
+      }
+      /**
+       * Pause Deployment
+       *
+       * @example
+       * ```ts
+       * const betaManagedAgentsDeployment =
+       *   await client.beta.deployments.pause('deployment_id');
+       * ```
+       */
+      pause(deploymentID, params = {}, options) {
+        const { betas } = params ?? {};
+        return this._client.post(path4`/v1/deployments/${deploymentID}/pause?beta=true`, {
+          ...options,
+          headers: buildHeaders([
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
+            options?.headers
+          ])
+        });
+      }
+      /**
+       * Run Deployment Now
+       *
+       * @example
+       * ```ts
+       * const betaManagedAgentsDeploymentRun =
+       *   await client.beta.deployments.run('deployment_id');
+       * ```
+       */
+      run(deploymentID, params = {}, options) {
+        const { betas } = params ?? {};
+        return this._client.post(path4`/v1/deployments/${deploymentID}/run?beta=true`, {
+          ...options,
+          headers: buildHeaders([
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
+            options?.headers
+          ])
+        });
+      }
+      /**
+       * Unpause Deployment
+       *
+       * @example
+       * ```ts
+       * const betaManagedAgentsDeployment =
+       *   await client.beta.deployments.unpause('deployment_id');
+       * ```
+       */
+      unpause(deploymentID, params = {}, options) {
+        const { betas } = params ?? {};
+        return this._client.post(path4`/v1/deployments/${deploymentID}/unpause?beta=true`, {
+          ...options,
+          headers: buildHeaders([
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
+            options?.headers
+          ])
+        });
+      }
+    };
+  }
+});
+
+// ../../node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs
+function helperHeader(value) {
+  return { [STAINLESS_HELPER_HEADER]: value };
+}
+function wasCreatedByStainlessHelper(value) {
+  return typeof value === "object" && value !== null && SDK_HELPER_SYMBOL in value;
+}
+function collectStainlessHelpers(tools, messages) {
+  const helpers = /* @__PURE__ */ new Set();
+  if (tools) {
+    for (const tool of tools) {
+      if (wasCreatedByStainlessHelper(tool)) {
+        helpers.add(tool[SDK_HELPER_SYMBOL]);
+      }
+    }
+  }
+  if (messages) {
+    for (const message of messages) {
+      if (wasCreatedByStainlessHelper(message)) {
+        helpers.add(message[SDK_HELPER_SYMBOL]);
+      }
+      const content = message.content;
+      if (Array.isArray(content)) {
+        for (const block of content) {
+          if (wasCreatedByStainlessHelper(block)) {
+            helpers.add(block[SDK_HELPER_SYMBOL]);
+          }
+        }
+      }
+    }
+  }
+  return Array.from(helpers);
+}
+function stainlessHelperHeader(tools, messages) {
+  const helpers = collectStainlessHelpers(tools, messages);
+  if (helpers.length === 0)
+    return {};
+  return { [STAINLESS_HELPER_HEADER]: helpers.join(", ") };
+}
+function stainlessHelperHeaderFromFile(file) {
+  if (wasCreatedByStainlessHelper(file)) {
+    return { [STAINLESS_HELPER_HEADER]: file[SDK_HELPER_SYMBOL] };
+  }
+  return {};
+}
+var STAINLESS_HELPER_HEADER, STAINLESS_HELPER_METHOD_HEADER, SDK_HELPER_SYMBOL;
+var init_stainless_helper_header = __esm({
+  "../../node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs"() {
+    "use strict";
+    init_esm_shims();
+    STAINLESS_HELPER_HEADER = "x-stainless-helper";
+    STAINLESS_HELPER_METHOD_HEADER = "x-stainless-helper-method";
+    SDK_HELPER_SYMBOL = /* @__PURE__ */ Symbol("anthropic.sdk.stainlessHelper");
   }
 });
 
@@ -3922,13 +4333,13 @@ var require_dist = __commonJS({
         const computedSignature = this.sign(msgId, timestamp, payload);
         const expectedSignature = computedSignature.split(",")[1];
         const passedSignatures = msgSignature.split(" ");
-        const encoder = new globalThis.TextEncoder();
+        const encoder2 = new globalThis.TextEncoder();
         for (const versionedSignature of passedSignatures) {
           const [version2, signature] = versionedSignature.split(",");
           if (version2 !== "v1") {
             continue;
           }
-          if ((0, timing_safe_equal_1.timingSafeEqual)(encoder.encode(signature), encoder.encode(expectedSignature))) {
+          if ((0, timing_safe_equal_1.timingSafeEqual)(encoder2.encode(signature), encoder2.encode(expectedSignature))) {
             return JSON.parse(payload.toString());
           }
         }
@@ -3941,9 +4352,9 @@ var require_dist = __commonJS({
         } else {
           throw new Error("Expected payload to be of type string or Buffer.");
         }
-        const encoder = new TextEncoder();
+        const encoder2 = new TextEncoder();
         const timestampNumber = Math.floor(timestamp.getTime() / 1e3);
-        const toSign = encoder.encode(`${msgId}.${timestampNumber}.${payload}`);
+        const toSign = encoder2.encode(`${msgId}.${timestampNumber}.${payload}`);
         const expectedSignature = base64.encode(sha256.hmac(this.key, toSign));
         return `v1,${expectedSignature}`;
       }
@@ -4225,7 +4636,7 @@ function copyClientForHelper(client, { authToken, helper }) {
   const defaultHeaders = buildHeaders([
     inheritedAuthExtraHeaders,
     parentDefaults,
-    { "x-stainless-helper": helper }
+    { [STAINLESS_HELPER_HEADER]: helper }
   ]);
   return client.withOptions({
     apiKey: null,
@@ -4241,6 +4652,7 @@ var init_helper_client = __esm({
     init_esm_shims();
     init_error();
     init_headers();
+    init_stainless_helper_header();
   }
 });
 
@@ -4526,7 +4938,7 @@ function toSessionContent(content) {
   });
   return out.length > 0 ? out : [{ type: "text", text: "(no output)" }];
 }
-var _SessionToolRunner_instances, _SessionToolRunner_consumed, _SessionToolRunner_controller, _SessionToolRunner_detachExternal, _SessionToolRunner_requestOpts, _SessionToolRunner_toolByName, _SessionToolRunner_logger, _SessionToolRunner_seen, _SessionToolRunner_answered, _SessionToolRunner_results, _SessionToolRunner_inFlightCount, _SessionToolRunner_onIdle, _SessionToolRunner_idleTimer, _SessionToolRunner_requestOptions, _SessionToolRunner_streamLoop, _SessionToolRunner_reconcile, _SessionToolRunner_ingestHistory, _SessionToolRunner_handleStreamEvent, _SessionToolRunner_armIdleTimer, _SessionToolRunner_disarmIdleTimer, _SessionToolRunner_execute, _SessionToolRunner_sendResult, _SessionToolRunner_drain, HELPER_NAME, STREAM_BACKOFF_START_MS, STREAM_BACKOFF_CAP_MS, TOOL_TIMEOUT_MS, DRAIN_TIMEOUT_MS, SEND_RETRIES, DEFAULT_MAX_IDLE_MS, SessionToolRunner;
+var _SessionToolRunner_instances, _SessionToolRunner_consumed, _SessionToolRunner_controller, _SessionToolRunner_detachExternal, _SessionToolRunner_requestOpts, _SessionToolRunner_toolByName, _SessionToolRunner_logger, _SessionToolRunner_seen, _SessionToolRunner_answered, _SessionToolRunner_results, _SessionToolRunner_inFlightCount, _SessionToolRunner_onIdle, _SessionToolRunner_idleTimer, _SessionToolRunner_requestOptions, _SessionToolRunner_streamLoop, _SessionToolRunner_reconcile, _SessionToolRunner_ingestHistory, _SessionToolRunner_handleStreamEvent, _SessionToolRunner_armIdleTimer, _SessionToolRunner_disarmIdleTimer, _SessionToolRunner_execute, _SessionToolRunner_sendResult, _SessionToolRunner_drain, STREAM_BACKOFF_START_MS, STREAM_BACKOFF_CAP_MS, TOOL_TIMEOUT_MS, DRAIN_TIMEOUT_MS, SEND_RETRIES, DEFAULT_MAX_IDLE_MS, SessionToolRunner;
 var init_SessionToolRunner = __esm({
   "../../node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs"() {
     "use strict";
@@ -4539,8 +4951,8 @@ var init_SessionToolRunner = __esm({
     init_abort();
     init_async_queue();
     init_headers();
+    init_stainless_helper_header();
     init_BetaRunnableTool();
-    HELPER_NAME = "SessionToolRunner";
     STREAM_BACKOFF_START_MS = 500;
     STREAM_BACKOFF_CAP_MS = 1e4;
     TOOL_TIMEOUT_MS = 12e4;
@@ -4631,7 +5043,7 @@ var init_SessionToolRunner = __esm({
     _SessionToolRunner_requestOptions = function _SessionToolRunner_requestOptions2() {
       return {
         ...__classPrivateFieldGet(this, _SessionToolRunner_requestOpts, "f"),
-        headers: buildHeaders([{ "x-stainless-helper": HELPER_NAME }, __classPrivateFieldGet(this, _SessionToolRunner_requestOpts, "f")?.headers]),
+        headers: buildHeaders([helperHeader("session-tool-runner"), __classPrivateFieldGet(this, _SessionToolRunner_requestOpts, "f")?.headers]),
         signal: __classPrivateFieldGet(this, _SessionToolRunner_controller, "f").signal
       };
     }, _SessionToolRunner_streamLoop = // ===== event stream =====
@@ -5192,6 +5604,9 @@ import * as path7 from "path";
 import * as cp from "child_process";
 import * as crypto from "crypto";
 import * as readline from "readline";
+function resolveMaxBytes(configured) {
+  return configured === void 0 ? DEFAULT_MAX_FILE_BYTES : configured;
+}
 function betaAgentToolset20260401(ctx) {
   return [
     betaBashTool(ctx),
@@ -5298,8 +5713,9 @@ function betaReadTool(ctx) {
         if (!st.isFile()) {
           throw new ToolError(`read: ${file_path} is not a regular file`);
         }
-        if (st.size > READ_MAX_BYTES) {
-          throw new ToolError(`read: ${file_path} is ${st.size} bytes, exceeds ${READ_MAX_BYTES}-byte limit. Use bash (head/tail/sed) to read a slice.`);
+        const limit2 = resolveMaxBytes(ctx.maxFileBytes);
+        if (limit2 !== null && st.size > limit2) {
+          throw new ToolError(`read: ${file_path} is ${st.size} bytes, exceeds ${limit2}-byte limit. Use bash (head/tail/sed) to read a slice.`);
         }
         data = await fs4.readFile(abs, "utf8");
       } catch (e) {
@@ -5368,8 +5784,9 @@ function betaEditTool(ctx) {
         if (!st.isFile()) {
           throw new ToolError(`edit: ${file_path} is not a regular file`);
         }
-        if (st.size > EDIT_MAX_BYTES) {
-          throw new ToolError(`edit: ${file_path} is ${st.size} bytes, exceeds ${EDIT_MAX_BYTES}-byte limit. Use bash (sed/awk) to edit a large file.`);
+        const limit2 = resolveMaxBytes(ctx.maxFileBytes);
+        if (limit2 !== null && st.size > limit2) {
+          throw new ToolError(`edit: ${file_path} is ${st.size} bytes, exceeds ${limit2}-byte limit. Use bash (sed/awk) to edit a large file.`);
         }
         data = await fs4.readFile(abs, "utf8");
       } catch (e) {
@@ -5609,7 +6026,7 @@ async function findRg() {
   }
   return null;
 }
-var _BashSession_instances, _BashSession_proc, _BashSession_buf, _BashSession_truncated, _BashSession_closed, _BashSession_waiting, _BashSession_append, BASH_OUTPUT_LIMIT, BASH_DEFAULT_TIMEOUT_MS, READ_MAX_BYTES, EDIT_MAX_BYTES, GREP_OUTPUT_LIMIT, GREP_MAX_LINE_LENGTH, GLOB_RESULT_LIMIT, ANSI_RE, fsGlob, BashSession, WALK_MAX_DEPTH, WALK_MAX_ENTRIES;
+var _BashSession_instances, _BashSession_proc, _BashSession_buf, _BashSession_truncated, _BashSession_closed, _BashSession_waiting, _BashSession_append, BASH_OUTPUT_LIMIT, BASH_DEFAULT_TIMEOUT_MS, DEFAULT_MAX_FILE_BYTES, GREP_OUTPUT_LIMIT, GREP_MAX_LINE_LENGTH, GLOB_RESULT_LIMIT, ANSI_RE, fsGlob, BashSession, WALK_MAX_DEPTH, WALK_MAX_ENTRIES;
 var init_node = __esm({
   "../../node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs"() {
     "use strict";
@@ -5623,8 +6040,7 @@ var init_node = __esm({
     init_skills();
     BASH_OUTPUT_LIMIT = 100 * 1024;
     BASH_DEFAULT_TIMEOUT_MS = 12e4;
-    READ_MAX_BYTES = 256 * 1024;
-    EDIT_MAX_BYTES = READ_MAX_BYTES;
+    DEFAULT_MAX_FILE_BYTES = 256 * 1024;
     GREP_OUTPUT_LIMIT = 100 * 1024;
     GREP_MAX_LINE_LENGTH = 2e3;
     GLOB_RESULT_LIMIT = 200;
@@ -5836,6 +6252,7 @@ var init_worker = __esm({
         this.tools = opts.tools;
         this.workdir = opts.workdir ?? process.cwd();
         this.unrestrictedPaths = opts.unrestrictedPaths;
+        this.maxFileBytes = opts.maxFileBytes;
         this.maxIdleMs = opts.maxIdleMs;
         this.workerId = opts.workerId;
         this.requestOptions = opts.requestOptions;
@@ -5927,7 +6344,8 @@ var init_worker = __esm({
         workdir: this.workdir,
         client: this.client,
         sessionId,
-        ...this.unrestrictedPaths !== void 0 ? { unrestrictedPaths: this.unrestrictedPaths } : {}
+        ...this.unrestrictedPaths !== void 0 ? { unrestrictedPaths: this.unrestrictedPaths } : {},
+        ...this.maxFileBytes !== void 0 ? { maxFileBytes: this.maxFileBytes } : {}
       };
       const agentToolset = await Promise.resolve().then(() => (init_node(), node_exports));
       let cleanupSkills = async () => {
@@ -6853,12 +7271,15 @@ var init_batches = __esm({
        * ```
        */
       create(params, options) {
-        const { betas, ...body } = params;
+        const { betas, user_profile_id, ...body } = params;
         return this._client.post("/v1/messages/batches?beta=true", {
           body,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "message-batches-2024-09-24"].toString() },
+            {
+              "anthropic-beta": [...betas ?? [], "message-batches-2024-09-24"].toString(),
+              ...user_profile_id != null ? { "anthropic-user-profile-id": user_profile_id } : void 0
+            },
             options?.headers
           ])
         });
@@ -7114,6 +7535,15 @@ var init_beta_parser = __esm({
   }
 });
 
+// ../../node_modules/@anthropic-ai/sdk/streaming.mjs
+var init_streaming2 = __esm({
+  "../../node_modules/@anthropic-ai/sdk/streaming.mjs"() {
+    "use strict";
+    init_esm_shims();
+    init_streaming();
+  }
+});
+
 // ../../node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs
 var tokenize, strip, unstrip, generate, partialParse;
 var init_parser = __esm({
@@ -7220,7 +7650,9 @@ var init_parser = __esm({
             value += char;
             char = input[++current];
           }
-          while (char && NUMBERS.test(char) || char === ".") {
+          while (char && (NUMBERS.test(char) || char === "." || // exponent marker, e.g. `1e10` or `1.5E-9`
+          char === "e" || char === "E" || // exponent sign, only valid immediately after the exponent marker
+          (char === "-" || char === "+") && (value[value.length - 1] === "e" || value[value.length - 1] === "E"))) {
             value += char;
             char = input[++current];
           }
@@ -7267,7 +7699,7 @@ var init_parser = __esm({
           break;
         case "number":
           let lastCharacterOfLastToken = lastToken.value[lastToken.value.length - 1];
-          if (lastCharacterOfLastToken === "." || lastCharacterOfLastToken === "-") {
+          if (lastCharacterOfLastToken === "." || lastCharacterOfLastToken === "-" || lastCharacterOfLastToken === "+" || lastCharacterOfLastToken === "e" || lastCharacterOfLastToken === "E") {
             tokens = tokens.slice(0, tokens.length - 1);
             return strip(tokens);
           }
@@ -7341,12 +7773,36 @@ var init_parser = __esm({
   }
 });
 
-// ../../node_modules/@anthropic-ai/sdk/streaming.mjs
-var init_streaming2 = __esm({
-  "../../node_modules/@anthropic-ai/sdk/streaming.mjs"() {
+// ../../node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs
+function withLazyInput(prev, jsonBuf) {
+  const next = {};
+  for (const key of Object.keys(prev)) {
+    if (key !== "input")
+      next[key] = prev[key];
+  }
+  Object.defineProperty(next, JSON_BUF_PROPERTY, { value: jsonBuf, enumerable: false, writable: true });
+  let input;
+  let parsed = false;
+  Object.defineProperty(next, "input", {
+    enumerable: true,
+    configurable: true,
+    get() {
+      if (!parsed) {
+        input = jsonBuf ? partialParse(jsonBuf) : {};
+        parsed = true;
+      }
+      return input;
+    }
+  });
+  return next;
+}
+var JSON_BUF_PROPERTY;
+var init_message_stream_utils = __esm({
+  "../../node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs"() {
     "use strict";
     init_esm_shims();
-    init_streaming();
+    init_parser();
+    JSON_BUF_PROPERTY = "__json_buf";
   }
 });
 
@@ -7356,18 +7812,18 @@ function tracksToolInput(content) {
 }
 function checkNever(x) {
 }
-var _BetaMessageStream_instances, _BetaMessageStream_currentMessageSnapshot, _BetaMessageStream_params, _BetaMessageStream_connectedPromise, _BetaMessageStream_resolveConnectedPromise, _BetaMessageStream_rejectConnectedPromise, _BetaMessageStream_endPromise, _BetaMessageStream_resolveEndPromise, _BetaMessageStream_rejectEndPromise, _BetaMessageStream_listeners, _BetaMessageStream_ended, _BetaMessageStream_errored, _BetaMessageStream_aborted, _BetaMessageStream_catchingPromiseCreated, _BetaMessageStream_response, _BetaMessageStream_request_id, _BetaMessageStream_logger, _BetaMessageStream_getFinalMessage, _BetaMessageStream_getFinalText, _BetaMessageStream_handleError, _BetaMessageStream_beginRequest, _BetaMessageStream_addStreamEvent, _BetaMessageStream_endRequest, _BetaMessageStream_accumulateMessage, JSON_BUF_PROPERTY, BetaMessageStream;
+var _BetaMessageStream_instances, _BetaMessageStream_currentMessageSnapshot, _BetaMessageStream_params, _BetaMessageStream_connectedPromise, _BetaMessageStream_resolveConnectedPromise, _BetaMessageStream_rejectConnectedPromise, _BetaMessageStream_endPromise, _BetaMessageStream_resolveEndPromise, _BetaMessageStream_rejectEndPromise, _BetaMessageStream_listeners, _BetaMessageStream_ended, _BetaMessageStream_errored, _BetaMessageStream_aborted, _BetaMessageStream_catchingPromiseCreated, _BetaMessageStream_response, _BetaMessageStream_request_id, _BetaMessageStream_logger, _BetaMessageStream_getFinalMessage, _BetaMessageStream_getFinalText, _BetaMessageStream_handleError, _BetaMessageStream_beginRequest, _BetaMessageStream_addStreamEvent, _BetaMessageStream_endRequest, _BetaMessageStream_accumulateMessage, _BetaMessageStream_toolInputParseError, BetaMessageStream;
 var init_BetaMessageStream = __esm({
   "../../node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
-    init_parser();
+    init_stainless_helper_header();
     init_error2();
     init_errors();
     init_streaming2();
     init_beta_parser();
-    JSON_BUF_PROPERTY = "__json_buf";
+    init_message_stream_utils();
     BetaMessageStream = class _BetaMessageStream {
       constructor(params, opts) {
         _BetaMessageStream_instances.add(this);
@@ -7474,7 +7930,7 @@ var init_BetaMessageStream = __esm({
           runner._addMessageParam(message);
         }
         __classPrivateFieldSet(runner, _BetaMessageStream_params, { ...params, stream: true }, "f");
-        runner._run(() => runner._createMessage(messages, { ...params, stream: true }, { ...options, headers: { ...options?.headers, "X-Stainless-Helper-Method": "stream" } }));
+        runner._run(() => runner._createMessage(messages, { ...params, stream: true }, { ...options, headers: { ...options?.headers, [STAINLESS_HELPER_METHOD_HEADER]: "stream" } }));
         return runner;
       }
       _run(executor) {
@@ -7724,8 +8180,15 @@ var init_BetaMessageStream = __esm({
                 break;
               }
               case "input_json_delta": {
-                if (tracksToolInput(content) && content.input) {
-                  this._emit("inputJson", event.delta.partial_json, content.input);
+                if (tracksToolInput(content) && __classPrivateFieldGet(this, _BetaMessageStream_listeners, "f").inputJson?.length) {
+                  let jsonSnapshot;
+                  try {
+                    jsonSnapshot = content.input;
+                  } catch (err) {
+                    __classPrivateFieldGet(this, _BetaMessageStream_handleError, "f").call(this, __classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_toolInputParseError).call(this, content, err));
+                    break;
+                  }
+                  this._emit("inputJson", event.delta.partial_json, jsonSnapshot);
                 }
                 break;
               }
@@ -7797,6 +8260,9 @@ var init_BetaMessageStream = __esm({
             snapshot.container = event.delta.container;
             snapshot.stop_reason = event.delta.stop_reason;
             snapshot.stop_sequence = event.delta.stop_sequence;
+            if (event.delta.stop_details != null) {
+              snapshot.stop_details = event.delta.stop_details;
+            }
             snapshot.usage.output_tokens = event.usage.output_tokens;
             snapshot.context_management = event.context_management;
             if (event.usage.input_tokens != null) {
@@ -7817,6 +8283,9 @@ var init_BetaMessageStream = __esm({
             return snapshot;
           case "content_block_start":
             snapshot.content.push(event.content_block);
+            if (event.content_block.type === "fallback") {
+              snapshot.model = event.content_block.to.model;
+            }
             return snapshot;
           case "content_block_delta": {
             const snapshotContent = snapshot.content.at(event.index);
@@ -7841,23 +8310,8 @@ var init_BetaMessageStream = __esm({
               }
               case "input_json_delta": {
                 if (snapshotContent && tracksToolInput(snapshotContent)) {
-                  let jsonBuf = snapshotContent[JSON_BUF_PROPERTY] || "";
-                  jsonBuf += event.delta.partial_json;
-                  const newContent = { ...snapshotContent };
-                  Object.defineProperty(newContent, JSON_BUF_PROPERTY, {
-                    value: jsonBuf,
-                    enumerable: false,
-                    writable: true
-                  });
-                  if (jsonBuf) {
-                    try {
-                      newContent.input = partialParse(jsonBuf);
-                    } catch (err) {
-                      const error = new AnthropicError(`Unable to parse tool parameter JSON from model. Please retry your request or adjust your prompt. Error: ${err}. JSON: ${jsonBuf}`);
-                      __classPrivateFieldGet(this, _BetaMessageStream_handleError, "f").call(this, error);
-                    }
-                  }
-                  snapshot.content[event.index] = newContent;
+                  const jsonBuf = (snapshotContent[JSON_BUF_PROPERTY] || "") + event.delta.partial_json;
+                  snapshot.content[event.index] = withLazyInput(snapshotContent, jsonBuf);
                 }
                 break;
               }
@@ -7883,7 +8337,8 @@ var init_BetaMessageStream = __esm({
                 if (snapshotContent?.type === "compaction") {
                   snapshot.content[event.index] = {
                     ...snapshotContent,
-                    content: (snapshotContent.content || "") + event.delta.content
+                    content: (snapshotContent.content || "") + event.delta.content,
+                    encrypted_content: event.delta.encrypted_content
                   };
                 }
                 break;
@@ -7893,9 +8348,29 @@ var init_BetaMessageStream = __esm({
             }
             return snapshot;
           }
-          case "content_block_stop":
+          case "content_block_stop": {
+            const snapshotContent = snapshot.content.at(event.index);
+            if (snapshotContent && tracksToolInput(snapshotContent) && JSON_BUF_PROPERTY in snapshotContent) {
+              let input;
+              try {
+                input = snapshotContent.input;
+              } catch (err) {
+                input = {};
+                __classPrivateFieldGet(this, _BetaMessageStream_handleError, "f").call(this, __classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_toolInputParseError).call(this, snapshotContent, err));
+              }
+              Object.defineProperty(snapshotContent, "input", {
+                value: input,
+                enumerable: true,
+                configurable: true,
+                writable: true
+              });
+            }
             return snapshot;
+          }
         }
+      }, _BetaMessageStream_toolInputParseError = function _BetaMessageStream_toolInputParseError2(block, err) {
+        const jsonBuf = block[JSON_BUF_PROPERTY];
+        return new AnthropicError(`Unable to parse tool parameter JSON from model. Please retry your request or adjust your prompt. Error: ${err}. JSON: ${jsonBuf}`);
       }, Symbol.asyncIterator)]() {
         const pushQueue = [];
         const readQueue = [];
@@ -8068,11 +8543,14 @@ var init_BetaToolRunner = __esm({
             messages: structuredClone(params.messages)
           }
         }, "f");
-        const helpers = collectStainlessHelpers(params.tools, params.messages);
-        const helperValue = ["BetaToolRunner", ...helpers].join(", ");
+        const collected = collectStainlessHelpers(params.tools, params.messages);
         __classPrivateFieldSet(this, _BetaToolRunner_options, {
           ...options,
-          headers: buildHeaders([{ "x-stainless-helper": helperValue }, options?.headers])
+          headers: buildHeaders([
+            helperHeader("BetaToolRunner"),
+            collected.length ? { [STAINLESS_HELPER_HEADER]: collected.join(", ") } : void 0,
+            options?.headers
+          ])
         }, "f");
         __classPrivateFieldSet(this, _BetaToolRunner_completion, promiseWithResolvers(), "f");
         if (params.compactionControl?.enabled) {
@@ -8129,7 +8607,7 @@ var init_BetaToolRunner = __esm({
           max_tokens: __classPrivateFieldGet(this, _BetaToolRunner_state, "f").params.max_tokens
         }, {
           signal: __classPrivateFieldGet(this, _BetaToolRunner_options, "f").signal,
-          headers: buildHeaders([__classPrivateFieldGet(this, _BetaToolRunner_options, "f").headers, { "x-stainless-helper": "compaction" }])
+          headers: buildHeaders([__classPrivateFieldGet(this, _BetaToolRunner_options, "f").headers, helperHeader("compaction")])
         });
         if (response.content[0]?.type !== "text") {
           throw new AnthropicError("Expected text response for compaction");
@@ -8174,8 +8652,11 @@ var init_BetaToolRunner = __esm({
               const isCompacted = await __classPrivateFieldGet(this, _BetaToolRunner_instances, "m", _BetaToolRunner_checkAndCompact).call(this);
               if (!isCompacted) {
                 if (!__classPrivateFieldGet(this, _BetaToolRunner_mutated, "f")) {
-                  const { role, content } = await __classPrivateFieldGet(this, _BetaToolRunner_message, "f");
-                  __classPrivateFieldGet(this, _BetaToolRunner_state, "f").params.messages.push({ role, content });
+                  const message = await __classPrivateFieldGet(this, _BetaToolRunner_message, "f");
+                  __classPrivateFieldGet(this, _BetaToolRunner_state, "f").params.messages.push({ role: message.role, content: message.content });
+                  if (message.stop_reason === "refusal") {
+                    break;
+                  }
                 }
                 const toolMessage = await __classPrivateFieldGet(this, _BetaToolRunner_instances, "m", _BetaToolRunner_generateToolResponse).call(this, __classPrivateFieldGet(this, _BetaToolRunner_state, "f").params.messages.at(-1));
                 if (toolMessage) {
@@ -8380,7 +8861,16 @@ var init_messages = __esm({
       "claude-2.1": "July 21st, 2025",
       "claude-2.0": "July 21st, 2025",
       "claude-3-7-sonnet-latest": "February 19th, 2026",
-      "claude-3-7-sonnet-20250219": "February 19th, 2026"
+      "claude-3-7-sonnet-20250219": "February 19th, 2026",
+      "claude-3-5-haiku-latest": "February 19th, 2026",
+      "claude-3-5-haiku-20241022": "February 19th, 2026",
+      "claude-opus-4-0": "June 15th, 2026",
+      "claude-opus-4-20250514": "June 15th, 2026",
+      "claude-sonnet-4-0": "June 15th, 2026",
+      "claude-sonnet-4-20250514": "June 15th, 2026",
+      "claude-opus-4-1": "August 5th, 2026",
+      "claude-opus-4-1-20250805": "August 5th, 2026",
+      "claude-mythos-preview": "June 30th, 2026"
     };
     MODELS_TO_WARN_WITH_THINKING_ENABLED = ["claude-mythos-preview", "claude-opus-4-6"];
     Messages = class extends APIResource {
@@ -8390,7 +8880,7 @@ var init_messages = __esm({
       }
       create(params, options) {
         const modifiedParams = transformOutputFormat(params);
-        const { betas, ...body } = modifiedParams;
+        const { betas, user_profile_id, ...body } = modifiedParams;
         if (body.model in DEPRECATED_MODELS) {
           console.warn(`The model '${body.model}' is deprecated and will reach end-of-life on ${DEPRECATED_MODELS[body.model]}
 Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resources/model-deprecations for more information.`);
@@ -8403,14 +8893,17 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
           const maxNonstreamingTokens = MODEL_NONSTREAMING_TOKENS[body.model] ?? void 0;
           timeout = this._client.calculateNonstreamingTimeout(body.max_tokens, maxNonstreamingTokens);
         }
-        const helperHeader = stainlessHelperHeader(body.tools, body.messages);
+        const helperHeader2 = stainlessHelperHeader(body.tools, body.messages);
         return this._client.post("/v1/messages?beta=true", {
           body,
           timeout: timeout ?? 6e5,
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            helperHeader,
+            {
+              ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0,
+              ...user_profile_id != null ? { "anthropic-user-profile-id": user_profile_id } : void 0
+            },
+            helperHeader2,
             options?.headers
           ]),
           stream: modifiedParams.stream ?? false
@@ -9088,7 +9581,7 @@ var init_versions2 = __esm({
             { "anthropic-beta": [...betas ?? [], "skills-2025-10-02"].toString() },
             options?.headers
           ])
-        }, this._client));
+        }, this._client, false));
       }
       /**
        * Get Skill Version
@@ -9626,6 +10119,10 @@ var init_beta = __esm({
     "use strict";
     init_esm_shims();
     init_resource();
+    init_deployment_runs();
+    init_deployment_runs();
+    init_deployments();
+    init_deployments();
     init_files();
     init_files();
     init_models();
@@ -9656,6 +10153,8 @@ var init_beta = __esm({
         this.agents = new Agents(this._client);
         this.environments = new Environments(this._client);
         this.sessions = new Sessions(this._client);
+        this.deployments = new Deployments(this._client);
+        this.deploymentRuns = new DeploymentRuns(this._client);
         this.vaults = new Vaults(this._client);
         this.memoryStores = new MemoryStores(this._client);
         this.files = new Files(this._client);
@@ -9669,6 +10168,8 @@ var init_beta = __esm({
     Beta.Agents = Agents;
     Beta.Environments = Environments;
     Beta.Sessions = Sessions;
+    Beta.Deployments = Deployments;
+    Beta.DeploymentRuns = DeploymentRuns;
     Beta.Vaults = Vaults;
     Beta.MemoryStores = MemoryStores;
     Beta.Files = Files;
@@ -9778,18 +10279,18 @@ function tracksToolInput2(content) {
 }
 function checkNever2(x) {
 }
-var _MessageStream_instances, _MessageStream_currentMessageSnapshot, _MessageStream_params, _MessageStream_connectedPromise, _MessageStream_resolveConnectedPromise, _MessageStream_rejectConnectedPromise, _MessageStream_endPromise, _MessageStream_resolveEndPromise, _MessageStream_rejectEndPromise, _MessageStream_listeners, _MessageStream_ended, _MessageStream_errored, _MessageStream_aborted, _MessageStream_catchingPromiseCreated, _MessageStream_response, _MessageStream_request_id, _MessageStream_logger, _MessageStream_getFinalMessage, _MessageStream_getFinalText, _MessageStream_handleError, _MessageStream_beginRequest, _MessageStream_addStreamEvent, _MessageStream_endRequest, _MessageStream_accumulateMessage, JSON_BUF_PROPERTY2, MessageStream;
+var _MessageStream_instances, _MessageStream_currentMessageSnapshot, _MessageStream_params, _MessageStream_connectedPromise, _MessageStream_resolveConnectedPromise, _MessageStream_rejectConnectedPromise, _MessageStream_endPromise, _MessageStream_resolveEndPromise, _MessageStream_rejectEndPromise, _MessageStream_listeners, _MessageStream_ended, _MessageStream_errored, _MessageStream_aborted, _MessageStream_catchingPromiseCreated, _MessageStream_response, _MessageStream_request_id, _MessageStream_logger, _MessageStream_getFinalMessage, _MessageStream_getFinalText, _MessageStream_handleError, _MessageStream_beginRequest, _MessageStream_addStreamEvent, _MessageStream_endRequest, _MessageStream_accumulateMessage, MessageStream;
 var init_MessageStream = __esm({
   "../../node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
+    init_stainless_helper_header();
     init_errors();
     init_error2();
     init_streaming2();
-    init_parser();
     init_parser2();
-    JSON_BUF_PROPERTY2 = "__json_buf";
+    init_message_stream_utils();
     MessageStream = class _MessageStream {
       constructor(params, opts) {
         _MessageStream_instances.add(this);
@@ -9896,7 +10397,7 @@ var init_MessageStream = __esm({
           runner._addMessageParam(message);
         }
         __classPrivateFieldSet(runner, _MessageStream_params, { ...params, stream: true }, "f");
-        runner._run(() => runner._createMessage(messages, { ...params, stream: true }, { ...options, headers: { ...options?.headers, "X-Stainless-Helper-Method": "stream" } }));
+        runner._run(() => runner._createMessage(messages, { ...params, stream: true }, { ...options, headers: { ...options?.headers, [STAINLESS_HELPER_METHOD_HEADER]: "stream" } }));
         return runner;
       }
       _run(executor) {
@@ -10146,7 +10647,7 @@ var init_MessageStream = __esm({
                 break;
               }
               case "input_json_delta": {
-                if (tracksToolInput2(content) && content.input) {
+                if (tracksToolInput2(content) && __classPrivateFieldGet(this, _MessageStream_listeners, "f").inputJson?.length) {
                   this._emit("inputJson", event.delta.partial_json, content.input);
                 }
                 break;
@@ -10212,6 +10713,9 @@ var init_MessageStream = __esm({
           case "message_delta":
             snapshot.stop_reason = event.delta.stop_reason;
             snapshot.stop_sequence = event.delta.stop_sequence;
+            if (event.delta.stop_details != null) {
+              snapshot.stop_details = event.delta.stop_details;
+            }
             snapshot.usage.output_tokens = event.usage.output_tokens;
             if (event.usage.input_tokens != null) {
               snapshot.usage.input_tokens = event.usage.input_tokens;
@@ -10252,18 +10756,8 @@ var init_MessageStream = __esm({
               }
               case "input_json_delta": {
                 if (snapshotContent && tracksToolInput2(snapshotContent)) {
-                  let jsonBuf = snapshotContent[JSON_BUF_PROPERTY2] || "";
-                  jsonBuf += event.delta.partial_json;
-                  const newContent = { ...snapshotContent };
-                  Object.defineProperty(newContent, JSON_BUF_PROPERTY2, {
-                    value: jsonBuf,
-                    enumerable: false,
-                    writable: true
-                  });
-                  if (jsonBuf) {
-                    newContent.input = partialParse(jsonBuf);
-                  }
-                  snapshot.content[event.index] = newContent;
+                  const jsonBuf = (snapshotContent[JSON_BUF_PROPERTY] || "") + event.delta.partial_json;
+                  snapshot.content[event.index] = withLazyInput(snapshotContent, jsonBuf);
                 }
                 break;
               }
@@ -10290,8 +10784,18 @@ var init_MessageStream = __esm({
             }
             return snapshot;
           }
-          case "content_block_stop":
+          case "content_block_stop": {
+            const snapshotContent = snapshot.content.at(event.index);
+            if (snapshotContent && tracksToolInput2(snapshotContent) && JSON_BUF_PROPERTY in snapshotContent) {
+              Object.defineProperty(snapshotContent, "input", {
+                value: snapshotContent.input,
+                enumerable: true,
+                configurable: true,
+                writable: true
+              });
+            }
             return snapshot;
+          }
         }
       }, Symbol.asyncIterator)]() {
         const pushQueue = [];
@@ -10392,8 +10896,16 @@ var init_batches2 = __esm({
        * });
        * ```
        */
-      create(body, options) {
-        return this._client.post("/v1/messages/batches", { body, ...options });
+      create(params, options) {
+        const { user_profile_id, ...body } = params;
+        return this._client.post("/v1/messages/batches", {
+          body,
+          ...options,
+          headers: buildHeaders([
+            { ...user_profile_id != null ? { "anthropic-user-profile-id": user_profile_id } : void 0 },
+            options?.headers
+          ])
+        });
       }
       /**
        * This endpoint is idempotent and can be used to poll for Message Batch
@@ -10524,7 +11036,8 @@ var init_messages2 = __esm({
         super(...arguments);
         this.batches = new Batches2(this._client);
       }
-      create(body, options) {
+      create(params, options) {
+        const { user_profile_id, ...body } = params;
         if (body.model in DEPRECATED_MODELS2) {
           console.warn(`The model '${body.model}' is deprecated and will reach end-of-life on ${DEPRECATED_MODELS2[body.model]}
 Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resources/model-deprecations for more information.`);
@@ -10537,13 +11050,17 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
           const maxNonstreamingTokens = MODEL_NONSTREAMING_TOKENS[body.model] ?? void 0;
           timeout = this._client.calculateNonstreamingTimeout(body.max_tokens, maxNonstreamingTokens);
         }
-        const helperHeader = stainlessHelperHeader(body.tools, body.messages);
+        const helperHeader2 = stainlessHelperHeader(body.tools, body.messages);
         return this._client.post("/v1/messages", {
           body,
           timeout: timeout ?? 6e5,
           ...options,
-          headers: buildHeaders([helperHeader, options?.headers]),
-          stream: body.stream ?? false
+          headers: buildHeaders([
+            { ...user_profile_id != null ? { "anthropic-user-profile-id": user_profile_id } : void 0 },
+            helperHeader2,
+            options?.headers
+          ]),
+          stream: params.stream ?? false
         });
       }
       /**
@@ -10630,7 +11147,10 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
       "claude-opus-4-0": "June 15th, 2026",
       "claude-opus-4-20250514": "June 15th, 2026",
       "claude-sonnet-4-0": "June 15th, 2026",
-      "claude-sonnet-4-20250514": "June 15th, 2026"
+      "claude-sonnet-4-20250514": "June 15th, 2026",
+      "claude-opus-4-1": "August 5th, 2026",
+      "claude-opus-4-1-20250805": "August 5th, 2026",
+      "claude-mythos-preview": "June 30th, 2026"
     };
     MODELS_TO_WARN_WITH_THINKING_ENABLED2 = ["claude-mythos-preview", "claude-opus-4-6"];
     Messages2.Batches = Batches2;
@@ -10718,6 +11238,7 @@ var init_client = __esm({
     init_types();
     init_token_cache();
     init_credential_chain();
+    init_middleware();
     init_pagination();
     init_uploads2();
     init_resources2();
@@ -10789,13 +11310,13 @@ var init_client = __esm({
         this._baseURLIsExplicit = opts.__baseURLIsExplicit ?? !!baseURL;
         this.timeout = options.timeout ?? _a.DEFAULT_TIMEOUT;
         this.logger = options.logger ?? console;
-        const defaultLogLevel = "warn";
         this.logLevel = defaultLogLevel;
-        this.logLevel = parseLogLevel(options.logLevel, "ClientOptions.logLevel", this) ?? parseLogLevel(readEnv("ANTHROPIC_LOG"), "process.env['ANTHROPIC_LOG']", this) ?? defaultLogLevel;
+        this.logLevel = parseLogLevel(options.logLevel, "ClientOptions.logLevel", loggerFor(this)) ?? parseLogLevel(readEnv("ANTHROPIC_LOG"), "process.env['ANTHROPIC_LOG']", loggerFor(this)) ?? defaultLogLevel;
         this.fetchOptions = options.fetchOptions;
         this.maxRetries = options.maxRetries ?? 2;
         this.fetch = options.fetch ?? getDefaultFetch();
         __classPrivateFieldSet(this, _BaseAnthropic_encoder, FallbackEncoder, "f");
+        this.middleware = [...options.middleware ?? []];
         const customHeadersEnv = readEnv("ANTHROPIC_CUSTOM_HEADERS");
         if (customHeadersEnv) {
           const parsed = {};
@@ -10866,7 +11387,7 @@ var init_client = __esm({
       _credentialResolverOptions() {
         return {
           baseURL: this.baseURL,
-          fetch: this.fetch,
+          fetch: this._credentialsFetch(),
           userAgent: this.getUserAgent(),
           onCacheWriteError: (err) => {
             loggerFor(this).debug("credential cache write failed (best-effort)", err);
@@ -10875,6 +11396,18 @@ var init_client = __esm({
             loggerFor(this).warn(msg);
           }
         };
+      }
+      /**
+       * A `Fetch` for first-party credential token-exchange requests (OIDC
+       * federation jwt-bearer grants, user-OAuth refresh grants) that routes
+       * through this client's middleware chain, so middleware observes token
+       * traffic like any other request. Only client-level middleware applies:
+       * a minted token is shared across requests, so attributing the exchange
+       * to any one request's per-request middleware would be arbitrary. For the
+       * same reason, `ctx.options` is undefined for these requests.
+       */
+      _credentialsFetch() {
+        return wrapFetchWithMiddleware(this.fetch, this.middleware, void 0, this);
       }
       _makeTokenCache(provider) {
         return new TokenCache(provider, (err) => {
@@ -10904,6 +11437,7 @@ var init_client = __esm({
           logLevel: this.logLevel,
           fetch: this.fetch,
           fetchOptions: this.fetchOptions,
+          middleware: this.middleware,
           apiKey: this.apiKey,
           authToken: this.authToken,
           webhookKey: this.webhookKey,
@@ -11053,6 +11587,13 @@ var init_client = __esm({
        *
        * This is useful for cases where you want to add certain headers based off of
        * the request properties, e.g. `method` or `url`.
+       *
+       * Runs after all middleware (including {@link backendMiddleware}),
+       * immediately before each underlying fetch call, so it sees exactly what
+       * goes over the wire. Middleware may replay a request by calling `next()`
+       * more than once, so this hook can run multiple times per attempt:
+       * overrides must be idempotent and overwrite headers from a previous
+       * invocation rather than append to them.
        */
       async prepareRequest(request, { url, options }) {
         if (this._authState.tokenCache && this.apiKey == null) {
@@ -11067,6 +11608,27 @@ var init_client = __esm({
           }
           request.headers = headers;
         }
+      }
+      /**
+       * Internal {@link Middleware} composed innermost in the chain — inside both
+       * client-level and per-request middleware, immediately around the underlying
+       * `fetch`. Subclasses for third-party backends override this to adapt the
+       * canonical Anthropic-shaped request to the backend's wire shape (URL/body
+       * rewriting, request signing) and to normalize the wire response back to the
+       * canonical shape (e.g. AWS EventStream to SSE).
+       *
+       * Running inside the user's middleware means user middleware always observes
+       * canonical Anthropic-shaped traffic, and the adaptation re-runs (e.g.
+       * re-signs) on every `next()` invocation, covering whatever the middleware
+       * mutated.
+       *
+       * Errors thrown here follow the middleware error policy: they propagate to
+       * the caller as-is — no retries, no `APIConnectionError` wrapping — unless
+       * retryable (see {@link Middleware}); throw a `RetryableError` to opt into
+       * the retry path.
+       */
+      backendMiddleware() {
+        return [];
       }
       get(path8, opts) {
         return this.methodRequest("get", path8, opts);
@@ -11102,22 +11664,17 @@ var init_client = __esm({
         const { req, url, timeout } = await this.buildRequest(options, {
           retryCount: maxRetries - retriesRemaining
         });
-        await this.prepareRequest(req, { url, options });
         const requestLogID = "log_" + (Math.random() * (1 << 24) | 0).toString(16).padStart(6, "0");
         const retryLogStr = retryOfRequestLogID === void 0 ? "" : `, retryOf: ${retryOfRequestLogID}`;
         const startTime = Date.now();
-        loggerFor(this).debug(`[${requestLogID}] sending request`, formatRequestDetails({
-          retryOfRequestLogID,
-          method: options.method,
-          url,
-          options,
-          headers: req.headers
-        }));
         if (options.signal?.aborted) {
           throw new APIUserAbortError();
         }
         const controller = new AbortController();
-        const response = await this.fetchWithTimeout(url, req, timeout, controller).catch(castToError);
+        const response = await this.fetchWithTimeout(url, req, timeout, controller, options, {
+          requestLogID,
+          retryOfRequestLogID
+        }).catch(castToError);
         const headersTime = Date.now();
         if (response instanceof globalThis.Error) {
           const retryMessage = `retrying, ${retriesRemaining} attempts remaining`;
@@ -11125,6 +11682,17 @@ var init_client = __esm({
             throw new APIUserAbortError();
           }
           const isTimeout = isAbortError(response) || /timed? ?out/i.test(String(response) + ("cause" in response ? String(response.cause) : ""));
+          const hasMiddleware = this.middleware.length > 0 || !!options.middleware?.length || this.backendMiddleware().length > 0;
+          if (hasMiddleware && !isTimeout && !isRetryableError(response)) {
+            loggerFor(this).info(`[${requestLogID}] middleware error (not retryable)`);
+            loggerFor(this).debug(`[${requestLogID}] middleware error (not retryable)`, formatRequestDetails({
+              retryOfRequestLogID,
+              url,
+              durationMs: headersTime - startTime,
+              message: response.message
+            }));
+            throw response;
+          }
           if (retriesRemaining) {
             loggerFor(this).info(`[${requestLogID}] connection ${isTimeout ? "timed out" : "failed"} - ${retryMessage}`);
             loggerFor(this).debug(`[${requestLogID}] connection ${isTimeout ? "timed out" : "failed"} (${retryMessage})`, formatRequestDetails({
@@ -11144,6 +11712,9 @@ var init_client = __esm({
           }));
           if (isTimeout) {
             throw new APIConnectionTimeoutError();
+          }
+          if (hasMiddleware && !isFetchOriginError(response)) {
+            throw response;
           }
           throw new APIConnectionError({ cause: response });
         }
@@ -11197,12 +11768,11 @@ var init_client = __esm({
         const request = this.makeRequest(options, null, void 0);
         return new PagePromise(this, request, Page2);
       }
-      async fetchWithTimeout(url, init, ms, controller) {
+      async fetchWithTimeout(url, init, ms, controller, requestOptions, logCtx) {
         const { signal, method, ...options } = init || {};
         const abort = this._makeAbort(controller);
         if (signal)
           signal.addEventListener("abort", abort, { once: true });
-        const timeout = setTimeout(abort, ms);
         const isReadableBody = globalThis.ReadableStream && options.body instanceof globalThis.ReadableStream || typeof options.body === "object" && options.body !== null && Symbol.asyncIterator in options.body;
         const fetchOptions = {
           signal: controller.signal,
@@ -11213,11 +11783,34 @@ var init_client = __esm({
         if (method) {
           fetchOptions.method = method.toUpperCase();
         }
-        try {
-          return await this.fetch.call(void 0, url, fetchOptions);
-        } finally {
-          clearTimeout(timeout);
-        }
+        const baseFetch = this.fetch;
+        const timedFetch = async (innerUrl, innerInit) => {
+          const timeout = setTimeout(abort, ms);
+          try {
+            return await baseFetch.call(void 0, innerUrl, innerInit);
+          } finally {
+            clearTimeout(timeout);
+          }
+        };
+        const innerFetch = requestOptions === void 0 ? timedFetch : (async (innerUrl, innerInit = {}) => {
+          const innerUrlStr = typeof innerUrl === "string" ? innerUrl : innerUrl instanceof URL ? innerUrl.href : innerUrl.url;
+          innerInit.headers = innerInit.headers instanceof Headers ? innerInit.headers : new Headers(innerInit.headers);
+          await this.prepareRequest(innerInit, { url: innerUrlStr, options: requestOptions });
+          if (logCtx) {
+            loggerFor(this).debug(`[${logCtx.requestLogID}] sending request`, formatRequestDetails({
+              retryOfRequestLogID: logCtx.retryOfRequestLogID,
+              method: innerInit.method,
+              url: innerUrlStr,
+              options: requestOptions,
+              headers: innerInit.headers
+            }));
+          }
+          return timedFetch(innerUrl, innerInit);
+        });
+        const requestMiddleware = requestOptions?.middleware;
+        const backendMiddleware = this.backendMiddleware();
+        const allMiddleware = requestMiddleware?.length || backendMiddleware.length ? [...this.middleware, ...requestMiddleware ?? [], ...backendMiddleware] : this.middleware;
+        return await wrapFetchWithMiddleware(innerFetch, allMiddleware, requestOptions, this)(url, fetchOptions);
       }
       async shouldRetry(response, options) {
         const flags = this._authFlags(options);
@@ -11402,6 +11995,23 @@ var init_client = __esm({
   }
 });
 
+// ../../node_modules/@anthropic-ai/sdk/lib/middleware.mjs
+var encoder;
+var init_middleware2 = __esm({
+  "../../node_modules/@anthropic-ai/sdk/lib/middleware.mjs"() {
+    "use strict";
+    init_esm_shims();
+    init_error();
+    init_streaming();
+    init_errors();
+    init_headers();
+    init_stainless_helper_header();
+    init_values();
+    init_request_options();
+    encoder = new TextEncoder();
+  }
+});
+
 // ../../node_modules/@anthropic-ai/sdk/index.mjs
 var init_sdk = __esm({
   "../../node_modules/@anthropic-ai/sdk/index.mjs"() {
@@ -11410,6 +12020,7 @@ var init_sdk = __esm({
     init_client();
     init_uploads2();
     init_api_promise();
+    init_middleware2();
     init_client();
     init_pagination();
     init_error();
@@ -11479,7 +12090,7 @@ var package_default = {
     node: ">=18"
   },
   dependencies: {
-    "@anthropic-ai/sdk": "^0.98.0"
+    "@anthropic-ai/sdk": "^0.106.0"
   }
 };
 

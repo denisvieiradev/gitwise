@@ -28,14 +28,14 @@
   },
   "dependencies": {
     "@denisvieiradev/gitwise-core": "0.1.0",
-    "@clack/prompts": "^0.9.1",
+    "@clack/prompts": "^1.6.0",
     "chalk": "^5.3.0",
     "commander": "^15.0.0"
   },
   "devDependencies": {
-    "@jest/globals": "^29.7.0",
+    "@jest/globals": "^30.4.1",
     "ts-jest": "^29.4.11",
-    "typescript": "^5.7.3"
+    "typescript": "^6.0.3"
   },
   "keywords": ["gitwise", "git", "ai", "commit", "review", "pull-request", "release"],
   "author": "Denis Vieira <denisvieira05@gmail.com>",
