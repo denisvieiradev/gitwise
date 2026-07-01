@@ -12597,7 +12597,7 @@ async function acquireRepoLock(repoPath, options = {}) {
     command,
     acquiredAt: now().toISOString()
   };
-  await tryAcquire(lockPath, payload, staleMs, isAlive, now, 0);
+  await tryAcquire(lockPath, payload, staleMs, isAlive, now, 0, options.onReclaim);
   let released = false;
   return async () => {
     if (released) return;
@@ -12609,7 +12609,7 @@ async function acquireRepoLock(repoPath, options = {}) {
     }
   };
 }
-async function tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt) {
+async function tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt, onReclaim) {
   try {
     const handle = await open2(lockPath, "wx");
     try {
@@ -12641,7 +12641,8 @@ async function tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt) {
   } catch (unlinkErr) {
     if (unlinkErr.code !== "ENOENT") throw unlinkErr;
   }
-  return tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt + 1);
+  if (onReclaim) await onReclaim();
+  return tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt + 1, onReclaim);
 }
 async function readExisting(lockPath) {
   try {
