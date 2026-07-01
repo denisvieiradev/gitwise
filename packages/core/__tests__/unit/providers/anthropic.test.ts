@@ -64,7 +64,7 @@ describe("AnthropicProvider (core)", () => {
   });
 
   it("retries up to 3 times on 429 then throws API_RATE_LIMITED", async () => {
-    const apiError = new Anthropic.APIError(429, undefined, "Rate limited", {});
+    const apiError = new Anthropic.APIError(429, undefined, "Rate limited", new Headers());
     mockCreate
       .mockRejectedValueOnce(apiError)
       .mockRejectedValueOnce(apiError)
@@ -80,7 +80,7 @@ describe("AnthropicProvider (core)", () => {
   }, 30000);
 
   it("retries up to 3 times on 529 then throws API_RATE_LIMITED", async () => {
-    const apiError = new Anthropic.APIError(529, undefined, "Overloaded", {});
+    const apiError = new Anthropic.APIError(529, undefined, "Overloaded", new Headers());
     mockCreate
       .mockRejectedValueOnce(apiError)
       .mockRejectedValueOnce(apiError)
