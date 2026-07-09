@@ -404,15 +404,28 @@ export function takeNamedStashStep(cwd: string, stashName: string): Step<void> {
 }
 
 /**
- * Transaction step that stages the given files and creates one commit.
+ * Transaction step that stages the given group's files and creates one commit.
+ *
+ * Staging goes through `stagedTree` — a tree object captured from the fully
+ * staged index before the split unstaged everything — via the index alone
+ * (`git reset <tree> -- <paths>`). This never reads the working tree, so a
+ * planned path that no longer matches a worktree file (a staged-then-deleted
+ * file, a staged deletion, or a path the plan named but that was never staged)
+ * is handled by the index instead of aborting the whole commit with
+ * "pathspec did not match any files". A group whose paths contribute nothing
+ * to the index (e.g. all phantom paths) is skipped rather than failing on an
+ * empty commit.
+ *
  * apply  — records the prior HEAD SHA (for compensate) and the new HEAD SHA
- *           (as evidence of the created commit) in the result.
+ *           (as evidence of the created commit) in the result. When the group
+ *           stages nothing, `newSha === priorSha` and no commit is made.
  * compensate — runs `git reset --soft <priorSha>` to undo only this commit
  *              while preserving the staged delta for potential retry.
  */
 export function applyOneCommitStep(
   entry: CommitEntry,
   cwd: string,
+  stagedTree: string,
 ): Step<CommitStepResult> {
   const msg = entry.description
     ? `${entry.message}\n\n${entry.description}`
@@ -421,7 +434,20 @@ export function applyOneCommitStep(
     name: `applyCommit(${entry.message})`,
     async apply(): Promise<CommitStepResult> {
       const priorSha = await git.headSha(cwd);
-      await git.applyCommit({ message: msg, files: entry.files, cwd });
+      await git.stagePathsFromTree(cwd, stagedTree, entry.files);
+      const staged = await git.getStagedFilesList(cwd);
+      if (staged.length === 0) {
+        // None of the group's planned paths were actually staged (phantom or
+        // already-committed). Skip instead of failing `git commit` with
+        // "nothing to commit".
+        debug("Skipping commit group with no staged changes", {
+          message: entry.message,
+          files: entry.files,
+        });
+        return { priorSha, newSha: priorSha };
+      }
+      // files: [] — staging already done above via the index; this only commits.
+      await git.applyCommit({ message: msg, files: [], cwd });
       const newSha = await git.headSha(cwd);
       return { priorSha, newSha };
     },
@@ -459,11 +485,18 @@ export async function applyCommitPlan(
         // then immediately re-apply so the staged files are still visible.
         await tx.run(takeNamedStashStep(cwd, stashName));
 
-        // Unstage all files so per-commit git-add can re-stage each group.
+        // Capture the fully-staged state as a tree object BEFORE unstaging, so
+        // each group can be re-staged from it via the index alone. This avoids
+        // re-running `git add` against the working tree, which is fatal when a
+        // planned path no longer matches a worktree file (see applyOneCommitStep
+        // and the single-commit note below).
+        const stagedTree = await git.writeTree(cwd);
+
+        // Unstage all files so per-commit staging can re-stage each group.
         await git.resetStaged(cwd);
 
         for (const entry of plan.commits) {
-          await tx.run(applyOneCommitStep(entry, cwd));
+          await tx.run(applyOneCommitStep(entry, cwd, stagedTree));
         }
 
         // Happy path: drop the backup stash — it's no longer needed.

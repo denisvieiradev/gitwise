@@ -261,4 +261,52 @@ describe("git infra (core)", () => {
       await expect(git.branchExists(tempDir, "feature-roundtrip")).resolves.toBe(false);
     });
   });
+
+  describe("writeTree / stagePathsFromTree", () => {
+    it("writeTree returns a tree SHA for the current index", async () => {
+      await writeFile(join(tempDir, "x.ts"), "const x = 1;\n");
+      await exec("git", ["add", "x.ts"], { cwd: tempDir });
+      const tree = await git.writeTree(tempDir);
+      expect(tree).toMatch(/^[0-9a-f]{40}$/);
+    });
+
+    it("stages only the named paths from the tree, via the index (not the worktree)", async () => {
+      await writeFile(join(tempDir, "a.ts"), "const a = 1;\n");
+      await writeFile(join(tempDir, "b.ts"), "const b = 2;\n");
+      await exec("git", ["add", "a.ts", "b.ts"], { cwd: tempDir });
+      const tree = await git.writeTree(tempDir);
+      await git.resetStaged(tempDir);
+
+      await git.stagePathsFromTree(tempDir, tree, ["a.ts"]);
+      await expect(git.getStagedFilesList(tempDir)).resolves.toEqual(["a.ts"]);
+    });
+
+    it("re-stages a staged file even after its worktree copy is deleted", async () => {
+      await writeFile(join(tempDir, "gone.ts"), "const g = 1;\n");
+      await exec("git", ["add", "gone.ts"], { cwd: tempDir });
+      const tree = await git.writeTree(tempDir);
+      await git.resetStaged(tempDir);
+      await rm(join(tempDir, "gone.ts"));
+
+      // `git add gone.ts` would abort here ("pathspec did not match"); the
+      // tree-based staging must succeed instead.
+      await git.stagePathsFromTree(tempDir, tree, ["gone.ts"]);
+      await expect(git.getStagedFilesList(tempDir)).resolves.toEqual(["gone.ts"]);
+    });
+
+    it("is a harmless no-op for a path absent from both the tree and the worktree", async () => {
+      const tree = await git.writeTree(tempDir);
+      await expect(
+        git.stagePathsFromTree(tempDir, tree, ["phantom.log"]),
+      ).resolves.toBeUndefined();
+      await expect(git.getStagedFilesList(tempDir)).resolves.toEqual([]);
+    });
+
+    it("does nothing when given an empty file list", async () => {
+      const tree = await git.writeTree(tempDir);
+      await expect(
+        git.stagePathsFromTree(tempDir, tree, []),
+      ).resolves.toBeUndefined();
+    });
+  });
 });
