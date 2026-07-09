@@ -12270,13 +12270,15 @@ __export(git_exports, {
   resetSoft: () => resetSoft,
   resetStaged: () => resetStaged,
   showFileAtHead: () => showFileAtHead,
+  stagePathsFromTree: () => stagePathsFromTree,
   stashApplyNamed: () => stashApplyNamed,
   stashDropNamed: () => stashDropNamed,
   stashList: () => stashList,
   stashPopNamed: () => stashPopNamed,
   stashPushNamed: () => stashPushNamed,
   status: () => status,
-  tagExists: () => tagExists
+  tagExists: () => tagExists,
+  writeTree: () => writeTree
 });
 init_esm_shims();
 import { execFile } from "child_process";
@@ -12347,6 +12349,13 @@ async function getLog(cwd, range, maxCount) {
 }
 async function add(cwd, files) {
   await run(["add", ...files], cwd);
+}
+async function writeTree(cwd) {
+  return run(["write-tree"], cwd);
+}
+async function stagePathsFromTree(cwd, tree, files) {
+  if (files.length === 0) return;
+  await run(["reset", "-q", tree, "--", ...files], cwd);
 }
 async function commit(cwd, message) {
   return run(["commit", "-m", message], cwd);
@@ -13392,7 +13401,7 @@ function takeNamedStashStep(cwd, stashName) {
     }
   };
 }
-function applyOneCommitStep(entry, cwd) {
+function applyOneCommitStep(entry, cwd, stagedTree) {
   const msg = entry.description ? `${entry.message}
 
 ${entry.description}` : entry.message;
@@ -13400,7 +13409,16 @@ ${entry.description}` : entry.message;
     name: `applyCommit(${entry.message})`,
     async apply() {
       const priorSha = await headSha(cwd);
-      await applyCommit({ message: msg, files: entry.files, cwd });
+      await stagePathsFromTree(cwd, stagedTree, entry.files);
+      const staged = await getStagedFilesList(cwd);
+      if (staged.length === 0) {
+        debug("Skipping commit group with no staged changes", {
+          message: entry.message,
+          files: entry.files
+        });
+        return { priorSha, newSha: priorSha };
+      }
+      await applyCommit({ message: msg, files: [], cwd });
       const newSha = await headSha(cwd);
       return { priorSha, newSha };
     },
@@ -13425,9 +13443,10 @@ async function applyCommitPlan(plan, opts) {
       const logger = { warn };
       try {
         await tx.run(takeNamedStashStep(cwd, stashName));
+        const stagedTree = await writeTree(cwd);
         await resetStaged(cwd);
         for (const entry of plan.commits) {
-          await tx.run(applyOneCommitStep(entry, cwd));
+          await tx.run(applyOneCommitStep(entry, cwd, stagedTree));
         }
         await stashDropNamed(cwd, stashName);
       } catch (err) {
