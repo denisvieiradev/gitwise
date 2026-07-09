@@ -98,6 +98,32 @@ export async function add(cwd: string, files: string[]): Promise<void> {
   await run(["add", ...files], cwd);
 }
 
+/**
+ * Write the current index to a tree object and return its SHA. Captures the
+ * fully-staged state so individual paths can later be re-staged from it via
+ * the index alone, without ever reading the working tree.
+ */
+export async function writeTree(cwd: string): Promise<string> {
+  return run(["write-tree"], cwd);
+}
+
+/**
+ * Stage the given paths into the index from a tree object, without touching
+ * the working tree. Unlike `git add`, this never reads the worktree, so a path
+ * that no longer matches a worktree file — a staged-then-deleted file, a staged
+ * deletion, or a planned path that was never staged — is handled by the index
+ * (added, removed, or no-op'd) instead of aborting with
+ * "pathspec did not match any files". No-ops when `files` is empty.
+ */
+export async function stagePathsFromTree(
+  cwd: string,
+  tree: string,
+  files: string[],
+): Promise<void> {
+  if (files.length === 0) return;
+  await run(["reset", "-q", tree, "--", ...files], cwd);
+}
+
 export async function commit(cwd: string, message: string): Promise<string> {
   return run(["commit", "-m", message], cwd);
 }

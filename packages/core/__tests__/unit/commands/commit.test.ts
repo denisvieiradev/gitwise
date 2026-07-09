@@ -504,8 +504,9 @@ describe("applyOneCommitStep", () => {
     await exec("git", ["add", "a.ts"], { cwd: tempDir });
 
     const originalSha = await git.headSha(tempDir);
+    const stagedTree = await git.writeTree(tempDir);
     const entry = { message: "feat: add a", files: ["a.ts"] };
-    const step = applyOneCommitStep(entry, tempDir);
+    const step = applyOneCommitStep(entry, tempDir, stagedTree);
     const result = await step.apply();
 
     const newSha = await git.headSha(tempDir);
@@ -519,8 +520,9 @@ describe("applyOneCommitStep", () => {
     await exec("git", ["add", "a.ts"], { cwd: tempDir });
 
     const originalSha = await git.headSha(tempDir);
+    const stagedTree = await git.writeTree(tempDir);
     const entry = { message: "feat: add a", files: ["a.ts"] };
-    const step = applyOneCommitStep(entry, tempDir);
+    const step = applyOneCommitStep(entry, tempDir, stagedTree);
     const result = await step.apply();
 
     // commit was created
@@ -536,8 +538,9 @@ describe("applyOneCommitStep", () => {
     await writeFile(join(tempDir, "a.ts"), "const a = 1;");
     await exec("git", ["add", "a.ts"], { cwd: tempDir });
 
+    const stagedTree = await git.writeTree(tempDir);
     const entry = { message: "feat: add a", files: ["a.ts"] };
-    const step = applyOneCommitStep(entry, tempDir);
+    const step = applyOneCommitStep(entry, tempDir, stagedTree);
     const result = await step.apply();
 
     await step.compensate(result);
