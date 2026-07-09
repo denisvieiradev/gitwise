@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import { describe, it, expect, beforeEach, afterEach, jest } from "@jest/globals";
 
 // Mock @denisvieiradev/gitwise-core so we can drive specific GitwiseError
 // throws from commit() and verify the resulting CLI surface (exit code, JSON
@@ -11,6 +11,9 @@ const getApiKeyMock = jest.fn<(...args: unknown[]) => Promise<string | undefined
 const getMergedConfigMock = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 const createProviderMock = jest.fn<(...args: unknown[]) => unknown>();
 const parseStatusMock = jest.fn<(...args: unknown[]) => Promise<unknown[]>>();
+const gitAddMock = jest.fn<(...args: unknown[]) => Promise<void>>();
+const selectMock = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+const multiselectMock = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 
 jest.unstable_mockModule("@denisvieiradev/gitwise-core", async () => {
   // Import GitwiseError/EXIT_CODES/wrapError from the real source so
@@ -31,7 +34,7 @@ jest.unstable_mockModule("@denisvieiradev/gitwise-core", async () => {
     writeUserConfig: jest.fn(),
     git: {
       parseStatus: parseStatusMock,
-      add: jest.fn(),
+      add: gitAddMock,
       push: jest.fn(),
     },
     review: jest.fn(),
@@ -61,8 +64,8 @@ jest.unstable_mockModule("@clack/prompts", () => ({
   cancel: jest.fn(),
   spinner: () => ({ start: jest.fn(), stop: jest.fn(), message: jest.fn() }),
   confirm: jest.fn(async () => true),
-  select: jest.fn(),
-  multiselect: jest.fn(),
+  select: selectMock,
+  multiselect: multiselectMock,
   password: jest.fn(),
   isCancel: () => false,
   log: { info: jest.fn() },
@@ -80,6 +83,9 @@ beforeEach(async () => {
   getMergedConfigMock.mockReset();
   createProviderMock.mockReset();
   parseStatusMock.mockReset();
+  gitAddMock.mockReset();
+  selectMock.mockReset();
+  multiselectMock.mockReset();
 
   getMergedConfigMock.mockResolvedValue({
     provider: "api",
@@ -263,5 +269,119 @@ describe("runCli end-to-end — --api-key deprecation warning", () => {
     const stderrJoined = cap.stderr.join("");
     expect(stderrJoined).toContain(API_KEY_DEPRECATION_WARNING);
     expect(stderrJoined.match(/--api-key is deprecated/g)?.length).toBe(1);
+  });
+});
+
+describe("runCli end-to-end — partial-staging prompt", () => {
+  // The prompt is TTY-gated; jest's stdin is not a TTY, so stub it per test.
+  let originalIsTTY: PropertyDescriptor | undefined;
+
+  const stubTTY = (): void => {
+    originalIsTTY = Object.getOwnPropertyDescriptor(process.stdin, "isTTY");
+    Object.defineProperty(process.stdin, "isTTY", {
+      value: true,
+      configurable: true,
+    });
+  };
+
+  afterEach(() => {
+    if (originalIsTTY) {
+      Object.defineProperty(process.stdin, "isTTY", originalIsTTY);
+    } else {
+      delete (process.stdin as unknown as Record<string, unknown>).isTTY;
+    }
+    originalIsTTY = undefined;
+  });
+
+  const singlePlan = {
+    kind: "single",
+    commits: [{ message: "feat: x", files: ["a.ts"] }],
+    tokens: { input: 0, output: 0 },
+  };
+
+  const partialStatus = [
+    { file: "a.ts", indexStatus: "M", workTreeStatus: " " }, // staged
+    { file: "b.ts", indexStatus: " ", workTreeStatus: "M" }, // unstaged
+    { file: "c.ts", indexStatus: "?", workTreeStatus: "?" }, // untracked
+  ];
+
+  it("offers to stage more files when staged AND unstaged changes coexist", async () => {
+    stubTTY();
+    parseStatusMock.mockResolvedValue(partialStatus);
+    commitMock.mockResolvedValue(singlePlan);
+    applyCommitPlanMock.mockResolvedValue(undefined);
+    // 1st select: staging prompt → add all; 2nd select: refinement loop → apply
+    selectMock.mockResolvedValueOnce("add-all").mockResolvedValueOnce("apply");
+
+    const cap = makeCapture();
+    await runExpectingExit(["node", "gw", "commit"], cap);
+
+    // The staging question must have been asked…
+    const firstPromptMessage = (selectMock.mock.calls[0]?.[0] as { message?: string })?.message ?? "";
+    expect(firstPromptMessage.toLowerCase()).toContain("unstaged");
+    // …and choosing add-all must stage the remaining files before analysis.
+    expect(gitAddMock).toHaveBeenCalledWith(expect.any(String), ["-A"]);
+    expect(applyCommitPlanMock).toHaveBeenCalled();
+  });
+
+  it("continues with staged-only when the user keeps the current index", async () => {
+    stubTTY();
+    parseStatusMock.mockResolvedValue(partialStatus);
+    commitMock.mockResolvedValue(singlePlan);
+    applyCommitPlanMock.mockResolvedValue(undefined);
+    selectMock.mockResolvedValueOnce("keep").mockResolvedValueOnce("apply");
+
+    const cap = makeCapture();
+    await runExpectingExit(["node", "gw", "commit"], cap);
+
+    expect(gitAddMock).not.toHaveBeenCalled();
+    expect(applyCommitPlanMock).toHaveBeenCalled();
+  });
+
+  it("stages only the picked files when the user selects a subset", async () => {
+    stubTTY();
+    parseStatusMock.mockResolvedValue(partialStatus);
+    commitMock.mockResolvedValue(singlePlan);
+    applyCommitPlanMock.mockResolvedValue(undefined);
+    selectMock.mockResolvedValueOnce("pick").mockResolvedValueOnce("apply");
+    multiselectMock.mockResolvedValueOnce(["b.ts"]);
+
+    const cap = makeCapture();
+    await runExpectingExit(["node", "gw", "commit"], cap);
+
+    expect(gitAddMock).toHaveBeenCalledWith(expect.any(String), ["b.ts"]);
+    expect(applyCommitPlanMock).toHaveBeenCalled();
+  });
+
+  it("does not prompt when everything is already staged", async () => {
+    stubTTY();
+    parseStatusMock.mockResolvedValue([
+      { file: "a.ts", indexStatus: "M", workTreeStatus: " " },
+    ]);
+    commitMock.mockResolvedValue(singlePlan);
+    applyCommitPlanMock.mockResolvedValue(undefined);
+    selectMock.mockResolvedValueOnce("apply"); // refinement loop only
+
+    const cap = makeCapture();
+    await runExpectingExit(["node", "gw", "commit"], cap);
+
+    expect(selectMock).toHaveBeenCalledTimes(1);
+    const onlyPromptMessage = (selectMock.mock.calls[0]?.[0] as { message?: string })?.message ?? "";
+    expect(onlyPromptMessage.toLowerCase()).not.toContain("unstaged");
+    expect(gitAddMock).not.toHaveBeenCalled();
+  });
+
+  it("does not prompt with --no-confirm even when unstaged changes exist", async () => {
+    stubTTY();
+    parseStatusMock.mockResolvedValue(partialStatus);
+    commitMock.mockResolvedValue(singlePlan);
+    applyCommitPlanMock.mockResolvedValue(undefined);
+
+    const cap = makeCapture();
+    await runExpectingExit(["node", "gw", "commit", "--no-confirm"], cap);
+
+    expect(selectMock).not.toHaveBeenCalled();
+    expect(gitAddMock).not.toHaveBeenCalled();
+    expect(applyCommitPlanMock).toHaveBeenCalled();
   });
 });

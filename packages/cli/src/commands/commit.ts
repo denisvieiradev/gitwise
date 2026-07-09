@@ -84,6 +84,56 @@ async function promptInteractiveStage(cwd: string): Promise<"staged" | null> {
   return "staged";
 }
 
+/**
+ * Interactive prompt for the partially-staged state: the index already has
+ * staged changes but the working tree holds additional unstaged or untracked
+ * files. Offers to keep the current index, add everything, or pick a subset.
+ * Returns "kept" when there is nothing extra to offer or the user chooses to
+ * proceed with the staged set, "staged" when more files were added, and null
+ * when the user cancelled.
+ *
+ * Kept local to this command because it's specific to the commit prompt UX.
+ */
+async function promptStageAdditional(cwd: string): Promise<"staged" | "kept" | null> {
+  const changed = await git.parseStatus(cwd);
+  const staged = changed.filter((f) => f.indexStatus !== " " && f.indexStatus !== "?");
+  const unstaged = changed.filter((f) => f.workTreeStatus !== " ");
+  if (staged.length === 0 || unstaged.length === 0) return "kept";
+
+  const action = await p.select<"keep" | "add-all" | "pick" | "cancel">({
+    message: `You have ${unstaged.length} unstaged file${unstaged.length === 1 ? "" : "s"} besides the staged changes. What would you like to do?`,
+    options: [
+      { value: "keep", label: "Commit staged changes only" },
+      { value: "add-all", label: `Add all unstaged changes (${unstaged.length} file${unstaged.length === 1 ? "" : "s"})` },
+      { value: "pick", label: "Select files to add" },
+      { value: "cancel", label: "Cancel" },
+    ],
+  });
+
+  if (p.isCancel(action) || action === "cancel") return null;
+  if (action === "keep") return "kept";
+
+  if (action === "add-all") {
+    await git.add(cwd, ["-A"]);
+    return "staged";
+  }
+
+  const choices = unstaged.map((f) => ({
+    value: f.file,
+    label: `${f.indexStatus}${f.workTreeStatus} ${f.file}`,
+  }));
+  const picked = await p.multiselect<string>({
+    message: "Select files to add (space to toggle, enter to confirm)",
+    options: choices,
+    required: false,
+  });
+  if (p.isCancel(picked)) return null;
+  if (!Array.isArray(picked) || picked.length === 0) return "kept";
+
+  await git.add(cwd, picked);
+  return "staged";
+}
+
 function displayPlan(plan: CommitPlan): void {
   if (plan.kind === "single") {
     const [c] = plan.commits;
@@ -310,6 +360,18 @@ export function makeCommitCommand(): Command {
         : intent;
 
       p.intro(chalk.bold("gitwise commit"));
+
+      // Partially-staged state: something is already staged, but the working
+      // tree has more unstaged/untracked files. Ask before analyzing so the
+      // user isn't silently committing a subset of their changes. The empty-
+      // index case is handled separately via the NOTHING_STAGED catch below.
+      if (!skipConfirm && process.stdin.isTTY === true) {
+        const staging = await promptStageAdditional(cwd);
+        if (staging === null) {
+          p.cancel("Cancelled.");
+          process.exit(0);
+        }
+      }
 
       const spinner = p.spinner();
       spinner.start(opts.message ? "Preparing commit…" : "Analyzing staged changes…");
