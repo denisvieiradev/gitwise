@@ -14,6 +14,7 @@ const parseStatusMock = jest.fn<(...args: unknown[]) => Promise<unknown[]>>();
 const gitAddMock = jest.fn<(...args: unknown[]) => Promise<void>>();
 const selectMock = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 const multiselectMock = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+const setVerboseMock = jest.fn<(enabled: boolean) => void>();
 
 jest.unstable_mockModule("@denisvieiradev/gitwise-core", async () => {
   // Import GitwiseError/EXIT_CODES/wrapError from the real source so
@@ -52,6 +53,7 @@ jest.unstable_mockModule("@denisvieiradev/gitwise-core", async () => {
     readUserConfig: jest.fn(),
     writeApiKey: jest.fn(),
     resolveClaudeBinary: jest.fn(() => undefined),
+    setVerbose: setVerboseMock,
   };
 });
 
@@ -86,6 +88,7 @@ beforeEach(async () => {
   gitAddMock.mockReset();
   selectMock.mockReset();
   multiselectMock.mockReset();
+  setVerboseMock.mockReset();
 
   getMergedConfigMock.mockResolvedValue({
     provider: "api",
@@ -199,6 +202,34 @@ describe("runCli end-to-end — exit-code dispatch", () => {
 
     expect(cap.exitCode).toBe(1);
     expect(cap.stderr.join("")).toContain("boom");
+  });
+});
+
+describe("runCli end-to-end — --debug wires verbose logging", () => {
+  it("enables verbose/debug logging when --debug is passed", async () => {
+    commitMock.mockRejectedValue(
+      new GitwiseError({ code: "GIT_FAILED", message: "boom" }),
+    );
+
+    const cap = makeCapture();
+    await runExpectingExit(["node", "gw", "commit", "--debug"], cap);
+
+    // --debug is documented as "Show full stack traces on error", but the CLI
+    // also has debug()-gated diagnostics (e.g. which sensitive files were
+    // blocked) that are otherwise only reachable via the undocumented
+    // GITWISE_DEBUG=1 env var. --debug must enable those too.
+    expect(setVerboseMock).toHaveBeenCalledWith(true);
+  });
+
+  it("does not touch verbose logging when --debug is absent", async () => {
+    commitMock.mockRejectedValue(
+      new GitwiseError({ code: "GIT_FAILED", message: "boom" }),
+    );
+
+    const cap = makeCapture();
+    await runExpectingExit(["node", "gw", "commit"], cap);
+
+    expect(setVerboseMock).not.toHaveBeenCalled();
   });
 });
 
