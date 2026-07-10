@@ -255,13 +255,14 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan | CommitAl
   // `prod-customer-db-credentials.json` are themselves sensitive and can leak
   // via shell history, CI logs, or pasted terminal output. The flagged files
   // are exposed only on the structured `files` property and emitted through
-  // the debug logger so opt-in `GITWISE_DEBUG=1` surfaces them for triage.
+  // the debug logger so opt-in `--debug` (CLI flag) or `GITWISE_DEBUG=1` (env
+  // var, for non-interactive/CI use) surfaces them for triage.
   const sensitiveFiles = stagedFiles.filter(isSensitiveFile);
   if (sensitiveFiles.length > 0) {
     debug("Sensitive files blocked from commit", { files: sensitiveFiles });
     throw new GitwiseError({
       code: "SENSITIVE_FILE_BLOCKED",
-      message: `SENSITIVE_FILE_BLOCKED: ${sensitiveFiles.length} file(s) matched sensitive patterns (env/pem/credentials). Set GITWISE_DEBUG=1 to see which files were flagged.`,
+      message: `SENSITIVE_FILE_BLOCKED: ${sensitiveFiles.length} file(s) matched sensitive patterns (env/pem/credentials). Re-run with --debug (or set GITWISE_DEBUG=1) to see which files were flagged.`,
       details: { files: sensitiveFiles },
     });
   }
@@ -481,16 +482,24 @@ export async function applyCommitPlan(
       const logger: Logger = { warn: logWarn };
 
       try {
-        // Root step: save pre-split state as a named stash backup,
-        // then immediately re-apply so the staged files are still visible.
-        await tx.run(takeNamedStashStep(cwd, stashName));
-
-        // Capture the fully-staged state as a tree object BEFORE unstaging, so
-        // each group can be re-staged from it via the index alone. This avoids
-        // re-running `git add` against the working tree, which is fatal when a
-        // planned path no longer matches a worktree file (see applyOneCommitStep
-        // and the single-commit note below).
+        // Capture the fully-staged state as a tree object FIRST, while the index
+        // still holds every staged change, so each group can be re-staged from it
+        // via the index alone. This avoids re-running `git add` against the
+        // working tree, which is fatal when a planned path no longer matches a
+        // worktree file (see applyOneCommitStep and the single-commit note below).
+        //
+        // This MUST happen before takeNamedStashStep: that step runs
+        // `git stash apply` without `--index`, which restores modifications to
+        // already-tracked files to the WORKING TREE only, leaving the index equal
+        // to HEAD. Capturing the tree after the stash would therefore snapshot an
+        // empty (HEAD) index, so every per-group `git reset <tree> -- <path>`
+        // would stage nothing and every group would be skipped — producing zero
+        // commits while still reporting success.
         const stagedTree = await git.writeTree(cwd);
+
+        // Root step: save pre-split state as a named stash backup,
+        // then immediately re-apply so the working-tree files are still visible.
+        await tx.run(takeNamedStashStep(cwd, stashName));
 
         // Unstage all files so per-commit staging can re-stage each group.
         await git.resetStaged(cwd);
