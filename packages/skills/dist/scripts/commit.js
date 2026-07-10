@@ -13306,7 +13306,7 @@ async function commit2(opts) {
     debug("Sensitive files blocked from commit", { files: sensitiveFiles });
     throw new GitwiseError({
       code: "SENSITIVE_FILE_BLOCKED",
-      message: `SENSITIVE_FILE_BLOCKED: ${sensitiveFiles.length} file(s) matched sensitive patterns (env/pem/credentials). Set GITWISE_DEBUG=1 to see which files were flagged.`,
+      message: `SENSITIVE_FILE_BLOCKED: ${sensitiveFiles.length} file(s) matched sensitive patterns (env/pem/credentials). Re-run with --debug (or set GITWISE_DEBUG=1) to see which files were flagged.`,
       details: { files: sensitiveFiles }
     });
   }
@@ -13442,8 +13442,8 @@ async function applyCommitPlan(plan, opts) {
       const tx = new Transaction();
       const logger = { warn };
       try {
-        await tx.run(takeNamedStashStep(cwd, stashName));
         const stagedTree = await writeTree(cwd);
+        await tx.run(takeNamedStashStep(cwd, stashName));
         await resetStaged(cwd);
         for (const entry of plan.commits) {
           await tx.run(applyOneCommitStep(entry, cwd, stagedTree));
