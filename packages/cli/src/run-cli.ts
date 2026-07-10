@@ -1,5 +1,6 @@
 import { createRequire } from "node:module";
 import chalk from "chalk";
+import { setVerbose } from "@denisvieiradev/gitwise-core";
 import { needsFirstRun, runFirstRun } from "./first-run.js";
 import { createProgram } from "./program.js";
 import {
@@ -38,6 +39,15 @@ export async function runCli(
 ): Promise<void> {
   const args = argv.slice(2);
   const json = isJsonMode(args);
+
+  // `--debug` is the documented flag for extra diagnostics; wire it to the
+  // same verbose-logging switch as the undocumented GITWISE_DEBUG=1 env var
+  // so debug()-gated output (e.g. which sensitive files were blocked) is
+  // reachable without knowing about the env var. Only ever turned on here —
+  // never off — so it doesn't clobber GITWISE_DEBUG=1 already set by the user.
+  if (isDebugMode(args)) {
+    setVerbose(true);
+  }
 
   const rawStdoutWrite =
     opts.stdoutWrite ?? ((chunk: string) => void process.stdout.write(chunk));
