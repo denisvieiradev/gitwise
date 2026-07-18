@@ -107,6 +107,12 @@ describe("sensitive-file blocklist — anti-overmatch (safe paths must not be bl
     "config.json",              // ends with .json but is not a blocked pattern
     "environment.ts",           // contains 'env' but does not start with '.env'
     "app-credentials-example.txt", // contains 'credentials' but not *.credentials.json
+    // Env template files: conventionally committed, contain only placeholders
+    ".env.example",
+    ".env.sample",
+    ".env.template",
+    ".env.dist",
+    ".env.defaults",
   ])("does not block '%s' from the sensitive-file check", async (filename) => {
     const mock = new MockLLMProvider();
 
