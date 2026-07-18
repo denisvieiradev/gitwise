@@ -67,8 +67,24 @@ const SENSITIVE_PATTERNS = [
   /\.pkcs12$/,
 ];
 
+// Env template files are conventionally committed: they contain only
+// placeholder values, not real secrets. Exclude them from the `.env.` block.
+const SAFE_ENV_TEMPLATE_SUFFIXES = [
+  ".example",
+  ".sample",
+  ".template",
+  ".dist",
+  ".defaults",
+];
+
+function isSafeEnvTemplate(basename: string): boolean {
+  if (!basename.startsWith(".env")) return false;
+  return SAFE_ENV_TEMPLATE_SUFFIXES.some((suffix) => basename.endsWith(suffix));
+}
+
 function isSensitiveFile(filePath: string): boolean {
   const basename = filePath.split("/").pop() ?? filePath;
+  if (isSafeEnvTemplate(basename)) return false;
   return SENSITIVE_PATTERNS.some((pattern) => pattern.test(basename));
 }
 

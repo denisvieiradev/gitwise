@@ -13173,8 +13173,20 @@ var SENSITIVE_PATTERNS = [
   /\.pfx$/,
   /\.pkcs12$/
 ];
+var SAFE_ENV_TEMPLATE_SUFFIXES = [
+  ".example",
+  ".sample",
+  ".template",
+  ".dist",
+  ".defaults"
+];
+function isSafeEnvTemplate(basename3) {
+  if (!basename3.startsWith(".env")) return false;
+  return SAFE_ENV_TEMPLATE_SUFFIXES.some((suffix) => basename3.endsWith(suffix));
+}
 function isSensitiveFile(filePath) {
   const basename3 = filePath.split("/").pop() ?? filePath;
+  if (isSafeEnvTemplate(basename3)) return false;
   return SENSITIVE_PATTERNS.some((pattern) => pattern.test(basename3));
 }
 function tryParseJson(text) {
