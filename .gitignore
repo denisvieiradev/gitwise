@@ -27,3 +27,5 @@ Thumbs.db
 
 # Debug logs
 npm-debug.log*
+.gitwise/release-plan.json
+.gitwise/release-*.md
