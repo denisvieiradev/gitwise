@@ -27,11 +27,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
       - name: Build
         run: npm run build
+
+      - name: Lint
+        run: npm run lint
 
       - name: Verify committed plugin dist is up to date
         run: |
