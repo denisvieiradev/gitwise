@@ -7,3 +7,8 @@
 # id = "GHSA-xxxx-xxxx-xxxx"
 # ignoreUntil = 2026-12-31T00:00:00Z
 # reason = "No upstream fix available; revisit before expiry."
+
+[[IgnoredVulns]]
+id = "GHSA-g7r4-m6w7-qqqr"
+ignoreUntil = 2026-10-20T00:00:00Z
+reason = "esbuild arbitrary file read affects its Windows dev-server only; tsup@8.5.1 (latest) pins esbuild to ^0.27.0, which excludes the 0.28.1 fix. Revisit when tsup bumps its esbuild range."

@@ -1,6 +1,6 @@
 {
   "name": "gitwise",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI-powered git toolbelt: intelligent commit, code review, PR drafting, and versioned releases.",
   "author": {
     "name": "Denis Vieira",
