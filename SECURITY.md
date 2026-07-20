@@ -48,7 +48,7 @@ Every `gitwise` release is signed with the maintainer's GPG key and published wi
 
 ### Maintainer GPG Key
 
-**Key ID:** `E73555F2E6F5547F2BC105C3BD8BA14C42504AFD`
+**Key ID:** `7CEE0D8BC480C78C2CC9E7F2184620A7785B8F17`
 
 The full public key is available at [`KEYS.asc`](KEYS.asc) in this repository.
 

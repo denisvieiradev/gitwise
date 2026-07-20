@@ -63,7 +63,7 @@ Expected output includes:
 gpg: Good signature from "Denis Vieira <denisvieira05@gmail.com>"
 ```
 
-and the fingerprint `E73555F2E6F5547F2BC105C3BD8BA14C42504AFD`.
+and the fingerprint `7CEE0D8BC480C78C2CC9E7F2184620A7785B8F17`.
 
 You can also verify using raw gpg against the tag object:
 
