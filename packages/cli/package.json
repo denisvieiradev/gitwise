@@ -41,6 +41,6 @@
   "author": "Denis Vieira <denisvieira05@gmail.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=18"
+    "node": ">=22.12.0"
   }
 }

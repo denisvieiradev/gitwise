@@ -8,7 +8,7 @@
 [![npm provenance](https://img.shields.io/badge/npm-provenance-blue)](https://docs.npmjs.com/generating-provenance-statements)
 [![npm version](https://img.shields.io/npm/v/%40denisvieiradev%2Fgitwise)](https://www.npmjs.com/package/@denisvieiradev/gitwise)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node.js >= 18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+[![Node.js >= 22.12](https://img.shields.io/badge/node-%3E%3D22.12-brightgreen)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org)
 
 > **Coming from `devflow-cli`?** The pipeline parts (`prd`, `techspec`, `tasks`, `run-tasks`, `test`, `done`, `status`, `init`) have been removed. See [`docs/migrating-from-devflow.md`](docs/migrating-from-devflow.md) for the full mapping.
@@ -159,7 +159,7 @@ Prompt templates are loaded with three-level precedence: per-repo (`<repo>/.gitw
 
 | Requirement | Purpose |
 |---|---|
-| [Node.js](https://nodejs.org) >= 18 | Runtime |
+| [Node.js](https://nodejs.org) >= 22.12 | Runtime |
 | [Git](https://git-scm.com) | Always required |
 | [Claude Code](https://docs.claude.com/en/claude-code) **or** `ANTHROPIC_API_KEY` | LLM access |
 | [GitHub CLI (`gh`)](https://cli.github.com) | Optional — needed only for `gw pr` create and `gw release` GitHub releases |
@@ -168,7 +168,7 @@ Cross-platform: macOS, Linux, Windows.
 
 ## Architecture
 
-`gitwise` is a TypeScript / Node ≥ 18 npm-workspaces monorepo with three publishable packages:
+`gitwise` is a TypeScript / Node ≥ 22.12 npm-workspaces monorepo with three publishable packages:
 
 - [`@denisvieiradev/gitwise-core`](packages/core) — shared logic (commands, providers, git/github, config, templates).
 - `@denisvieiradev/gitwise` (`packages/cli/`) — the `gw` CLI. _(landed in a later refactor task.)_
