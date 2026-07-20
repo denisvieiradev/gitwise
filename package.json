@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/denisvieiradev/gitwise#readme",
   "engines": {
-    "node": ">=18"
+    "node": ">=22.12.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

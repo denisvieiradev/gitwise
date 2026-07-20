@@ -12141,7 +12141,7 @@ var package_default = {
   },
   homepage: "https://github.com/denisvieiradev/gitwise#readme",
   engines: {
-    node: ">=18"
+    node: ">=22.12.0"
   },
   dependencies: {
     "@anthropic-ai/sdk": "^0.109.0"

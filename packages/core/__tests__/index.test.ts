@@ -38,9 +38,9 @@ describe("@denisvieiradev/gitwise-core package.json", () => {
     expect(pkg.name).toBe("@denisvieiradev/gitwise-core");
   });
 
-  it("declares ESM and Node >= 18", () => {
+  it("declares ESM and Node >= 22.12.0", () => {
     expect(pkg.type).toBe("module");
-    expect(pkg.engines.node).toBe(">=18");
+    expect(pkg.engines.node).toBe(">=22.12.0");
   });
 
   it("publishes only the artifacts listed in the spec (dist, templates, README, LICENSE)", () => {
