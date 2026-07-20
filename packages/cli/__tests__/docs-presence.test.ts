@@ -100,7 +100,7 @@ describe("docs/supply-chain.md", () => {
   });
 
   it("includes the GPG fingerprint", () => {
-    expect(content).toMatch(/E73555F2E6F5547F2BC105C3BD8BA14C42504AFD/);
+    expect(content).toMatch(/7CEE0D8BC480C78C2CC9E7F2184620A7785B8F17/);
   });
 
   it("has Astro frontmatter with a title field", () => {
