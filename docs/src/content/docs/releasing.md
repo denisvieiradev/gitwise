@@ -11,18 +11,18 @@ Complete these steps once before the first release.
 
 ### 1. GitHub repository secrets
 
-The CI workflow requires two secrets. Set them with the GitHub CLI:
+The CI workflow requires one secret. Set it with the GitHub CLI:
 
 ```bash
 # Export your GPG private key and set the secret
 gpg --armor --export-secret-keys <YOUR_GPG_KEY_ID> \
   | gh secret set GPG_PRIVATE_KEY -R denisvieiradev/gitwise
-
-# Set the GPG passphrase (prompted interactively)
-gh secret set GPG_PASSPHRASE -R denisvieiradev/gitwise
 ```
 
-Verify both secrets exist:
+The release-signing key is intentionally passphrase-less — it only ever runs
+unattended in GitHub Actions, so there's no `GPG_PASSPHRASE` secret to set.
+
+Verify the secret exists:
 
 ```bash
 gh secret list -R denisvieiradev/gitwise
@@ -37,8 +37,6 @@ The workflow publishes without a stored token using GitHub Actions OIDC. Configu
    - [`@denisvieiradev/gitwise-core`](https://www.npmjs.com/package/@denisvieiradev/gitwise-core)
    - [`@denisvieiradev/gitwise`](https://www.npmjs.com/package/@denisvieiradev/gitwise)
    - [`@denisvieiradev/gitwise-skills`](https://www.npmjs.com/package/@denisvieiradev/gitwise-skills)
-
-   If the packages do not exist yet, go to **Account Settings → Packages → Add a new package** to pre-register each one.
 
    For each package, set:
    | Field | Value |
@@ -196,7 +194,7 @@ The Trusted Publisher mapping for the package is missing or incorrect. Re-check 
 
 ### GPG signing fails
 
-The `GPG_PRIVATE_KEY` or `GPG_PASSPHRASE` secret is missing or incorrect. Re-export and re-set the secrets (see [One-Time Setup](#one-time-setup)).
+The `GPG_PRIVATE_KEY` secret is missing or incorrect. Re-export and re-set it (see [One-Time Setup](#one-time-setup)).
 
 ### Emergency publish with NPM_TOKEN
 

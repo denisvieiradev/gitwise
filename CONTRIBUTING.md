@@ -157,54 +157,56 @@ npm run dev
 - Update the README if you add new commands or change behavior.
 - Never commit API keys or `~/.gitwise/.env` contents.
 
-## Releasing (Phase 0)
+## Releasing
 
-gitwise is in **Phase 0** of the release plan recorded in [ADR-005](.compozy/tasks/refactor-idea/adrs/adr-005.md):
-all workspaces share a single locked version, and the release is cut from a
-maintainer's machine using a small Node script. Phase 1 — when `gw release`
-dogfoods itself against this repo — replaces the manual step. `scripts/release.mjs`
-**stays in the repo as the documented fallback** after Phase 1 (per ADR-005).
+gitwise is in **Phase 1** of the release plan recorded in [ADR-005](.compozy/tasks/refactor-idea/adrs/adr-005.md):
+Phase 0 (manual releases cut with a small Node script) ended at `v0.1.0`.
+Releases are now cut by running `gw release` — the CLI dogfoods itself
+against this repo — with npm publishing hardened to GitHub Actions OIDC
+(no stored npm token needed for normal releases).
 
-### Per-release runbook
+The full step-by-step runbook, including one-time npm Trusted Publisher
+setup, lives in [`docs/src/content/docs/releasing.md`](docs/src/content/docs/releasing.md).
+Summary:
 
 1. Make sure `main` is green and `CHANGELOG.md` has an entry for the version
-   you are about to cut. The release workflow uses the top `## ` section of
-   `CHANGELOG.md` as the GitHub release body.
-2. From the repo root, run the bump propagator. It accepts `patch`, `minor`,
-   `major`, or an explicit `X.Y.Z`:
+   you are about to cut.
+2. `gw release prepare` (optionally `--bump minor|major`) — analyzes commits,
+   proposes a version, writes a `.gitwise/release-<version>.md` plan.
+3. Review/edit the plan, then `gw release finish` — bumps every
+   `packages/*/package.json`, commits, creates a signed tag, and pushes.
+4. Pushing the `v*` tag triggers [`.github/workflows/release.yml`](.github/workflows/release.yml):
+   build, test, GPG-sign the tag, publish all three packages to npm via OIDC
+   with provenance, generate an SBOM, and open a GitHub release from the
+   CHANGELOG entry. A failing test aborts the publish.
 
-   ```bash
-   node scripts/release.mjs patch
-   # or: node scripts/release.mjs 0.2.0
-   ```
+Two independent fallbacks exist for when the primary flow can't run, per
+ADR-005:
 
-   The script bumps the root `package.json`, propagates the same version to
-   every `packages/*/package.json`, stages the changes, creates a
-   `chore(release): vX.Y.Z` commit, and tags `vX.Y.Z`. It deliberately does
-   **not** push.
-3. Push the commit and the tag:
-
-   ```bash
-   git push origin HEAD
-   git push origin vX.Y.Z
-   ```
-
-4. Pushing the tag triggers [`.github/workflows/release.yml`](.github/workflows/release.yml),
-   which installs dependencies, builds every workspace, runs the full test
-   suite, and only then publishes each package via
-   `npm publish --workspaces --access public` and opens a GitHub release using
-   the CHANGELOG entry. A failing test aborts the publish.
+- If `gw release` itself is unavailable, `scripts/release.mjs` (the old
+  Phase 0 bump propagator) still works — run `node scripts/release.mjs
+  patch|minor|major|X.Y.Z` to bump and tag manually (`--help`-style usage is
+  printed on invalid args).
+- If OIDC is misconfigured but `gw release` produced a valid tag, dispatch
+  `release.yml` manually with a stored `NPM_TOKEN` — see
+  `docs/src/content/docs/releasing.md`'s "Emergency publish with NPM_TOKEN"
+  section.
 
 ### Required repository secrets
 
-| Secret           | Purpose                                                          |
-|------------------|------------------------------------------------------------------|
-| `NPM_TOKEN`      | Authenticates `npm publish` against the npm registry             |
-| `GITHUB_TOKEN`   | Default token used by `gh release create` (provided by Actions)  |
+| Secret           | Purpose                                                                                   |
+|------------------|---------------------------------------------------------------------------------------------|
+| `GPG_PRIVATE_KEY`| Signs release tags. Passphrase-less — no `GPG_PASSPHRASE` secret exists or is needed.       |
+| `NPM_TOKEN`      | Emergency-only fallback for `npm publish` when OIDC is unavailable (`use_npm_token: true`). Not required for normal releases. |
+| `GITHUB_TOKEN`   | Default token used by `gh release create` (provided by Actions)                             |
 
 ### Rolling back a botched release
 
-If `release.mjs` ran but you have not pushed yet, undo it locally:
+For the primary `gw release` flow: if you ran `gw release prepare` but
+haven't run `finish` yet, run `gw release abort` to discard the plan.
+
+For the `scripts/release.mjs` fallback path: if it ran but you haven't
+pushed yet, undo it locally:
 
 ```bash
 git tag -d vX.Y.Z
