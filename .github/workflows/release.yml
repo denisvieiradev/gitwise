@@ -41,6 +41,13 @@ jobs:
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Upgrade npm for OIDC trusted publishing
+        # Node 22's bundled npm (10.x) predates npm's OIDC trusted-publishing
+        # support (added in npm 11.5.1). Without this, --provenance signs
+        # fine (older, separate Sigstore feature) but the actual publish PUT
+        # carries no registry auth token, and npm masks that as a 404.
+        run: npm install -g npm@latest
+
       - name: Import GPG key
         id: import-gpg
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd  # v7.0.0
