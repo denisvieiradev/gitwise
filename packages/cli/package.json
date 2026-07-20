@@ -1,6 +1,6 @@
 {
   "name": "@denisvieiradev/gitwise",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI-powered git toolbelt: intelligent commit, code review, PR drafting, and versioned releases.",
   "type": "module",
   "bin": {
@@ -37,7 +37,15 @@
     "ts-jest": "^29.4.11",
     "typescript": "^6.0.3"
   },
-  "keywords": ["gitwise", "git", "ai", "commit", "review", "pull-request", "release"],
+  "keywords": [
+    "gitwise",
+    "git",
+    "ai",
+    "commit",
+    "review",
+    "pull-request",
+    "release"
+  ],
   "author": "Denis Vieira <denisvieira05@gmail.com>",
   "license": "MIT",
   "engines": {
