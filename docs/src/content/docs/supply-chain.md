@@ -75,7 +75,7 @@ gpg --verify <(git cat-file tag v<version> | grep -A 100 "^-----BEGIN PGP SIGNAT
 **Key fingerprint**:
 
 ```
-E735 55F2 E6F5 547F 2BC1  05C3 BD8B A14C 4250 4AFD
+7CEE 0D8B C480 C78C 2CC9  E7F2 1846 20A7 785B 8F17
 ```
 
 **What signed tags certify**: the version tag `v<X.Y.Z>` was created by the holder of the private key matching the published public key. An attacker cannot forge a valid signed tag without the private key, so tag signatures provide a second verification path independent of npm and Sigstore.
