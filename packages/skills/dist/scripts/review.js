@@ -5452,8 +5452,8 @@ var init_fs_util = __esm({
 import * as fs3 from "fs/promises";
 import * as fssync from "fs";
 import * as path6 from "path";
-import { execFile as execFile5 } from "child_process";
-import { promisify as promisify5 } from "util";
+import { execFile as execFile4 } from "child_process";
+import { promisify as promisify4 } from "util";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 async function setupSkills(ctx) {
@@ -5541,7 +5541,7 @@ function assertNoSpecialMembers(verboseListing) {
 }
 async function runArchiveTool(cmd, args2) {
   try {
-    const { stdout } = await execFileAsync2(cmd, args2);
+    const { stdout } = await execFileAsync(cmd, args2);
     return stdout;
   } catch (e) {
     if (e != null && typeof e === "object" && e.code === "ENOENT") {
@@ -5603,7 +5603,7 @@ async function readHead(file, n) {
     await handle.close();
   }
 }
-var execFileAsync2;
+var execFileAsync;
 var init_skills = __esm({
   "../../node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs"() {
     "use strict";
@@ -5611,7 +5611,7 @@ var init_skills = __esm({
     init_error();
     init_log();
     init_fs_util();
-    execFileAsync2 = promisify5(execFile5);
+    execFileAsync = promisify4(execFile4);
   }
 });
 
@@ -12343,12 +12343,10 @@ var STALE_LOCK_MS = 10 * 60 * 1e3;
 
 // ../core/src/providers/claude-code.ts
 init_esm_shims();
-import { execFile as execFile3, execSync, spawn } from "child_process";
+import { execSync, spawn } from "child_process";
 import fs from "fs";
 import os from "os";
 import path3 from "path";
-import { promisify as promisify3 } from "util";
-var execFileAsync = promisify3(execFile3);
 var LARGE_PROMPT_THRESHOLD = 1e5;
 var DEFAULT_TIMEOUT_MS = 12e4;
 var COMMON_CLAUDE_PATHS = [
@@ -12426,35 +12424,12 @@ var ClaudeCodeProvider = class {
     return args2;
   }
   async callViaCli(args2) {
-    try {
-      const { stdout } = await execFileAsync(this.claudeBinaryPath, args2, {
-        timeout: DEFAULT_TIMEOUT_MS,
-        maxBuffer: 10 * 1024 * 1024,
-        ...{ input: "" }
-      });
-      return this.parseResponse(stdout);
-    } catch (err) {
-      const execErr = err;
-      if (execErr.stdout) {
-        try {
-          const parsed = JSON.parse(execErr.stdout);
-          if (parsed.is_error) {
-            throw new Error(`Claude CLI error: ${parsed.result}`);
-          }
-        } catch (parseErr) {
-          if (parseErr instanceof Error && parseErr.message.startsWith("Claude CLI error:")) {
-            throw parseErr;
-          }
-        }
-      }
-      const stderr = execErr.stderr?.replace(/Warning: no stdin data.*\n?/g, "").trim();
-      if (stderr) {
-        throw new Error(`Claude CLI failed: ${stderr}`);
-      }
-      throw this.wrapError(err);
-    }
+    return this.spawnClaude(args2, "");
   }
   async callViaStdin(args2, input) {
+    return this.spawnClaude(args2, input);
+  }
+  async spawnClaude(args2, input) {
     return new Promise((resolve4, reject) => {
       const child = spawn(this.claudeBinaryPath, args2, {
         stdio: ["pipe", "pipe", "pipe"],
@@ -12860,9 +12835,9 @@ ${stderr}`;
 
 // ../core/src/commands/pr.ts
 init_esm_shims();
-import { execFile as execFile4 } from "child_process";
-import { promisify as promisify4 } from "util";
-var exec3 = promisify4(execFile4);
+import { execFile as execFile3 } from "child_process";
+import { promisify as promisify3 } from "util";
+var exec3 = promisify3(execFile3);
 
 // ../core/src/commands/release.ts
 init_esm_shims();
