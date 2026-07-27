@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-07-27
+
+### Added
+- Interactive prompt for partial staging in commit workflow
+- Refinement loop for generating and iterating on commit message suggestions
+- `--debug` flag for verbose logging output
+- Skill definitions for gitwise commands compatible with Claude plugin marketplace
+- Claude Code marketplace plugin manifest with `.claude-plugin/plugin.json` configuration
+- Auto-discovered `SKILL.md` format with frontmatter for plugin skills
+- Release lifecycle with prepare/finish strategies and workspace propagation
+- Bundled core templates into plugin distribution
+- `--no-color` accessibility flag for CLI output
+
+### Changed
+- Complete architectural refactor from devflow-cli to gitwise-workspace monorepo
+- Ported LLM providers and configuration loaders with env-file key handling
+- Template engine now supports 3-level precedence for custom templates
+- Split-commit mode now stages files directly from index for consistency
+- Improved commit split plan to ensure all staged files are properly assigned
+- CLI command structure reorganized with missing commit command flags
+
+### Fixed
+- Explicitly close stdin when spawning child processes
+- Resynchronized lockfile and patched vulnerable development dependencies
+- Upgraded npm in CI release workflow for OIDC trusted-publish support
+- Raised Node.js engine floor to >=22.12.0 to match actual dependencies
+- Build workspaces before linting to resolve dependency issues
+- Allow environment template files in sensitive file checks
+- Split-commit now correctly commits all modified tracked files
+- Show success feedback when push succeeds in commit workflow
+- Avoid redundant hint messages in push mode
+- Narrowed commit script runner result types
+- Improved error handling in review and core modules
+- Fixed plugin.json paths following SKILL.md migration
+
+### Security
+- Rotated release-signing GPG key for future releases
+- Added `.gitguardian.yaml` allowlist for test paths to prevent false positives
+
 ## [0.1.1] - 2026-07-20
 
 ### Added
