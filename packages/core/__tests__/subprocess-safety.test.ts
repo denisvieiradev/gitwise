@@ -2,6 +2,7 @@ import { describe, it, expect, jest, afterEach } from "@jest/globals";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { EventEmitter } from "node:events";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const SRC_ROOT = join(__dirname, "../src");
@@ -201,7 +202,38 @@ describe("subprocess argument safety — runtime array-args assertion (claude-co
     jest.resetModules();
   });
 
-  it("ClaudeCodeProvider.chat() calls execFile with array args (not a shell string)", async () => {
+  // ClaudeCodeProvider drives the CLI via `spawn` (not `execFile`/`exec`) so it
+  // can explicitly close the child's stdin itself — `execFile`'s async variant
+  // silently ignores any `input`/`stdio` option, which left stdin open and
+  // caused the CLI to hang waiting for piped input that would never arrive.
+  function createFakeChild(fakeResponse: string) {
+    const stdout = new EventEmitter();
+    const stderr = new EventEmitter();
+    const stdinWrites: string[] = [];
+    let stdinEnded = false;
+    const child = new EventEmitter() as EventEmitter & {
+      stdout: EventEmitter;
+      stderr: EventEmitter;
+      stdin: { write: (chunk: string) => void; end: () => void };
+    };
+    child.stdout = stdout;
+    child.stderr = stderr;
+    child.stdin = {
+      write: (chunk: string) => {
+        stdinWrites.push(chunk);
+      },
+      end: () => {
+        stdinEnded = true;
+        queueMicrotask(() => {
+          stdout.emit("data", Buffer.from(fakeResponse));
+          child.emit("close", 0);
+        });
+      },
+    };
+    return { child, stdinWrites, isStdinEnded: () => stdinEnded };
+  }
+
+  it("ClaudeCodeProvider.chat() calls spawn with array args (not a shell string)", async () => {
     const capturedCalls: Array<{ cmd: string; args: unknown }> = [];
     const fakeResponse = JSON.stringify({
       result: "test response",
@@ -211,17 +243,14 @@ describe("subprocess argument safety — runtime array-args assertion (claude-co
 
     jest.resetModules();
     jest.unstable_mockModule("node:child_process", () => ({
-      execFile: (
-        cmd: string,
-        args: string[],
-        _opts: unknown,
-        cb: (err: null, result: { stdout: string; stderr: string }) => void,
-      ): void => {
-        capturedCalls.push({ cmd, args });
-        cb(null, { stdout: fakeResponse, stderr: "" });
+      execFile: () => {
+        throw new Error("execFile should not be used — spawn must be used instead");
       },
       execSync: () => Buffer.from(""),
-      spawn: () => ({}),
+      spawn: (cmd: string, args: string[]) => {
+        capturedCalls.push({ cmd, args });
+        return createFakeChild(fakeResponse).child;
+      },
     }));
 
     const { ClaudeCodeProvider } = await import("../src/providers/claude-code.js");
@@ -238,27 +267,31 @@ describe("subprocess argument safety — runtime array-args assertion (claude-co
     }
   });
 
-  it("ClaudeCodeProvider.chat() passes the binary path as a discrete first argument, not shell-interpolated", async () => {
+  it("ClaudeCodeProvider.chat() passes the binary path as a discrete first argument, not shell-interpolated, and closes stdin itself", async () => {
     const capturedCalls: Array<{ cmd: string; args: string[] }> = [];
     const fakeResponse = JSON.stringify({
       result: "test",
       is_error: false,
       usage: { input_tokens: 1, output_tokens: 1 },
     });
+    let stdinWasEnded = false;
 
     jest.resetModules();
     jest.unstable_mockModule("node:child_process", () => ({
-      execFile: (
-        cmd: string,
-        args: string[],
-        _opts: unknown,
-        cb: (err: null, result: { stdout: string; stderr: string }) => void,
-      ): void => {
-        capturedCalls.push({ cmd, args });
-        cb(null, { stdout: fakeResponse, stderr: "" });
+      execFile: () => {
+        throw new Error("execFile should not be used — spawn must be used instead");
       },
       execSync: () => Buffer.from(""),
-      spawn: () => ({}),
+      spawn: (cmd: string, args: string[]) => {
+        capturedCalls.push({ cmd, args });
+        const fake = createFakeChild(fakeResponse);
+        const originalEnd = fake.child.stdin.end;
+        fake.child.stdin.end = () => {
+          originalEnd();
+          stdinWasEnded = fake.isStdinEnded();
+        };
+        return fake.child;
+      },
     }));
 
     const { ClaudeCodeProvider } = await import("../src/providers/claude-code.js");
@@ -275,6 +308,8 @@ describe("subprocess argument safety — runtime array-args assertion (claude-co
     expect(firstCall.cmd).toBe(fakeBinary);
     expect(typeof firstCall.cmd).toBe("string");
     expect(Array.isArray(firstCall.args)).toBe(true);
+    // Stdin must be closed by gitwise itself, not left open for the CLI to wait on.
+    expect(stdinWasEnded).toBe(true);
   });
 });
 

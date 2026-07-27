@@ -1,13 +1,11 @@
-import { execFile, execSync, spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { promisify } from "node:util";
 import { debug } from "../infra/logger.js";
 import { EXIT_CODES, GitwiseError } from "../errors.js";
 import type { LLMChatRequest, LLMChatResponse, LLMProvider, ModelConfig, ModelTier } from "./types.js";
 
-const execFileAsync = promisify(execFile);
 const LARGE_PROMPT_THRESHOLD = 100_000;
 const DEFAULT_TIMEOUT_MS = 120_000;
 
@@ -122,41 +120,21 @@ export class ClaudeCodeProvider implements LLMProvider {
   }
 
   private async callViaCli(args: string[]): Promise<ClaudeCliResult> {
-    try {
-      const { stdout } = await execFileAsync(this.claudeBinaryPath, args, {
-        timeout: DEFAULT_TIMEOUT_MS,
-        maxBuffer: 10 * 1024 * 1024,
-        ...({ input: "" } as Record<string, unknown>),
-      });
-      return this.parseResponse(stdout as string);
-    } catch (err: unknown) {
-      const execErr = err as { stdout?: string; stderr?: string };
-      if (execErr.stdout) {
-        try {
-          const parsed = JSON.parse(execErr.stdout);
-          if (parsed.is_error) {
-            throw new Error(`Claude CLI error: ${parsed.result}`);
-          }
-        } catch (parseErr) {
-          if (parseErr instanceof Error && parseErr.message.startsWith("Claude CLI error:")) {
-            throw parseErr;
-          }
-        }
-      }
-      const stderr = execErr.stderr
-        ?.replace(/Warning: no stdin data.*\n?/g, "")
-        .trim();
-      if (stderr) {
-        throw new Error(`Claude CLI failed: ${stderr}`);
-      }
-      throw this.wrapError(err);
-    }
+    // No stdin payload for this path — the prompt travels via argv (-p ...).
+    // Closing stdin immediately (rather than leaving it open) matters: the
+    // `claude` CLI treats a non-TTY stdin as possible piped input and waits
+    // on it before proceeding.
+    return this.spawnClaude(args, "");
   }
 
   private async callViaStdin(
     args: string[],
     input: string,
   ): Promise<ClaudeCliResult> {
+    return this.spawnClaude(args, input);
+  }
+
+  private async spawnClaude(args: string[], input: string): Promise<ClaudeCliResult> {
     return new Promise((resolve, reject) => {
       const child = spawn(this.claudeBinaryPath, args, {
         stdio: ["pipe", "pipe", "pipe"],
