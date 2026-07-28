@@ -12091,7 +12091,7 @@ init_esm_shims();
 // ../core/package.json
 var package_default = {
   name: "@denisvieiradev/gitwise-core",
-  version: "0.1.1",
+  version: "1.1.0",
   description: "Shared logic for gitwise: non-interactive commit/review/pr/release commands, LLM providers, git/github primitives, prompt templates.",
   type: "module",
   main: "./dist/index.js",
@@ -13652,6 +13652,28 @@ ${dirty}`,
   await saveReleasePlan(cwd, persistedPlan);
   await finishRelease({ cwd, tagAndPush, createGhRelease, workspacePropagation, signTags });
 }
+function finishPushFailure(opts) {
+  const { stage, tag, mainBranch, developBranch, newVersion, err } = opts;
+  const cause = err instanceof Error ? err.message : String(err);
+  const action = stage === "tag" ? `create the tag "${tag}"` : stage === "push-main" ? `push "${mainBranch}" (with tags) to origin` : `push "${developBranch}" to origin`;
+  const recoverySteps = stage === "tag" ? [
+    `git tag -a ${tag} -F .gitwise/release-${newVersion}.md`,
+    `git push origin ${mainBranch} --follow-tags`
+  ] : [
+    `git ls-remote --tags origin ${tag}  # check whether the tag already reached origin`,
+    `git fetch origin`,
+    `git merge origin/${mainBranch}  # do NOT rebase \u2014 that changes the hash ${tag} points to`,
+    `git push origin ${mainBranch} --follow-tags`
+  ];
+  return new GitwiseError({
+    code: "FINISH_PUSH_FAILED",
+    message: `Failed to ${action} while finishing v${newVersion}: ${cause}. The release plan file has already been deleted, so "gw release finish" cannot be re-run, and the release commit already exists locally, so "gw release prepare" will refuse with NO_COMMITS. Recover manually:
+${recoverySteps.map((s) => `  ${s}`).join("\n")}`,
+    exitCode: EXIT_CODES.GIT_FAILED,
+    cause: err,
+    details: { stage, tag, mainBranch, developBranch, newVersion }
+  });
+}
 async function finishRelease(opts) {
   const {
     cwd,
@@ -13842,15 +13864,27 @@ ${cause}`,
     await checkout(cwd, mainBranch);
   }
   if (tagAndPush) {
-    await createTag(cwd, tag, notes, { signed: signTags !== false });
-    await pushWithTags(cwd, "origin", mainBranch);
+    try {
+      await createTag(cwd, tag, notes, { signed: signTags !== false });
+    } catch (err) {
+      throw finishPushFailure({ stage: "tag", tag, mainBranch, newVersion: plan.newVersion, err });
+    }
+    try {
+      await pushWithTags(cwd, "origin", mainBranch);
+    } catch (err) {
+      throw finishPushFailure({ stage: "push-main", tag, mainBranch, newVersion: plan.newVersion, err });
+    }
     debug("release.finish.tag.pushed", {
       tag,
       branch: mainBranch,
       remote: "origin"
     });
     if (strategy.requiresDevelop()) {
-      await push(cwd, "origin", developBranch);
+      try {
+        await push(cwd, "origin", developBranch);
+      } catch (err) {
+        throw finishPushFailure({ stage: "push-develop", tag, mainBranch, developBranch, newVersion: plan.newVersion, err });
+      }
     }
   }
   if (createGhRelease) {
