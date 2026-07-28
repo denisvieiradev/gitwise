@@ -103,6 +103,11 @@ export function formatReleaseError(err: unknown): FormattedReleaseError {
         message,
         hint: "Resolve the merge conflicts (`git status` lists the files), then `git merge --continue`. The release plan file has already been deleted, so `gw release finish` cannot be re-run — finish tagging and pushing manually with `git tag -a v<version> -F .gitwise/release-<version>.md` and `git push --follow-tags origin <main-branch>`.",
       };
+    case "FINISH_PUSH_FAILED":
+      return {
+        message,
+        hint: "The exact recovery commands are in the error message above. The release commit (and possibly the tag) already exist locally — do not re-run `gw release prepare` or `gw release finish`, and do not rebase (it would change the hash the tag points to).",
+      };
     case "NOTES_READ_FAILED":
       return {
         message,

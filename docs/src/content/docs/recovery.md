@@ -86,6 +86,35 @@ stash@{0}: On main: gitwise/split-2026-05-23T14:30:00.000Z
 
 5. Your working tree is now exactly as it was before `gw commit` ran. You can retry the commit-split or commit manually.
 
+## Release Finish — Push Rejected
+
+`gw release finish` deletes `.gitwise/release-plan.json` before tagging and pushing, so a `finish` re-run is never applied twice. If the tag creation or the final push then fails — most commonly a rejected non-fast-forward push because `origin/<mainBranch>` advanced while the release was being prepared or finished (for example a CI bot committing directly to `main`) — `gw release finish` surfaces a `FINISH_PUSH_FAILED` error and cannot be re-run: the plan is gone, and the release commit already exists locally, so `gw release prepare` will also refuse with `NO_COMMITS`.
+
+**Symptoms**: `gw release finish` fails with `FINISH_PUSH_FAILED` (or the underlying `git push`/`git tag` error), and neither `gw release finish` nor `gw release prepare` can be run again.
+
+**Recovery steps**:
+
+1. Check whether the tag already reached the remote (it can succeed even when the branch push is rejected):
+   ```sh
+   git ls-remote --tags origin v<version>
+   ```
+
+2. If the tag is missing, create it locally from the preserved notes file — do not touch `package.json`/`CHANGELOG.md` again, the release commit already exists:
+   ```sh
+   git tag -a v<version> -F .gitwise/release-<version>.md
+   ```
+
+3. Reconcile with the remote using a **merge, never a rebase**. Rebasing would give the release commit a new hash, orphaning the tag that already points at the original commit:
+   ```sh
+   git fetch origin
+   git merge origin/<mainBranch>
+   ```
+
+4. Push the branch and tag together:
+   ```sh
+   git push origin <mainBranch> --follow-tags
+   ```
+
 ## Workspace Version Bump
 
 `gw release prepare` propagates the new version to each `packages/*/package.json` in sequence. If a write fails partway through, some manifests are already bumped while others still carry the old version.

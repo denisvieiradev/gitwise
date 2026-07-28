@@ -26,6 +26,7 @@ describe("formatReleaseError", () => {
     { code: "RELEASE_BRANCH_UNMERGED", hintIncludes: "Merge the release branch" },
     { code: "COMMIT_HOOK_FAILURE", hintIncludes: "pre-commit hook rejected the release commit" },
     { code: "FINISH_MERGE_CONFLICT", hintIncludes: "git merge --continue" },
+    { code: "FINISH_PUSH_FAILED", hintIncludes: "do not rebase" },
     { code: "NOTES_READ_FAILED", hintIncludes: "Recreate `.gitwise/release-<version>.md`" },
   ];
 

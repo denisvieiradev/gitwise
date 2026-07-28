@@ -781,6 +781,50 @@ export async function applyRelease(
   await finishRelease({ cwd, tagAndPush, createGhRelease, workspacePropagation, signTags });
 }
 
+/**
+ * Build the `FINISH_PUSH_FAILED` error thrown by step 9 of {@link finishRelease}.
+ * Called after the plan file (step 6) and, for github-flow, the release commit
+ * (step 5) already exist — so the message spells out reconciliation via fetch
+ * + merge rather than pointing back at "gw release prepare"/"gw release finish",
+ * neither of which can recover this state.
+ */
+function finishPushFailure(opts: {
+  stage: "tag" | "push-main" | "push-develop";
+  tag: string;
+  mainBranch: string;
+  developBranch?: string;
+  newVersion: string;
+  err: unknown;
+}): GitwiseError {
+  const { stage, tag, mainBranch, developBranch, newVersion, err } = opts;
+  const cause = err instanceof Error ? err.message : String(err);
+  const action =
+    stage === "tag"
+      ? `create the tag "${tag}"`
+      : stage === "push-main"
+        ? `push "${mainBranch}" (with tags) to origin`
+        : `push "${developBranch}" to origin`;
+  const recoverySteps =
+    stage === "tag"
+      ? [
+          `git tag -a ${tag} -F .gitwise/release-${newVersion}.md`,
+          `git push origin ${mainBranch} --follow-tags`,
+        ]
+      : [
+          `git ls-remote --tags origin ${tag}  # check whether the tag already reached origin`,
+          `git fetch origin`,
+          `git merge origin/${mainBranch}  # do NOT rebase — that changes the hash ${tag} points to`,
+          `git push origin ${mainBranch} --follow-tags`,
+        ];
+  return new GitwiseError({
+    code: "FINISH_PUSH_FAILED",
+    message: `Failed to ${action} while finishing v${newVersion}: ${cause}. The release plan file has already been deleted, so "gw release finish" cannot be re-run, and the release commit already exists locally, so "gw release prepare" will refuse with NO_COMMITS. Recover manually:\n${recoverySteps.map((s) => `  ${s}`).join("\n")}`,
+    exitCode: EXIT_CODES.GIT_FAILED,
+    cause: err,
+    details: { stage, tag, mainBranch, developBranch, newVersion },
+  });
+}
+
 // ─── finishRelease ───────────────────────────────────────────────────────────
 
 export interface FinishReleaseOptions {
@@ -838,7 +882,12 @@ export interface FinishReleaseOptions {
  * failed strategy merge (typically gitflow's develop merge when develop has
  * advanced) surfaces as `FINISH_MERGE_CONFLICT` — the repo is left mid-merge
  * for manual recovery (`git merge --continue` then tag + push by hand) since
- * the plan can no longer be re-run.
+ * the plan can no longer be re-run. A failure in step 9 (tag creation, or a
+ * rejected push — typically a non-fast-forward because origin's mainBranch
+ * advanced, e.g. a CI bot commit, while this release was being prepared or
+ * finished) surfaces as `FINISH_PUSH_FAILED` with the exact fetch/merge/push
+ * recovery commands embedded in the message; merge (never rebase) is required
+ * because the tag, if already created, is pinned to the release commit's hash.
  */
 export async function finishRelease(opts: FinishReleaseOptions): Promise<void> {
   const {
@@ -1119,17 +1168,37 @@ export async function finishRelease(opts: FinishReleaseOptions): Promise<void> {
     await git.checkout(cwd, mainBranch);
   }
 
-  // 9. Tag and push. Tag annotation = the (possibly edited) notes.
+  // 9. Tag and push. Tag annotation = the (possibly edited) notes. The plan
+  // file is already gone (step 6), so any failure here — most commonly a
+  // rejected non-fast-forward push because origin/mainBranch advanced while
+  // this release was being prepared/finished (e.g. a CI bot commit) — leaves
+  // "gw release finish" unable to re-run. Wrap each git call so the thrown
+  // FINISH_PUSH_FAILED error spells out the exact manual recovery: the
+  // release commit (and possibly the tag) already exist locally, so the fix
+  // is to fetch + merge (never rebase, which would change the hash the tag
+  // points to) and push again — not to re-run prepare or recreate the commit.
   if (tagAndPush) {
-    await git.createTag(cwd, tag, notes, { signed: signTags !== false });
-    await git.pushWithTags(cwd, "origin", mainBranch);
+    try {
+      await git.createTag(cwd, tag, notes, { signed: signTags !== false });
+    } catch (err) {
+      throw finishPushFailure({ stage: "tag", tag, mainBranch, newVersion: plan.newVersion, err });
+    }
+    try {
+      await git.pushWithTags(cwd, "origin", mainBranch);
+    } catch (err) {
+      throw finishPushFailure({ stage: "push-main", tag, mainBranch, newVersion: plan.newVersion, err });
+    }
     debug("release.finish.tag.pushed", {
       tag,
       branch: mainBranch,
       remote: "origin",
     });
     if (strategy.requiresDevelop()) {
-      await git.push(cwd, "origin", developBranch);
+      try {
+        await git.push(cwd, "origin", developBranch);
+      } catch (err) {
+        throw finishPushFailure({ stage: "push-develop", tag, mainBranch, developBranch, newVersion: plan.newVersion, err });
+      }
     }
   }
 

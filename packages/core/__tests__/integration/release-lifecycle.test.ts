@@ -871,3 +871,92 @@ describe("release lifecycle integration — successive prepares survive prior no
     expect(finalGitignore).toContain(".gitwise/release-*.md");
   });
 });
+
+// ─── Finish push rejected ────────────────────────────────────────────────────
+
+describe("release lifecycle integration — github-flow finish push rejected", () => {
+  let cwd: string;
+  let originDir: string | null;
+  let outsideClone: string | null;
+
+  beforeEach(async () => {
+    cwd = await mkdtemp(join(tmpdir(), "gitwise-int-push-rejected-"));
+    originDir = null;
+    outsideClone = null;
+    await initRepoOnMain(cwd);
+    await writeFile(join(cwd, "feature.ts"), "export const f = 1;");
+    await exec("git", ["add", "feature.ts"], { cwd });
+    await exec("git", ["commit", "-m", "feat: trunk feature"], { cwd });
+  });
+
+  afterEach(async () => {
+    jest.dontMock("../../src/infra/github.js");
+    jest.resetModules();
+    await rm(cwd, { recursive: true, force: true });
+    if (originDir) await rm(originDir, { recursive: true, force: true });
+    if (outsideClone) await rm(outsideClone, { recursive: true, force: true });
+  });
+
+  it("surfaces FINISH_PUSH_FAILED with fetch/merge recovery commands when origin/main advanced during the release", async () => {
+    jest.resetModules();
+    jest.unstable_mockModule("../../src/infra/github.js", () => ({
+      isGhAvailable: async () => false,
+      createGitHubRelease: async () => ({ url: "n/a" }),
+    }));
+    const { prepareRelease, finishRelease } = await import(
+      "../../src/commands/release.js"
+    );
+
+    // Establish origin/main so there is something to diverge from.
+    originDir = await addOrigin(cwd);
+    await exec("git", ["push", "origin", "main"], { cwd });
+
+    await prepareRelease({ cwd, provider: planMock("minor") });
+
+    // Simulate a concurrent push landing on origin/main (e.g. a CI bot commit)
+    // while this release was being prepared/finished — from a second clone so
+    // it never touches `cwd`, mirroring the real race.
+    outsideClone = await mkdtemp(join(tmpdir(), "gitwise-int-push-rejected-clone-"));
+    await exec("git", ["clone", originDir, outsideClone]);
+    await exec("git", ["config", "user.email", "bot@test.com"], { cwd: outsideClone });
+    await exec("git", ["config", "user.name", "Bot"], { cwd: outsideClone });
+    await writeFile(join(outsideClone, "bot.ts"), "export const bot = 1;");
+    await exec("git", ["add", "bot.ts"], { cwd: outsideClone });
+    await exec("git", ["commit", "-m", "chore: bot commit"], { cwd: outsideClone });
+    await exec("git", ["push", "origin", "main"], { cwd: outsideClone });
+
+    // finish creates the release commit + tag locally, then the branch push
+    // is rejected as non-fast-forward because `cwd` never fetched the bot commit.
+    await expect(
+      finishRelease({ cwd, tagAndPush: true, createGhRelease: false, signTags: false }),
+    ).rejects.toMatchObject({
+      code: "FINISH_PUSH_FAILED",
+      details: { stage: "push-main", tag: "v1.1.0", mainBranch: "main", newVersion: "1.1.0" },
+    });
+
+    // Plan file already deleted (ADR-003) — finish cannot be re-run.
+    expect(await pathExists(join(cwd, ".gitwise/release-plan.json"))).toBe(false);
+
+    // The release commit and tag survive locally so the recovery commands in
+    // the error message (fetch + merge + push) have something to work with.
+    const pkgAfterFinish = JSON.parse(
+      await readFile(join(cwd, "package.json"), "utf-8"),
+    ) as { version: string };
+    expect(pkgAfterFinish.version).toBe("1.1.0");
+    const { stdout: tags } = await exec("git", ["tag", "-l"], { cwd });
+    expect(tags.trim()).toBe("v1.1.0");
+
+    // Confirm the manual recovery path actually works: fetch + merge (never
+    // rebase, which would orphan the tag) + push succeeds afterward.
+    await exec("git", ["fetch", "origin"], { cwd });
+    await exec("git", ["merge", "origin/main", "-m", "merge"], { cwd });
+    await exec("git", ["push", "origin", "main", "--follow-tags"], { cwd });
+    const { stdout: originLog } = await exec(
+      "git",
+      ["log", "main", "--oneline"],
+      { cwd: originDir },
+    );
+    expect(originLog).toContain("chore(release): v1.1.0");
+    expect(originLog).toContain("chore: bot commit");
+  });
+});
