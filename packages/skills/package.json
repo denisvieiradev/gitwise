@@ -1,6 +1,6 @@
 {
   "name": "@denisvieiradev/gitwise-skills",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Claude Code plugin for gitwise — AI commit, review, PR, and release skills.",
   "type": "module",
   "main": "./dist/index.js",

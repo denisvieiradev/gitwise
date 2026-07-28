@@ -1,6 +1,6 @@
 {
   "name": "gitwise-workspace",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "gitwise monorepo root (private). The publishable packages live under packages/*.",
   "private": true,
   "type": "module",
