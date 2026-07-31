@@ -305,7 +305,7 @@ var init_version = __esm({
   "../../node_modules/@anthropic-ai/sdk/version.mjs"() {
     "use strict";
     init_esm_shims();
-    VERSION = "0.106.0";
+    VERSION = "0.109.0";
   }
 });
 
@@ -2100,7 +2100,7 @@ var init_streaming = __esm({
                   throw e;
                 }
               }
-              if (sse.event === "message_start" || sse.event === "message_delta" || sse.event === "message_stop" || sse.event === "content_block_start" || sse.event === "content_block_delta" || sse.event === "content_block_stop" || sse.event === "message" || sse.event === "user.message" || sse.event === "user.interrupt" || sse.event === "user.tool_confirmation" || sse.event === "user.custom_tool_result" || sse.event === "user.tool_result" || sse.event === "agent.message" || sse.event === "agent.thinking" || sse.event === "agent.tool_use" || sse.event === "agent.tool_result" || sse.event === "agent.mcp_tool_use" || sse.event === "agent.mcp_tool_result" || sse.event === "agent.custom_tool_use" || sse.event === "agent.thread_context_compacted" || sse.event === "session.status_running" || sse.event === "session.status_idle" || sse.event === "session.status_rescheduled" || sse.event === "session.status_terminated" || sse.event === "session.error" || sse.event === "session.deleted" || sse.event === "session.updated" || sse.event === "span.model_request_start" || sse.event === "span.model_request_end" || sse.event === "span.outcome_evaluation_start" || sse.event === "span.outcome_evaluation_ongoing" || sse.event === "span.outcome_evaluation_end" || sse.event === "user.define_outcome" || sse.event === "agent.thread_message_received" || sse.event === "agent.thread_message_sent" || sse.event === "agent.session_thread_message_received" || sse.event === "agent.session_thread_message_sent" || sse.event === "session.thread_created" || sse.event === "session.thread_status_created" || sse.event === "session.thread_status_running" || sse.event === "session.thread_status_idle" || sse.event === "session.thread_status_rescheduled" || sse.event === "session.thread_status_terminated" || sse.event === "system.message") {
+              if (sse.event === "message_start" || sse.event === "message_delta" || sse.event === "message_stop" || sse.event === "content_block_start" || sse.event === "content_block_delta" || sse.event === "content_block_stop" || sse.event === "message" || sse.event === "user.message" || sse.event === "user.interrupt" || sse.event === "user.tool_confirmation" || sse.event === "user.custom_tool_result" || sse.event === "user.tool_result" || sse.event === "agent.message" || sse.event === "agent.thinking" || sse.event === "agent.tool_use" || sse.event === "agent.tool_result" || sse.event === "agent.mcp_tool_use" || sse.event === "agent.mcp_tool_result" || sse.event === "agent.custom_tool_use" || sse.event === "agent.thread_context_compacted" || sse.event === "session.status_running" || sse.event === "session.status_idle" || sse.event === "session.status_rescheduled" || sse.event === "session.status_terminated" || sse.event === "session.error" || sse.event === "session.deleted" || sse.event === "session.updated" || sse.event === "span.model_request_start" || sse.event === "span.model_request_end" || sse.event === "span.outcome_evaluation_start" || sse.event === "span.outcome_evaluation_ongoing" || sse.event === "span.outcome_evaluation_end" || sse.event === "user.define_outcome" || sse.event === "agent.thread_message_received" || sse.event === "agent.thread_message_sent" || sse.event === "agent.session_thread_message_received" || sse.event === "agent.session_thread_message_sent" || sse.event === "session.thread_created" || sse.event === "session.thread_status_created" || sse.event === "session.thread_status_running" || sse.event === "session.thread_status_idle" || sse.event === "session.thread_status_rescheduled" || sse.event === "session.thread_status_terminated" || sse.event === "event_start" || sse.event === "event_delta" || sse.event === "system.message") {
                 try {
                   yield JSON.parse(sse.data);
                 } catch (e) {
@@ -2507,7 +2507,7 @@ var init_api_promise = __esm({
 });
 
 // ../../node_modules/@anthropic-ai/sdk/core/pagination.mjs
-var _AbstractPage_client, AbstractPage, PagePromise, Page, PageCursor;
+var _AbstractPage_client, AbstractPage, PagePromise, Page, PageCursor, BidirectionalPageCursor;
 var init_pagination = __esm({
   "../../node_modules/@anthropic-ai/sdk/core/pagination.mjs"() {
     "use strict";
@@ -2621,6 +2621,30 @@ var init_pagination = __esm({
         super(client, response, body, options);
         this.data = body.data || [];
         this.next_page = body.next_page || null;
+      }
+      getPaginatedItems() {
+        return this.data ?? [];
+      }
+      nextPageRequestOptions() {
+        const cursor = this.next_page;
+        if (!cursor) {
+          return null;
+        }
+        return {
+          ...this.options,
+          query: {
+            ...maybeObj(this.options.query),
+            page: cursor
+          }
+        };
+      }
+    };
+    BidirectionalPageCursor = class extends AbstractPage {
+      constructor(client, response, body, options) {
+        super(client, response, body, options);
+        this.data = body.data || [];
+        this.next_page = body.next_page || null;
+        this.prev_page = body.prev_page || null;
       }
       getPaginatedItems() {
         return this.data ?? [];
@@ -3092,7 +3116,9 @@ var init_deployments = __esm({
        * @example
        * ```ts
        * const betaManagedAgentsDeployment =
-       *   await client.beta.deployments.retrieve('deployment_id');
+       *   await client.beta.deployments.retrieve(
+       *     'depl_011CZkZcDH3vPqd7xnEfwTai',
+       *   );
        * ```
        */
       retrieve(deploymentID, params = {}, options) {
@@ -3111,7 +3137,9 @@ var init_deployments = __esm({
        * @example
        * ```ts
        * const betaManagedAgentsDeployment =
-       *   await client.beta.deployments.update('deployment_id');
+       *   await client.beta.deployments.update(
+       *     'depl_011CZkZcDH3vPqd7xnEfwTai',
+       *   );
        * ```
        */
       update(deploymentID, params, options) {
@@ -3153,7 +3181,9 @@ var init_deployments = __esm({
        * @example
        * ```ts
        * const betaManagedAgentsDeployment =
-       *   await client.beta.deployments.archive('deployment_id');
+       *   await client.beta.deployments.archive(
+       *     'depl_011CZkZcDH3vPqd7xnEfwTai',
+       *   );
        * ```
        */
       archive(deploymentID, params = {}, options) {
@@ -3172,7 +3202,9 @@ var init_deployments = __esm({
        * @example
        * ```ts
        * const betaManagedAgentsDeployment =
-       *   await client.beta.deployments.pause('deployment_id');
+       *   await client.beta.deployments.pause(
+       *     'depl_011CZkZcDH3vPqd7xnEfwTai',
+       *   );
        * ```
        */
       pause(deploymentID, params = {}, options) {
@@ -3191,7 +3223,9 @@ var init_deployments = __esm({
        * @example
        * ```ts
        * const betaManagedAgentsDeploymentRun =
-       *   await client.beta.deployments.run('deployment_id');
+       *   await client.beta.deployments.run(
+       *     'depl_011CZkZcDH3vPqd7xnEfwTai',
+       *   );
        * ```
        */
       run(deploymentID, params = {}, options) {
@@ -3210,7 +3244,9 @@ var init_deployments = __esm({
        * @example
        * ```ts
        * const betaManagedAgentsDeployment =
-       *   await client.beta.deployments.unpause('deployment_id');
+       *   await client.beta.deployments.unpause(
+       *     'depl_011CZkZcDH3vPqd7xnEfwTai',
+       *   );
        * ```
        */
       unpause(deploymentID, params = {}, options) {
@@ -5316,6 +5352,7 @@ async function realpathOrSelf(p) {
 async function canonicalize(abs) {
   const tail = [];
   let prefix = abs;
+  let hops = 0;
   for (; ; ) {
     let real;
     try {
@@ -5327,6 +5364,9 @@ async function canonicalize(abs) {
       } catch {
       }
       if (isLink) {
+        if (++hops > 40) {
+          throw new ToolError(`path ${JSON.stringify(abs)} has too many levels of symbolic links`);
+        }
         prefix = path5.resolve(path5.dirname(prefix), await fs2.readlink(prefix));
         continue;
       }
@@ -5342,19 +5382,12 @@ async function canonicalize(abs) {
 }
 async function confineToRoot(root, p, opts) {
   const allowOutside = opts?.allowOutside ?? false;
-  if (path5.isAbsolute(p)) {
-    if (!allowOutside) {
-      throw new ToolError(`absolute path ${JSON.stringify(p)} not permitted`);
-    }
-    return path5.resolve(p);
-  }
   const realRoot = await realpathOrSelf(path5.resolve(root));
   const abs = path5.resolve(realRoot, p);
   if (allowOutside)
     return abs;
   const real = await canonicalize(abs);
-  const rootSep = realRoot.endsWith(path5.sep) ? realRoot : realRoot + path5.sep;
-  if (real !== realRoot && !real.startsWith(rootSep)) {
+  if (real !== realRoot && !real.startsWith(realRoot + path5.sep)) {
     throw new ToolError(`path ${JSON.stringify(p)} escapes workdir`);
   }
   return real;
@@ -5419,8 +5452,8 @@ var init_fs_util = __esm({
 import * as fs3 from "fs/promises";
 import * as fssync from "fs";
 import * as path6 from "path";
-import { execFile as execFile5 } from "child_process";
-import { promisify as promisify5 } from "util";
+import { execFile as execFile4 } from "child_process";
+import { promisify as promisify4 } from "util";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 async function setupSkills(ctx) {
@@ -5508,7 +5541,7 @@ function assertNoSpecialMembers(verboseListing) {
 }
 async function runArchiveTool(cmd, args2) {
   try {
-    const { stdout } = await execFileAsync2(cmd, args2);
+    const { stdout } = await execFileAsync(cmd, args2);
     return stdout;
   } catch (e) {
     if (e != null && typeof e === "object" && e.code === "ENOENT") {
@@ -5570,7 +5603,7 @@ async function readHead(file, n) {
     await handle.close();
   }
 }
-var execFileAsync2;
+var execFileAsync;
 var init_skills = __esm({
   "../../node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs"() {
     "use strict";
@@ -5578,7 +5611,7 @@ var init_skills = __esm({
     init_error();
     init_log();
     init_fs_util();
-    execFileAsync2 = promisify5(execFile5);
+    execFileAsync = promisify4(execFile4);
   }
 });
 
@@ -5842,6 +5875,7 @@ function betaGlobTool(ctx) {
       if (!ctx.unrestrictedPaths && pat.split(/[\\/]/).includes("..")) {
         throw new ToolError('glob: ".." is not permitted in the pattern');
       }
+      const realRoot = ctx.unrestrictedPaths ? root : await fs4.realpath(root).catch(() => root);
       const matches = [];
       try {
         for await (const entry of fsGlob(pat, {
@@ -5852,8 +5886,16 @@ function betaGlobTool(ctx) {
           if (!entry.isFile())
             continue;
           const full = path7.join(entry.parentPath, entry.name);
-          if (!ctx.unrestrictedPaths && !isWithin(root, full))
-            continue;
+          if (!ctx.unrestrictedPaths) {
+            let real;
+            try {
+              real = await fs4.realpath(full);
+            } catch {
+              continue;
+            }
+            if (!isWithin(realRoot, real))
+              continue;
+          }
           let mtime = 0;
           try {
             mtime = (await fs4.stat(full)).mtimeMs;
@@ -7249,7 +7291,7 @@ var init_batches = __esm({
        * can take up to 24 hours to complete.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -7290,7 +7332,7 @@ var init_batches = __esm({
        * `results_url` field in the response.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -7315,7 +7357,7 @@ var init_batches = __esm({
        * returned first.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -7343,7 +7385,7 @@ var init_batches = __esm({
        * like to delete an in-progress batch, you must first cancel it.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -7375,7 +7417,7 @@ var init_batches = __esm({
        * non-interruptible.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -7403,7 +7445,7 @@ var init_batches = __esm({
        * requests. Use the `custom_id` field to match results to requests.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -8948,7 +8990,7 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
        * including tools, images, and documents, without creating it.
        *
        * Learn more about token counting in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/token-counting)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/token-counting)
        *
        * @example
        * ```ts
@@ -8961,12 +9003,15 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
        */
       countTokens(params, options) {
         const modifiedParams = transformOutputFormat(params);
-        const { betas, ...body } = modifiedParams;
+        const { betas, user_profile_id, ...body } = modifiedParams;
         return this._client.post("/v1/messages/count_tokens?beta=true", {
           body,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "token-counting-2024-11-01"].toString() },
+            {
+              "anthropic-beta": [...betas ?? [], "token-counting-2024-11-01"].toString(),
+              ...user_profile_id != null ? { "anthropic-user-profile-id": user_profile_id } : void 0
+            },
             options?.headers
           ])
         });
@@ -9065,8 +9110,9 @@ var init_events = __esm({
        * ```
        */
       stream(sessionID, params = {}, options) {
-        const { betas } = params ?? {};
+        const { betas, ...query } = params ?? {};
         return this._client.get(path4`/v1/sessions/${sessionID}/events/stream?beta=true`, {
+          query,
           ...options,
           headers: buildHeaders([
             { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
@@ -9492,7 +9538,7 @@ var init_sessions = __esm({
        */
       list(params = {}, options) {
         const { betas, ...query } = params ?? {};
-        return this._client.getAPIList("/v1/sessions?beta=true", PageCursor, {
+        return this._client.getAPIList("/v1/sessions?beta=true", BidirectionalPageCursor, {
           query,
           ...options,
           headers: buildHeaders([
@@ -10876,7 +10922,7 @@ var init_batches2 = __esm({
        * can take up to 24 hours to complete.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -10913,7 +10959,7 @@ var init_batches2 = __esm({
        * `results_url` field in the response.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -10930,7 +10976,7 @@ var init_batches2 = __esm({
        * returned first.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -10950,7 +10996,7 @@ var init_batches2 = __esm({
        * like to delete an in-progress batch, you must first cancel it.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -10973,7 +11019,7 @@ var init_batches2 = __esm({
        * non-interruptible.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -10993,7 +11039,7 @@ var init_batches2 = __esm({
        * requests. Use the `custom_id` field to match results to requests.
        *
        * Learn more about the Message Batches API in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/batch-processing)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/batch-processing)
        *
        * @example
        * ```ts
@@ -11115,7 +11161,7 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
        * including tools, images, and documents, without creating it.
        *
        * Learn more about token counting in our
-       * [user guide](https://docs.claude.com/en/docs/build-with-claude/token-counting)
+       * [user guide](https://platform.claude.com/docs/en/build-with-claude/token-counting)
        *
        * @example
        * ```ts
@@ -11126,8 +11172,16 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
        *   });
        * ```
        */
-      countTokens(body, options) {
-        return this._client.post("/v1/messages/count_tokens", { body, ...options });
+      countTokens(params, options) {
+        const { user_profile_id, ...body } = params;
+        return this._client.post("/v1/messages/count_tokens", {
+          body,
+          ...options,
+          headers: buildHeaders([
+            { ...user_profile_id != null ? { "anthropic-user-profile-id": user_profile_id } : void 0 },
+            options?.headers
+          ])
+        });
       }
     };
     DEPRECATED_MODELS2 = {
@@ -12036,7 +12090,7 @@ init_esm_shims();
 // ../core/package.json
 var package_default = {
   name: "@denisvieiradev/gitwise-core",
-  version: "0.1.0",
+  version: "1.1.1",
   description: "Shared logic for gitwise: non-interactive commit/review/pr/release commands, LLM providers, git/github primitives, prompt templates.",
   type: "module",
   main: "./dist/index.js",
@@ -12086,10 +12140,10 @@ var package_default = {
   },
   homepage: "https://github.com/denisvieiradev/gitwise#readme",
   engines: {
-    node: ">=18"
+    node: ">=22.12.0"
   },
   dependencies: {
-    "@anthropic-ai/sdk": "^0.106.0"
+    "@anthropic-ai/sdk": "^0.109.0"
   }
 };
 
@@ -12216,13 +12270,15 @@ __export(git_exports, {
   resetSoft: () => resetSoft,
   resetStaged: () => resetStaged,
   showFileAtHead: () => showFileAtHead,
+  stagePathsFromTree: () => stagePathsFromTree,
   stashApplyNamed: () => stashApplyNamed,
   stashDropNamed: () => stashDropNamed,
   stashList: () => stashList,
   stashPopNamed: () => stashPopNamed,
   stashPushNamed: () => stashPushNamed,
   status: () => status,
-  tagExists: () => tagExists
+  tagExists: () => tagExists,
+  writeTree: () => writeTree
 });
 init_esm_shims();
 import { execFile } from "child_process";
@@ -12293,6 +12349,13 @@ async function getLog(cwd, range, maxCount) {
 }
 async function add(cwd, files) {
   await run(["add", ...files], cwd);
+}
+async function writeTree(cwd) {
+  return run(["write-tree"], cwd);
+}
+async function stagePathsFromTree(cwd, tree, files) {
+  if (files.length === 0) return;
+  await run(["reset", "-q", tree, "--", ...files], cwd);
 }
 async function commit(cwd, message) {
   return run(["commit", "-m", message], cwd);
@@ -12642,7 +12705,7 @@ async function acquireRepoLock(repoPath, options = {}) {
     command,
     acquiredAt: now().toISOString()
   };
-  await tryAcquire(lockPath, payload, staleMs, isAlive, now, 0);
+  await tryAcquire(lockPath, payload, staleMs, isAlive, now, 0, options.onReclaim);
   let released = false;
   return async () => {
     if (released) return;
@@ -12654,7 +12717,7 @@ async function acquireRepoLock(repoPath, options = {}) {
     }
   };
 }
-async function tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt) {
+async function tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt, onReclaim) {
   try {
     const handle = await open2(lockPath, "wx");
     try {
@@ -12686,7 +12749,8 @@ async function tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt) {
   } catch (unlinkErr) {
     if (unlinkErr.code !== "ENOENT") throw unlinkErr;
   }
-  return tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt + 1);
+  if (onReclaim) await onReclaim();
+  return tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt + 1, onReclaim);
 }
 async function readExisting(lockPath) {
   try {
@@ -12727,12 +12791,10 @@ function defaultIsProcessAlive(pid) {
 
 // ../core/src/providers/claude-code.ts
 init_esm_shims();
-import { execFile as execFile3, execSync, spawn } from "child_process";
+import { execSync, spawn } from "child_process";
 import fs from "fs";
 import os from "os";
 import path3 from "path";
-import { promisify as promisify3 } from "util";
-var execFileAsync = promisify3(execFile3);
 var LARGE_PROMPT_THRESHOLD = 1e5;
 var DEFAULT_TIMEOUT_MS = 12e4;
 var COMMON_CLAUDE_PATHS = [
@@ -12810,35 +12872,12 @@ var ClaudeCodeProvider = class {
     return args2;
   }
   async callViaCli(args2) {
-    try {
-      const { stdout } = await execFileAsync(this.claudeBinaryPath, args2, {
-        timeout: DEFAULT_TIMEOUT_MS,
-        maxBuffer: 10 * 1024 * 1024,
-        ...{ input: "" }
-      });
-      return this.parseResponse(stdout);
-    } catch (err) {
-      const execErr = err;
-      if (execErr.stdout) {
-        try {
-          const parsed = JSON.parse(execErr.stdout);
-          if (parsed.is_error) {
-            throw new Error(`Claude CLI error: ${parsed.result}`);
-          }
-        } catch (parseErr) {
-          if (parseErr instanceof Error && parseErr.message.startsWith("Claude CLI error:")) {
-            throw parseErr;
-          }
-        }
-      }
-      const stderr = execErr.stderr?.replace(/Warning: no stdin data.*\n?/g, "").trim();
-      if (stderr) {
-        throw new Error(`Claude CLI failed: ${stderr}`);
-      }
-      throw this.wrapError(err);
-    }
+    return this.spawnClaude(args2, "");
   }
   async callViaStdin(args2, input) {
+    return this.spawnClaude(args2, input);
+  }
+  async spawnClaude(args2, input) {
     return new Promise((resolve4, reject) => {
       const child = spawn(this.claudeBinaryPath, args2, {
         stdio: ["pipe", "pipe", "pipe"],
@@ -13110,8 +13149,20 @@ var SENSITIVE_PATTERNS = [
   /\.pfx$/,
   /\.pkcs12$/
 ];
+var SAFE_ENV_TEMPLATE_SUFFIXES = [
+  ".example",
+  ".sample",
+  ".template",
+  ".dist",
+  ".defaults"
+];
+function isSafeEnvTemplate(basename3) {
+  if (!basename3.startsWith(".env")) return false;
+  return SAFE_ENV_TEMPLATE_SUFFIXES.some((suffix) => basename3.endsWith(suffix));
+}
 function isSensitiveFile(filePath) {
   const basename3 = filePath.split("/").pop() ?? filePath;
+  if (isSafeEnvTemplate(basename3)) return false;
   return SENSITIVE_PATTERNS.some((pattern) => pattern.test(basename3));
 }
 function tryParseJson(text) {
@@ -13243,7 +13294,7 @@ async function commit2(opts) {
     debug("Sensitive files blocked from commit", { files: sensitiveFiles });
     throw new GitwiseError({
       code: "SENSITIVE_FILE_BLOCKED",
-      message: `SENSITIVE_FILE_BLOCKED: ${sensitiveFiles.length} file(s) matched sensitive patterns (env/pem/credentials). Set GITWISE_DEBUG=1 to see which files were flagged.`,
+      message: `SENSITIVE_FILE_BLOCKED: ${sensitiveFiles.length} file(s) matched sensitive patterns (env/pem/credentials). Re-run with --debug (or set GITWISE_DEBUG=1) to see which files were flagged.`,
       details: { files: sensitiveFiles }
     });
   }
@@ -13338,7 +13389,7 @@ function takeNamedStashStep(cwd, stashName) {
     }
   };
 }
-function applyOneCommitStep(entry, cwd) {
+function applyOneCommitStep(entry, cwd, stagedTree) {
   const msg = entry.description ? `${entry.message}
 
 ${entry.description}` : entry.message;
@@ -13346,7 +13397,16 @@ ${entry.description}` : entry.message;
     name: `applyCommit(${entry.message})`,
     async apply() {
       const priorSha = await headSha(cwd);
-      await applyCommit({ message: msg, files: entry.files, cwd });
+      await stagePathsFromTree(cwd, stagedTree, entry.files);
+      const staged = await getStagedFilesList(cwd);
+      if (staged.length === 0) {
+        debug("Skipping commit group with no staged changes", {
+          message: entry.message,
+          files: entry.files
+        });
+        return { priorSha, newSha: priorSha };
+      }
+      await applyCommit({ message: msg, files: [], cwd });
       const newSha = await headSha(cwd);
       return { priorSha, newSha };
     },
@@ -13370,10 +13430,11 @@ async function applyCommitPlan(plan, opts) {
       const tx = new Transaction();
       const logger = { warn };
       try {
+        const stagedTree = await writeTree(cwd);
         await tx.run(takeNamedStashStep(cwd, stashName));
         await resetStaged(cwd);
         for (const entry of plan.commits) {
-          await tx.run(applyOneCommitStep(entry, cwd));
+          await tx.run(applyOneCommitStep(entry, cwd, stagedTree));
         }
         await stashDropNamed(cwd, stashName);
       } catch (err) {
@@ -13408,9 +13469,9 @@ init_esm_shims();
 
 // ../core/src/commands/pr.ts
 init_esm_shims();
-import { execFile as execFile4 } from "child_process";
-import { promisify as promisify4 } from "util";
-var exec3 = promisify4(execFile4);
+import { execFile as execFile3 } from "child_process";
+import { promisify as promisify3 } from "util";
+var exec3 = promisify3(execFile3);
 
 // ../core/src/commands/issue.ts
 init_esm_shims();
