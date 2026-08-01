@@ -12090,7 +12090,7 @@ init_esm_shims();
 // ../core/package.json
 var package_default = {
   name: "@denisvieiradev/gitwise-core",
-  version: "1.1.0",
+  version: "1.1.1",
   description: "Shared logic for gitwise: non-interactive commit/review/pr/release commands, LLM providers, git/github primitives, prompt templates.",
   type: "module",
   main: "./dist/index.js",
@@ -12681,7 +12681,8 @@ var COMMAND_TIER_MAP = {
   commit: "fast",
   review: "powerful",
   pr: "fast",
-  release: "fast"
+  release: "fast",
+  issue: "fast"
 };
 function resolveModelTier(command) {
   return COMMAND_TIER_MAP[command] ?? "balanced";
@@ -12838,6 +12839,9 @@ init_esm_shims();
 import { execFile as execFile3 } from "child_process";
 import { promisify as promisify3 } from "util";
 var exec3 = promisify3(execFile3);
+
+// ../core/src/commands/issue.ts
+init_esm_shims();
 
 // ../core/src/commands/release.ts
 init_esm_shims();

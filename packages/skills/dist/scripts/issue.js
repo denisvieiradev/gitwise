@@ -457,12 +457,12 @@ function getDefaultFetch() {
   }
   throw new Error("`fetch` is not defined as a global; Either pass `fetch` to the client, `new Anthropic({ fetch })` or polyfill the global, `globalThis.fetch = fetch`");
 }
-function makeReadableStream(...args) {
+function makeReadableStream(...args2) {
   const ReadableStream2 = globalThis.ReadableStream;
   if (typeof ReadableStream2 === "undefined") {
     throw new Error("`ReadableStream` is not defined as a global; You will need to polyfill it, `globalThis.ReadableStream = ReadableStream`");
   }
-  return new ReadableStream2(...args);
+  return new ReadableStream2(...args2);
 }
 function ReadableStreamFrom(iterable) {
   let iter = Symbol.asyncIterator in iterable ? iterable[Symbol.asyncIterator]() : iterable[Symbol.iterator]();
@@ -5539,9 +5539,9 @@ function assertNoSpecialMembers(verboseListing) {
     }
   }
 }
-async function runArchiveTool(cmd, args) {
+async function runArchiveTool(cmd, args2) {
   try {
-    const { stdout } = await execFileAsync(cmd, args);
+    const { stdout } = await execFileAsync(cmd, args2);
     return stdout;
   } catch (e) {
     if (e != null && typeof e === "object" && e.code === "ENOENT") {
@@ -8118,7 +8118,7 @@ var init_BetaMessageStream = __esm({
         await this.done();
         return __classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_getFinalText).call(this);
       }
-      _emit(event, ...args) {
+      _emit(event, ...args2) {
         if (__classPrivateFieldGet(this, _BetaMessageStream_ended, "f"))
           return;
         if (event === "end") {
@@ -8128,10 +8128,10 @@ var init_BetaMessageStream = __esm({
         const listeners = __classPrivateFieldGet(this, _BetaMessageStream_listeners, "f")[event];
         if (listeners) {
           __classPrivateFieldGet(this, _BetaMessageStream_listeners, "f")[event] = listeners.filter((l) => !l.once);
-          listeners.forEach(({ listener }) => listener(...args));
+          listeners.forEach(({ listener }) => listener(...args2));
         }
         if (event === "abort") {
-          const error = args[0];
+          const error = args2[0];
           if (!__classPrivateFieldGet(this, _BetaMessageStream_catchingPromiseCreated, "f") && !listeners?.length) {
             Promise.reject(error);
           }
@@ -8141,7 +8141,7 @@ var init_BetaMessageStream = __esm({
           return;
         }
         if (event === "error") {
-          const error = args[0];
+          const error = args2[0];
           if (!__classPrivateFieldGet(this, _BetaMessageStream_catchingPromiseCreated, "f") && !listeners?.length) {
             Promise.reject(error);
           }
@@ -10589,7 +10589,7 @@ var init_MessageStream = __esm({
         await this.done();
         return __classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_getFinalText).call(this);
       }
-      _emit(event, ...args) {
+      _emit(event, ...args2) {
         if (__classPrivateFieldGet(this, _MessageStream_ended, "f"))
           return;
         if (event === "end") {
@@ -10599,10 +10599,10 @@ var init_MessageStream = __esm({
         const listeners = __classPrivateFieldGet(this, _MessageStream_listeners, "f")[event];
         if (listeners) {
           __classPrivateFieldGet(this, _MessageStream_listeners, "f")[event] = listeners.filter((l) => !l.once);
-          listeners.forEach(({ listener }) => listener(...args));
+          listeners.forEach(({ listener }) => listener(...args2));
         }
         if (event === "abort") {
-          const error = args[0];
+          const error = args2[0];
           if (!__classPrivateFieldGet(this, _MessageStream_catchingPromiseCreated, "f") && !listeners?.length) {
             Promise.reject(error);
           }
@@ -10612,7 +10612,7 @@ var init_MessageStream = __esm({
           return;
         }
         if (event === "error") {
-          const error = args[0];
+          const error = args2[0];
           if (!__classPrivateFieldGet(this, _MessageStream_catchingPromiseCreated, "f") && !listeners?.length) {
             Promise.reject(error);
           }
@@ -12081,9 +12081,8 @@ var init_sdk = __esm({
   }
 });
 
-// scripts/release.ts
+// scripts/issue.ts
 init_esm_shims();
-import { fileURLToPath as fileURLToPath3 } from "url";
 
 // ../core/src/index.ts
 init_esm_shims();
@@ -12174,13 +12173,13 @@ var GitwiseError = class extends Error {
   exitCode;
   cause;
   details;
-  constructor(args) {
-    super(args.message);
+  constructor(args2) {
+    super(args2.message);
     this.name = "GitwiseError";
-    this.code = args.code;
-    this.exitCode = args.exitCode ?? EXIT_CODES[args.code] ?? 1;
-    this.cause = args.cause;
-    this.details = args.details;
+    this.code = args2.code;
+    this.exitCode = args2.exitCode ?? EXIT_CODES[args2.code] ?? 1;
+    this.cause = args2.cause;
+    this.details = args2.details;
   }
   toJSON() {
     return {
@@ -12198,20 +12197,6 @@ init_esm_shims();
 var verboseEnabled = false;
 if (process.env["GITWISE_DEBUG"] === "1") {
   verboseEnabled = true;
-}
-function info(message, context) {
-  if (context) {
-    console.log(message, context);
-  } else {
-    console.log(message);
-  }
-}
-function warn(message, context) {
-  if (context) {
-    console.warn(message, context);
-  } else {
-    console.warn(message);
-  }
 }
 function debug(message, context) {
   if (!verboseEnabled) return;
@@ -12240,14 +12225,6 @@ async function readJSON(filePath) {
   const content = await readFile(filePath, "utf-8");
   return JSON.parse(content);
 }
-async function writeJSON(filePath, data) {
-  await ensureDir(dirname(filePath));
-  const content = JSON.stringify(data, null, 2) + "\n";
-  await writeFile(filePath, content, "utf-8");
-}
-async function ensureDir(dirPath) {
-  await mkdir(dirPath, { recursive: true });
-}
 
 // ../core/src/infra/index.ts
 init_esm_shims();
@@ -12264,18 +12241,18 @@ function execStderr(err) {
   if (typeof stderr === "string" && stderr.length > 0) return stderr;
   return void 0;
 }
-async function run(args, cwd) {
-  debug("git command", { args, cwd });
+async function run(args2, cwd) {
+  debug("git command", { args: args2, cwd });
   try {
-    const result = await exec("git", args, { cwd, timeout: GIT_TIMEOUT_MS, maxBuffer: GIT_MAX_BUFFER });
+    const result = await exec("git", args2, { cwd, timeout: GIT_TIMEOUT_MS, maxBuffer: GIT_MAX_BUFFER });
     return result.stdout.trim();
   } catch (err) {
     if (err instanceof Error && "killed" in err && err.killed) {
       throw new GitwiseError({
         code: "GIT_FAILED",
-        message: `Git command timed out after ${GIT_TIMEOUT_MS / 1e3}s: git ${args.join(" ")}`,
+        message: `Git command timed out after ${GIT_TIMEOUT_MS / 1e3}s: git ${args2.join(" ")}`,
         cause: err,
-        details: { command: `git ${args.join(" ")}`, timedOut: true }
+        details: { command: `git ${args2.join(" ")}`, timedOut: true }
       });
     }
     const stderr = execStderr(err);
@@ -12284,7 +12261,7 @@ async function run(args, cwd) {
       message: err instanceof Error ? err.message : String(err),
       cause: err,
       details: {
-        command: `git ${args.join(" ")}`,
+        command: `git ${args2.join(" ")}`,
         ...stderr !== void 0 ? { stderr } : {}
       }
     });
@@ -12292,172 +12269,6 @@ async function run(args, cwd) {
 }
 async function getBranch(cwd) {
   return run(["rev-parse", "--abbrev-ref", "HEAD"], cwd);
-}
-async function createBranch(cwd, branchName, startPoint) {
-  const args = ["checkout", "-b", branchName];
-  if (startPoint) args.push(startPoint);
-  await run(args, cwd);
-}
-async function checkout(cwd, branchName) {
-  await run(["checkout", branchName], cwd);
-}
-async function checkoutForce(cwd, branchName) {
-  await run(["checkout", "-f", branchName], cwd);
-}
-async function resetHard(cwd, ref) {
-  await run(["reset", "--hard", ref], cwd);
-}
-async function getLog(cwd, range, maxCount) {
-  const args = ["log", "--oneline"];
-  if (maxCount) args.push(`-${maxCount}`);
-  if (range) args.push(range);
-  return run(args, cwd);
-}
-async function add(cwd, files) {
-  await run(["add", ...files], cwd);
-}
-async function commit(cwd, message) {
-  return run(["commit", "-m", message], cwd);
-}
-async function status(cwd) {
-  debug("git command", { args: ["status", "--porcelain"], cwd });
-  try {
-    const result = await exec(
-      "git",
-      ["status", "--porcelain"],
-      { cwd, timeout: GIT_TIMEOUT_MS, maxBuffer: GIT_MAX_BUFFER }
-    );
-    return result.stdout.replace(/\n+$/, "");
-  } catch (err) {
-    if (err instanceof Error && "killed" in err && err.killed) {
-      throw new GitwiseError({
-        code: "GIT_FAILED",
-        message: `Git command timed out after ${GIT_TIMEOUT_MS / 1e3}s: git status --porcelain`,
-        cause: err,
-        details: { command: "git status --porcelain", timedOut: true }
-      });
-    }
-    const stderr = execStderr(err);
-    throw new GitwiseError({
-      code: "GIT_FAILED",
-      message: err instanceof Error ? err.message : String(err),
-      cause: err,
-      details: {
-        command: "git status --porcelain",
-        ...stderr !== void 0 ? { stderr } : {}
-      }
-    });
-  }
-}
-async function push(cwd, remote, branch) {
-  await run(["push", remote, branch], cwd);
-}
-async function getLatestTag(cwd) {
-  try {
-    return await run(["describe", "--tags", "--abbrev=0"], cwd);
-  } catch {
-    return null;
-  }
-}
-async function createTag(cwd, tag, message, options) {
-  const flag = options?.signed === true ? "-s" : "-a";
-  await run(["tag", flag, tag, "-m", message], cwd);
-}
-async function tagExists(cwd, tag) {
-  try {
-    await exec("git", ["rev-parse", "--verify", "--quiet", `refs/tags/${tag}`], {
-      cwd,
-      timeout: GIT_TIMEOUT_MS
-    });
-    return true;
-  } catch {
-    return false;
-  }
-}
-async function pushWithTags(cwd, remote, branch) {
-  await run(["push", remote, branch, "--follow-tags"], cwd);
-}
-async function mergeNoFf(cwd, source) {
-  await run(["merge", "--no-ff", source], cwd);
-}
-async function branchExists(cwd, branch) {
-  try {
-    await exec(
-      "git",
-      ["show-ref", "--verify", "--quiet", `refs/heads/${branch}`],
-      { cwd, timeout: GIT_TIMEOUT_MS, maxBuffer: GIT_MAX_BUFFER }
-    );
-    return true;
-  } catch {
-    return false;
-  }
-}
-async function headSha(cwd) {
-  return run(["rev-parse", "HEAD"], cwd);
-}
-async function showFileAtHead(cwd, path8) {
-  debug("git command", { args: ["show", `HEAD:${path8}`], cwd });
-  try {
-    const result = await exec("git", ["show", `HEAD:${path8}`], {
-      cwd,
-      timeout: GIT_TIMEOUT_MS,
-      maxBuffer: GIT_MAX_BUFFER
-    });
-    return result.stdout;
-  } catch {
-    return null;
-  }
-}
-async function deleteBranch(cwd, branch, force = false) {
-  await run(["branch", force ? "-D" : "-d", branch], cwd);
-}
-async function isBranchMerged(cwd, branch, target) {
-  try {
-    await exec(
-      "git",
-      ["merge-base", "--is-ancestor", branch, target],
-      { cwd, timeout: GIT_TIMEOUT_MS, maxBuffer: GIT_MAX_BUFFER }
-    );
-    return true;
-  } catch {
-    return false;
-  }
-}
-async function detectBaseBranch(cwd) {
-  try {
-    await exec("git", ["rev-parse", "--verify", "main"], { cwd, timeout: GIT_TIMEOUT_MS });
-    return "main";
-  } catch {
-  }
-  try {
-    await exec("git", ["rev-parse", "--verify", "master"], { cwd, timeout: GIT_TIMEOUT_MS });
-    return "master";
-  } catch {
-  }
-  throw new GitwiseError({
-    code: "NO_BASE_BRANCH",
-    message: "No base branch found: neither main nor master exists",
-    exitCode: EXIT_CODES.REPO_STATE_INVALID
-  });
-}
-async function applyCommit(params) {
-  const { message, files, cwd } = params;
-  try {
-    if (files.length > 0) {
-      await add(cwd, files);
-    }
-    await commit(cwd, message);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const stderr = execStderr(err);
-    throw new GitwiseError({
-      code: "COMMIT_HOOK_FAILURE",
-      message: `Git commit failed: ${msg}`,
-      exitCode: EXIT_CODES.GIT_FAILED,
-      cause: err,
-      details: stderr !== void 0 ? { stderr } : void 0
-    });
-  }
 }
 
 // ../core/src/infra/github.ts
@@ -12473,24 +12284,22 @@ async function isGhAvailable() {
     return false;
   }
 }
-async function createGitHubRelease(params) {
-  debug("Creating GitHub release via gh", { tag: params.tag });
-  const args = [
-    "release",
-    "create",
-    params.tag,
-    "--title",
-    params.title,
-    "--notes",
-    params.body
-  ];
-  const result = await exec2("gh", args, { cwd: params.cwd });
+async function createIssue(params) {
+  debug("Creating issue via gh", { title: params.title });
+  const args2 = ["issue", "create", "--title", params.title, "--body", params.body];
+  for (const label of params.labels ?? []) {
+    args2.push("--label", label);
+  }
+  for (const assignee of params.assignees ?? []) {
+    args2.push("--assignee", assignee);
+  }
+  const result = await exec2("gh", args2, { cwd: params.cwd });
   const url = result.stdout?.trim();
   if (!url) {
     throw new GitwiseError({
       code: "GH_FAILED",
-      message: "gh release create returned empty output \u2014 check gh auth status",
-      details: { command: "gh release create" }
+      message: "gh issue create returned empty output \u2014 check gh auth status",
+      details: { command: "gh issue create" }
     });
   }
   return { url };
@@ -12534,48 +12343,6 @@ async function read(key, projectRoot) {
 
 // ../core/src/infra/transaction.ts
 init_esm_shims();
-var Transaction = class {
-  applied = [];
-  async run(step) {
-    const result = await step.apply();
-    this.applied.push({ step, result });
-    return result;
-  }
-  get size() {
-    return this.applied.length;
-  }
-  async rollback(reason, logger) {
-    const failures = [];
-    for (const { step, result } of [...this.applied].reverse()) {
-      try {
-        await step.compensate(result);
-      } catch (err) {
-        failures.push({ step: step.name, error: err });
-        logger.warn("compensate-failed", {
-          step: step.name,
-          reason: serializeError(err)
-        });
-      }
-    }
-    if (failures.length > 0) {
-      logger.warn("rollback partial: one or more compensate actions failed", {
-        code: "ROLLBACK_PARTIAL",
-        originalCode: reason.code,
-        failures: failures.map((f) => ({
-          step: f.step,
-          error: serializeError(f.error)
-        }))
-      });
-    }
-    return { partial: failures.length > 0, failures };
-  }
-};
-function serializeError(err) {
-  if (err instanceof Error) {
-    return { name: err.name, message: err.message };
-  }
-  return err;
-}
 
 // ../core/src/infra/lockfile.ts
 init_esm_shims();
@@ -12583,103 +12350,6 @@ import { mkdir as mkdir2, open as open2, readFile as readFile3, unlink as unlink
 import { hostname } from "os";
 import path2 from "path";
 var STALE_LOCK_MS = 10 * 60 * 1e3;
-async function acquireRepoLock(repoPath, options = {}) {
-  const command = options.command ?? "unknown";
-  const staleMs = options.staleMs ?? STALE_LOCK_MS;
-  const isAlive = options.isProcessAlive ?? defaultIsProcessAlive;
-  const now = options.now ?? (() => /* @__PURE__ */ new Date());
-  const dir = path2.join(repoPath, ".gitwise");
-  const lockPath = path2.join(dir, ".lock");
-  await mkdir2(dir, { recursive: true });
-  const payload = {
-    pid: process.pid,
-    host: hostname(),
-    command,
-    acquiredAt: now().toISOString()
-  };
-  await tryAcquire(lockPath, payload, staleMs, isAlive, now, 0, options.onReclaim);
-  let released = false;
-  return async () => {
-    if (released) return;
-    released = true;
-    try {
-      await unlink2(lockPath);
-    } catch (err) {
-      if (err.code !== "ENOENT") throw err;
-    }
-  };
-}
-async function tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt, onReclaim) {
-  try {
-    const handle = await open2(lockPath, "wx");
-    try {
-      await handle.writeFile(JSON.stringify(payload, null, 2) + "\n", "utf-8");
-    } finally {
-      await handle.close();
-    }
-    return;
-  } catch (err) {
-    if (err.code !== "EEXIST") throw err;
-  }
-  if (attempt >= 1) {
-    throw new GitwiseError({
-      code: "REPO_LOCKED",
-      message: "Another gitwise process holds the lock on this repository",
-      details: { lockPath }
-    });
-  }
-  const existing = await readExisting(lockPath);
-  if (existing && !isStale(existing, staleMs, isAlive, now)) {
-    throw new GitwiseError({
-      code: "REPO_LOCKED",
-      message: `gitwise lock held by pid ${existing.pid} (command: ${existing.command}) since ${existing.acquiredAt}`,
-      details: { existing, lockPath }
-    });
-  }
-  try {
-    await unlink2(lockPath);
-  } catch (unlinkErr) {
-    if (unlinkErr.code !== "ENOENT") throw unlinkErr;
-  }
-  if (onReclaim) await onReclaim();
-  return tryAcquire(lockPath, payload, staleMs, isAlive, now, attempt + 1, onReclaim);
-}
-async function readExisting(lockPath) {
-  try {
-    const content = await readFile3(lockPath, "utf-8");
-    const parsed = JSON.parse(content);
-    if (typeof parsed.pid !== "number" || typeof parsed.host !== "string" || typeof parsed.command !== "string" || typeof parsed.acquiredAt !== "string") {
-      return null;
-    }
-    return {
-      pid: parsed.pid,
-      host: parsed.host,
-      command: parsed.command,
-      acquiredAt: parsed.acquiredAt
-    };
-  } catch {
-    return null;
-  }
-}
-function isStale(existing, staleMs, isAlive, now) {
-  if (!isAlive(existing.pid)) return true;
-  const acquiredAt = Date.parse(existing.acquiredAt);
-  if (Number.isNaN(acquiredAt)) return true;
-  const age = now().getTime() - acquiredAt;
-  return age > staleMs;
-}
-function defaultIsProcessAlive(pid) {
-  if (!Number.isInteger(pid) || pid <= 0) return false;
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (err) {
-    const code = err.code;
-    if (code === "ESRCH") return false;
-    if (code === "EPERM") return true;
-    return false;
-  }
-}
 
 // ../core/src/providers/claude-code.ts
 init_esm_shims();
@@ -12740,8 +12410,8 @@ var ClaudeCodeProvider = class {
     const modelId = this.resolveModel(req.tier);
     debug("Calling Claude Code CLI", { model: modelId, tier: req.tier, binary: this.claudeBinaryPath });
     const userContent = req.userMessage;
-    const args = this.buildArgs(req.systemPrompt, modelId, userContent);
-    const result = userContent.length > LARGE_PROMPT_THRESHOLD ? await this.callViaStdin(args, userContent) : await this.callViaCli(args);
+    const args2 = this.buildArgs(req.systemPrompt, modelId, userContent);
+    const result = userContent.length > LARGE_PROMPT_THRESHOLD ? await this.callViaStdin(args2, userContent) : await this.callViaCli(args2);
     return {
       content: result.result,
       tokens: {
@@ -12751,7 +12421,7 @@ var ClaudeCodeProvider = class {
     };
   }
   buildArgs(systemPrompt, modelId, userContent) {
-    const args = [
+    const args2 = [
       "-p",
       ...userContent.length <= LARGE_PROMPT_THRESHOLD ? [userContent] : [],
       "--system-prompt",
@@ -12761,17 +12431,17 @@ var ClaudeCodeProvider = class {
       "--output-format",
       "json"
     ];
-    return args;
+    return args2;
   }
-  async callViaCli(args) {
-    return this.spawnClaude(args, "");
+  async callViaCli(args2) {
+    return this.spawnClaude(args2, "");
   }
-  async callViaStdin(args, input) {
-    return this.spawnClaude(args, input);
+  async callViaStdin(args2, input) {
+    return this.spawnClaude(args2, input);
   }
-  async spawnClaude(args, input) {
+  async spawnClaude(args2, input) {
     return new Promise((resolve4, reject) => {
-      const child = spawn(this.claudeBinaryPath, args, {
+      const child = spawn(this.claudeBinaryPath, args2, {
         stdio: ["pipe", "pipe", "pipe"],
         timeout: DEFAULT_TIMEOUT_MS
       });
@@ -13040,6 +12710,107 @@ var exec3 = promisify3(execFile3);
 
 // ../core/src/commands/issue.ts
 init_esm_shims();
+function parseIssueResponse(content) {
+  const titleMatch = content.match(/^TITLE:\s*(.+)$/m);
+  const title = titleMatch ? titleMatch[1].trim() : "Issue";
+  const separatorIdx = content.indexOf("---");
+  const body = separatorIdx >= 0 ? content.slice(separatorIdx + 3).trim() : content.trim();
+  return { title, body };
+}
+var ISSUE_SYSTEM_PROMPT = `You are a developer filing a GitHub issue. Based on the user's description, write a clear, actionable issue.
+
+Decide whether the description is a bug report or a feature request and structure the body accordingly.
+
+Output format (nothing else):
+TITLE: <concise, specific title, max 70 chars>
+---
+## Description
+<what the issue is about, in 1-3 short paragraphs>
+
+## Steps to Reproduce
+<numbered steps \u2014 for a bug; omit this section for a feature request>
+
+## Expected vs Actual
+<for a bug: expected behavior vs what happens; omit for a feature request>
+
+## Acceptance Criteria
+<for a feature request: a checklist of what "done" means; omit for a bug>
+
+## Context
+<environment, related links, or scope notes \u2014 omit if none>`;
+async function issue(opts) {
+  const { cwd, provider, description: description2, prompt } = opts;
+  if (!description2 || !description2.trim()) {
+    throw new GitwiseError({
+      code: "INVALID_INTENT",
+      message: "An issue description is required to draft an issue",
+      exitCode: EXIT_CODES.INVALID_INTENT
+    });
+  }
+  let currentBranch = "";
+  try {
+    currentBranch = await getBranch(cwd);
+  } catch {
+  }
+  let systemPrompt = ISSUE_SYSTEM_PROMPT;
+  let userMessageFromTemplate = `Description:
+${description2}`;
+  if (currentBranch) {
+    userMessageFromTemplate += `
+
+Current branch: ${currentBranch}`;
+  }
+  try {
+    const templateContent = await loadTemplate("issue", {
+      repoRoot: opts.repoRoot ?? cwd,
+      templatesPath: opts.templatesPath
+    });
+    if (templateContent && templateContent.includes("{{")) {
+      userMessageFromTemplate = interpolate(templateContent, {
+        description: description2,
+        branch: currentBranch
+      });
+    } else if (templateContent) {
+      systemPrompt = templateContent;
+    }
+  } catch {
+  }
+  const userMessage = userMessageFromTemplate + (prompt ? `
+
+Additional context: ${prompt}` : "");
+  debug("Calling LLM for issue draft", { tier: "fast", branch: currentBranch });
+  const tier = resolveModelTier("issue");
+  const response = await provider.chat({ systemPrompt, userMessage, tier });
+  const tokens = { input: response.tokens.input, output: response.tokens.output };
+  const { title, body } = parseIssueResponse(response.content);
+  return {
+    title,
+    body,
+    labels: opts.labels,
+    assignees: opts.assignees,
+    tokens
+  };
+}
+async function applyIssue(draft, opts) {
+  const { cwd } = opts;
+  const ghAvailable = await isGhAvailable();
+  if (!ghAvailable) {
+    throw new GitwiseError({
+      code: "GH_UNAVAILABLE",
+      message: "gh CLI is not installed \u2014 cannot create a GitHub issue",
+      exitCode: EXIT_CODES.GH_FAILED,
+      details: { draft }
+    });
+  }
+  const created = await createIssue({
+    title: draft.title,
+    body: draft.body,
+    labels: draft.labels,
+    assignees: draft.assignees,
+    cwd
+  });
+  return { url: created.url };
+}
 
 // ../core/src/commands/release.ts
 init_esm_shims();
@@ -13076,1043 +12847,11 @@ var STRATEGIES = Object.freeze({
   "github-flow": githubFlow,
   gitflow
 });
-function createReleaseStrategy(name) {
-  return STRATEGIES[name];
-}
 
 // ../core/src/commands/release-plan.ts
 init_esm_shims();
 import { readFile as readFile5, unlink as unlink3, writeFile as writeFile2 } from "fs/promises";
 import { dirname as dirname3, join as join5 } from "path";
-var PLAN_REL_PATH = ".gitwise/release-plan.json";
-function planPath(cwd) {
-  return join5(cwd, PLAN_REL_PATH);
-}
-async function saveReleasePlan(cwd, plan) {
-  await writeJSON(planPath(cwd), plan);
-}
-async function loadReleasePlan(cwd) {
-  const filePath = planPath(cwd);
-  if (!await fileExists(filePath)) return null;
-  const raw = await readFile5(filePath, "utf-8");
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (err) {
-    throw new GitwiseError({
-      code: "INVALID_PLAN_JSON",
-      message: `Release plan at ${filePath} is not valid JSON: ${err instanceof Error ? err.message : String(err)}`,
-      exitCode: EXIT_CODES.CONFIG_INVALID,
-      cause: err
-    });
-  }
-  const schema = parsed?.schema;
-  if (schema !== 1) {
-    throw new GitwiseError({
-      code: "INVALID_PLAN_SCHEMA",
-      message: `Release plan schema ${String(schema)} is not supported by this gitwise binary (expected 1).`,
-      exitCode: EXIT_CODES.CONFIG_INVALID
-    });
-  }
-  if (!isPersistedReleasePlan(parsed)) {
-    throw new GitwiseError({
-      code: "INVALID_PLAN_SCHEMA",
-      message: `Release plan at ${filePath} is missing or has wrong-typed required fields for schema 1.`,
-      exitCode: EXIT_CODES.CONFIG_INVALID
-    });
-  }
-  return parsed;
-}
-function isPersistedReleasePlan(value) {
-  if (!value || typeof value !== "object") return false;
-  const p = value;
-  if (p.schema !== 1) return false;
-  if (p.strategy !== "gitflow" && p.strategy !== "github-flow") return false;
-  if (p.suggestedBump !== "major" && p.suggestedBump !== "minor" && p.suggestedBump !== "patch") {
-    return false;
-  }
-  if (typeof p.currentVersion !== "string") return false;
-  if (typeof p.newVersion !== "string") return false;
-  if (typeof p.changelog !== "string") return false;
-  if (typeof p.notes !== "string") return false;
-  if (typeof p.commits !== "string") return false;
-  if (typeof p.preparedAt !== "string") return false;
-  if (typeof p.baseCommit !== "string") return false;
-  if (typeof p.targetBranch !== "string") return false;
-  if (typeof p.releaseBranchCreated !== "boolean") return false;
-  if (!p.tokens || typeof p.tokens !== "object") return false;
-  const tokens = p.tokens;
-  if (typeof tokens.input !== "number" || !Number.isFinite(tokens.input)) return false;
-  if (typeof tokens.output !== "number" || !Number.isFinite(tokens.output)) return false;
-  return true;
-}
-async function deleteReleasePlan(cwd) {
-  try {
-    await unlink3(planPath(cwd));
-  } catch (err) {
-    if (err.code === "ENOENT") return;
-    throw err;
-  }
-}
-function applyGitignoreEntry(content, entry) {
-  if (isCovered(content, entry)) return content;
-  const needsLeadingNewline = content.length > 0 && !content.endsWith("\n");
-  return `${content}${needsLeadingNewline ? "\n" : ""}${entry}
-`;
-}
-async function ensureGitignored(cwd, entry) {
-  const gitignorePath = join5(cwd, ".gitignore");
-  const exists = await fileExists(gitignorePath);
-  const original = exists ? await readFile5(gitignorePath, "utf-8") : "";
-  const next = applyGitignoreEntry(original, entry);
-  if (next === original) return;
-  await writeFile2(gitignorePath, next, "utf-8");
-  info(`Added ${entry} to .gitignore`);
-}
-function isCovered(content, entry) {
-  const candidates = /* @__PURE__ */ new Set([entry]);
-  const dir = dirname3(entry);
-  if (dir && dir !== "." && dir !== "/") {
-    candidates.add(`${dir}/`);
-    candidates.add(`${dir}/*`);
-  }
-  for (const rawLine of content.split("\n")) {
-    const line = rawLine.trim();
-    if (line.length === 0 || line.startsWith("#")) continue;
-    if (candidates.has(line)) return true;
-  }
-  return false;
-}
-
-// ../core/src/commands/release.ts
-var RELEASE_PLAN_REL_PATH = ".gitwise/release-plan.json";
-var RELEASE_NOTES_GLOB_REL_PATH = ".gitwise/release-*.md";
-var STRICT_SEMVER_RE = /^v?(\d+)\.(\d+)\.(\d+)$/;
-function bumpVersion(current, type) {
-  const match = STRICT_SEMVER_RE.exec(current);
-  if (!match) {
-    throw new GitwiseError({
-      code: "INVALID_VERSION",
-      message: `Invalid current version: ${current}`,
-      exitCode: EXIT_CODES.CONFIG_INVALID
-    });
-  }
-  const major = Number(match[1]);
-  const minor = Number(match[2]);
-  const patch = Number(match[3]);
-  switch (type) {
-    case "major":
-      return `${major + 1}.0.0`;
-    case "minor":
-      return `${major}.${minor + 1}.0`;
-    case "patch":
-      return `${major}.${minor}.${patch + 1}`;
-    // Belt-and-suspenders: TS makes this unreachable for typed callers, but
-    // any JS caller (or a cast like `parseVersionSuggestion`'s former one)
-    // could smuggle in a bogus value. Surface it as INVALID_VERSION instead
-    // of silently returning undefined and minting `release/undefined` /
-    // `vundefined` artifacts downstream.
-    default:
-      throw new GitwiseError({
-        code: "INVALID_VERSION",
-        message: `Invalid bump type: ${String(type)}`,
-        exitCode: EXIT_CODES.CONFIG_INVALID
-      });
-  }
-}
-function parseVersionSuggestion(raw) {
-  try {
-    const cleaned = raw.replace(/```(?:json)?\n?/g, "").trim();
-    const parsed = JSON.parse(cleaned);
-    const { suggestion, reasoning } = parsed;
-    if ((suggestion === "major" || suggestion === "minor" || suggestion === "patch") && typeof reasoning === "string") {
-      return { suggestion, reasoning };
-    }
-  } catch {
-  }
-  return null;
-}
-function heuristicBump(commits) {
-  if (/BREAKING CHANGE|!:/.test(commits)) return "major";
-  if (/^feat[:(]/m.test(commits)) return "minor";
-  return "patch";
-}
-var CHANGELOG_HEADER = `# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com),
-and this project adheres to [Semantic Versioning](https://semver.org/).
-
-`;
-async function release(opts) {
-  const { cwd, provider, language = "en" } = opts;
-  const pkgPath = join6(cwd, "package.json");
-  if (!await fileExists(pkgPath)) {
-    throw new GitwiseError({
-      code: "NO_PACKAGE_JSON",
-      message: "No package.json found",
-      exitCode: EXIT_CODES.CONFIG_INVALID
-    });
-  }
-  const pkg = await readJSON(pkgPath);
-  const currentVersion = pkg.version;
-  const projectName = pkg.name ?? "project";
-  const lastTag = await getLatestTag(cwd);
-  const logRange = lastTag ? `${lastTag}..HEAD` : void 0;
-  const commits = await getLog(cwd, logRange);
-  if (!commits) {
-    throw new GitwiseError({
-      code: "NO_COMMITS",
-      message: "No new commits since last release",
-      exitCode: EXIT_CODES.RELEASE_PLAN_STALE
-    });
-  }
-  const templateOpts = {
-    repoRoot: opts.repoRoot ?? cwd,
-    templatesPath: opts.templatesPath
-  };
-  const tier = resolveModelTier("release");
-  let totalInput = 0;
-  let totalOutput = 0;
-  let suggestedBump;
-  if (opts.bump) {
-    suggestedBump = opts.bump;
-  } else {
-    const versionTemplate = await loadTemplate("release-version", templateOpts);
-    const versionPrompt = interpolate(versionTemplate, { currentVersion });
-    debug("Calling LLM for version suggestion");
-    const versionResponse = await provider.chat({
-      systemPrompt: "You are a release engineer. Respond with JSON only.",
-      userMessage: `${versionPrompt}
-
-Commits:
-${commits}`,
-      tier
-    });
-    totalInput += versionResponse.tokens.input;
-    totalOutput += versionResponse.tokens.output;
-    const suggestion = parseVersionSuggestion(versionResponse.content);
-    suggestedBump = suggestion?.suggestion ?? heuristicBump(commits);
-  }
-  const newVersion = bumpVersion(currentVersion, suggestedBump);
-  const changelogTemplate = await loadTemplate("release-changelog", templateOpts);
-  const changelogPrompt = interpolate(changelogTemplate, { projectName });
-  debug("Calling LLM for changelog generation");
-  const changelogResponse = await provider.chat({
-    systemPrompt: "You are a technical writer generating a changelog. Follow Keep a Changelog format.",
-    userMessage: `${changelogPrompt}
-
-Commits:
-${commits}`,
-    tier
-  });
-  totalInput += changelogResponse.tokens.input;
-  totalOutput += changelogResponse.tokens.output;
-  const changelog = changelogResponse.content;
-  const notesTemplate = await loadTemplate("release-notes", templateOpts);
-  const notesPrompt = interpolate(notesTemplate, {
-    version: newVersion,
-    projectName,
-    language
-  });
-  debug("Calling LLM for release notes generation");
-  const notesResponse = await provider.chat({
-    systemPrompt: "You are a product communications specialist writing release notes.",
-    userMessage: `${notesPrompt}
-
-Commits:
-${commits}`,
-    tier
-  });
-  totalInput += notesResponse.tokens.input;
-  totalOutput += notesResponse.tokens.output;
-  const notes = notesResponse.content;
-  return {
-    suggestedBump,
-    newVersion,
-    currentVersion,
-    changelog,
-    notes,
-    commits,
-    tokens: { input: totalInput, output: totalOutput }
-  };
-}
-function createReleaseBranchStep(cwd, branchName, startPoint) {
-  return {
-    name: `create-branch:${branchName}`,
-    apply: async () => {
-      const previousBranch = await getBranch(cwd);
-      await createBranch(cwd, branchName, startPoint);
-      return { branchName, previousBranch };
-    },
-    compensate: async ({ branchName: branch, previousBranch }) => {
-      await checkoutForce(cwd, previousBranch);
-      await deleteBranch(cwd, branch, true);
-    }
-  };
-}
-function writeFileStep(filePath, contents) {
-  return {
-    name: `write-file:${filePath}`,
-    apply: async () => {
-      const priorBytes = await fileExists(filePath) ? await readFile6(filePath) : null;
-      await writeFile3(filePath, contents);
-      return priorBytes;
-    },
-    compensate: async (priorBytes) => {
-      if (priorBytes === null) {
-        try {
-          await unlink4(filePath);
-        } catch (err) {
-          if (err.code !== "ENOENT") throw err;
-        }
-      } else {
-        await writeFile3(filePath, priorBytes);
-      }
-    }
-  };
-}
-function mutateGitignoreStep(cwd) {
-  const gitignorePath = join6(cwd, ".gitignore");
-  return {
-    name: "mutate-gitignore",
-    apply: async () => {
-      const priorBytes = await fileExists(gitignorePath) ? await readFile6(gitignorePath) : null;
-      await ensureGitignored(cwd, RELEASE_PLAN_REL_PATH);
-      await ensureGitignored(cwd, RELEASE_NOTES_GLOB_REL_PATH);
-      return priorBytes;
-    },
-    compensate: async (priorBytes) => {
-      if (priorBytes === null) {
-        try {
-          await unlink4(gitignorePath);
-        } catch (err) {
-          if (err.code !== "ENOENT") throw err;
-        }
-      } else {
-        await writeFile3(gitignorePath, priorBytes);
-      }
-    }
-  };
-}
-function writeChangelogStep(cwd, newVersion, entryBody) {
-  const changelogPath = join6(cwd, "CHANGELOG.md");
-  return {
-    name: "write-changelog",
-    apply: async () => {
-      const priorBytes = await fileExists(changelogPath) ? await readFile6(changelogPath) : null;
-      const date = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-      const versionHeader = `## [${newVersion}] - ${date}
-
-${entryBody}
-
-`;
-      if (priorBytes !== null) {
-        const existing = priorBytes.toString("utf-8");
-        const headerEnd = existing.indexOf("## [");
-        if (headerEnd > 0) {
-          await writeFile3(
-            changelogPath,
-            existing.slice(0, headerEnd) + versionHeader + existing.slice(headerEnd),
-            "utf-8"
-          );
-        } else {
-          const body = existing.startsWith(CHANGELOG_HEADER) ? existing.slice(CHANGELOG_HEADER.length) : existing;
-          await writeFile3(
-            changelogPath,
-            CHANGELOG_HEADER + versionHeader + body,
-            "utf-8"
-          );
-        }
-      } else {
-        await writeFile3(
-          changelogPath,
-          CHANGELOG_HEADER + versionHeader,
-          "utf-8"
-        );
-      }
-      return priorBytes;
-    },
-    compensate: async (priorBytes) => {
-      if (priorBytes === null) {
-        try {
-          await unlink4(changelogPath);
-        } catch (err) {
-          if (err.code !== "ENOENT") throw err;
-        }
-      } else {
-        await writeFile3(changelogPath, priorBytes);
-      }
-    }
-  };
-}
-function commitReleaseStep(cwd, message, files) {
-  return {
-    name: "commit-release-bump",
-    apply: async () => {
-      const preSha = await headSha(cwd);
-      await applyCommit({ message, files, cwd });
-      return preSha;
-    },
-    compensate: async (preSha) => {
-      await resetHard(cwd, preSha);
-    }
-  };
-}
-function savePlanStep(cwd, plan) {
-  return {
-    name: "save-plan",
-    apply: async () => {
-      await saveReleasePlan(cwd, plan);
-    },
-    compensate: async () => {
-      await deleteReleasePlan(cwd);
-    }
-  };
-}
-async function prepareRelease(opts) {
-  const { cwd } = opts;
-  const repoConfig = await readRepoConfig(cwd);
-  const strategyName = opts.strategy ?? repoConfig?.releaseStrategy ?? "github-flow";
-  const developBranch = opts.developBranch ?? repoConfig?.developBranch ?? "develop";
-  const strategy = createReleaseStrategy(strategyName);
-  debug("release.prepare.start", { strategy: strategyName, cwd });
-  const releaseLock = await acquireRepoLock(cwd, {
-    command: "release prepare"
-  });
-  try {
-    const dirtyEntries = (await status(cwd)).split("\n").map((line) => line.replace(/\s+$/, "")).filter((line) => line.length >= 3).filter((line) => {
-      const path8 = line.slice(3).trim();
-      if (path8 === ".gitignore") return false;
-      if (path8 === ".gitwise/" || path8 === ".gitwise") return false;
-      if (path8.startsWith(".gitwise/")) return false;
-      return true;
-    });
-    if (dirtyEntries.length > 0) {
-      throw new GitwiseError({
-        code: "WORKING_TREE_DIRTY",
-        message: `Working tree must be clean before preparing a release \u2014 commit or stash first.
-${dirtyEntries.join("\n")}`,
-        exitCode: EXIT_CODES.REPO_STATE_INVALID
-      });
-    }
-    const existingPlan = await loadReleasePlan(cwd);
-    if (existingPlan) {
-      throw new GitwiseError({
-        code: "RELEASE_PLAN_EXISTS",
-        message: `An in-flight release plan already exists at .gitwise/release-plan.json for v${existingPlan.newVersion} (${existingPlan.strategy}). Finish it with "gw release finish" or discard it with "gw release abort" before preparing a new release.`,
-        exitCode: EXIT_CODES.RELEASE_BRANCH_CONFLICT
-      });
-    }
-    if (strategy.requiresDevelop()) {
-      if (!await branchExists(cwd, developBranch)) {
-        throw new GitwiseError({
-          code: "STRATEGY_DEVELOP_MISSING",
-          message: `GitFlow requires a "${developBranch}" branch but it does not exist. Create it first (e.g. git checkout -b ${developBranch}).`,
-          exitCode: EXIT_CODES.REPO_STATE_INVALID
-        });
-      }
-    }
-    const baseCommit = await headSha(cwd);
-    const plan = await release(opts);
-    const releaseBranch = strategy.releaseBranchFor(plan.newVersion);
-    if (releaseBranch && await branchExists(cwd, releaseBranch)) {
-      throw new GitwiseError({
-        code: "RELEASE_BRANCH_CONFLICT",
-        message: `Release branch "${releaseBranch}" already exists. Delete it or pick a different version \u2014 see docs/recovery.md if a prior prepare crashed before its rollback finished.`,
-        exitCode: EXIT_CODES.RELEASE_BRANCH_CONFLICT,
-        details: { releaseBranch, newVersion: plan.newVersion }
-      });
-    }
-    const tx = new Transaction();
-    await ensureDir(join6(cwd, ".gitwise"));
-    let targetBranch;
-    try {
-      if (releaseBranch) {
-        await tx.run(
-          createReleaseBranchStep(cwd, releaseBranch, developBranch)
-        );
-        debug("release.prepare.branch.created", {
-          branch: releaseBranch,
-          from: developBranch
-        });
-        targetBranch = releaseBranch;
-      } else {
-        targetBranch = await getBranch(cwd);
-      }
-      const notesPath = join6(cwd, ".gitwise", `release-${plan.newVersion}.md`);
-      await tx.run(writeFileStep(notesPath, plan.notes));
-      let propagatedManifests = [];
-      if (releaseBranch) {
-        const pkgPath = join6(cwd, "package.json");
-        await tx.run(writeWorkspaceVersionStep(pkgPath, plan.newVersion));
-        if (opts.workspacePropagation) {
-          propagatedManifests = await runWorkspaceVersionStepsInto(
-            tx,
-            cwd,
-            plan.newVersion
-          );
-        }
-        await tx.run(writeChangelogStep(cwd, plan.newVersion, plan.changelog));
-      }
-      await tx.run(mutateGitignoreStep(cwd));
-      if (releaseBranch) {
-        const stagePaths = ["package.json", "CHANGELOG.md"];
-        if (await fileExists(join6(cwd, ".gitignore"))) {
-          stagePaths.push(".gitignore");
-        }
-        stagePaths.push(...propagatedManifests);
-        await tx.run(
-          commitReleaseStep(
-            cwd,
-            `chore(release): v${plan.newVersion}`,
-            stagePaths
-          )
-        );
-      }
-      const persistedPlan = {
-        schema: 1,
-        strategy: strategyName,
-        currentVersion: plan.currentVersion,
-        newVersion: plan.newVersion,
-        suggestedBump: plan.suggestedBump,
-        changelog: plan.changelog,
-        notes: plan.notes,
-        commits: plan.commits,
-        preparedAt: (/* @__PURE__ */ new Date()).toISOString(),
-        baseCommit,
-        targetBranch,
-        releaseBranchCreated: releaseBranch !== null,
-        tokens: plan.tokens
-      };
-      await tx.run(savePlanStep(cwd, persistedPlan));
-      debug("release.prepare.plan.saved", {
-        newVersion: plan.newVersion,
-        targetBranch,
-        releaseBranchCreated: persistedPlan.releaseBranchCreated
-      });
-      return persistedPlan;
-    } catch (err) {
-      const reason = err instanceof GitwiseError ? err : new GitwiseError({
-        code: "RELEASE_PREPARE_FAILED",
-        message: `Failed to prepare release: ${err instanceof Error ? err.message : String(err)}`,
-        exitCode: EXIT_CODES.GIT_FAILED,
-        cause: err
-      });
-      debug("release.prepare.rollback.start", {
-        appliedSteps: tx.size,
-        code: reason.code
-      });
-      await tx.rollback(reason, txLogger);
-      throw reason;
-    }
-  } finally {
-    await releaseLock();
-  }
-}
-async function applyRelease(plan, opts) {
-  const { cwd, tagAndPush = true, createGhRelease = true, workspacePropagation = false, signTags } = opts;
-  const dirty = (await status(cwd)).trim();
-  if (dirty) {
-    throw new GitwiseError({
-      code: "WORKING_TREE_DIRTY",
-      message: `Working tree must be clean before releasing \u2014 commit or stash first.
-${dirty}`,
-      exitCode: EXIT_CODES.REPO_STATE_INVALID
-    });
-  }
-  const tag = `v${plan.newVersion}`;
-  if (await tagExists(cwd, tag)) {
-    throw new GitwiseError({
-      code: "TAG_EXISTS",
-      message: `Tag ${tag} already exists. Bump to a new version or delete the tag.`,
-      exitCode: EXIT_CODES.RELEASE_BRANCH_CONFLICT
-    });
-  }
-  await ensureDir(join6(cwd, ".gitwise"));
-  await writeFile3(
-    join6(cwd, ".gitwise", `release-${plan.newVersion}.md`),
-    plan.notes,
-    "utf-8"
-  );
-  const persistedPlan = {
-    schema: 1,
-    strategy: "github-flow",
-    currentVersion: plan.currentVersion,
-    newVersion: plan.newVersion,
-    suggestedBump: plan.suggestedBump,
-    changelog: plan.changelog,
-    notes: plan.notes,
-    commits: plan.commits,
-    preparedAt: (/* @__PURE__ */ new Date()).toISOString(),
-    baseCommit: await headSha(cwd),
-    targetBranch: await getBranch(cwd),
-    releaseBranchCreated: false,
-    tokens: plan.tokens
-  };
-  await ensureGitignored(cwd, RELEASE_PLAN_REL_PATH);
-  await ensureGitignored(cwd, RELEASE_NOTES_GLOB_REL_PATH);
-  await saveReleasePlan(cwd, persistedPlan);
-  await finishRelease({ cwd, tagAndPush, createGhRelease, workspacePropagation, signTags });
-}
-function finishPushFailure(opts) {
-  const { stage, tag, mainBranch, developBranch, newVersion, err } = opts;
-  const cause = err instanceof Error ? err.message : String(err);
-  const action = stage === "tag" ? `create the tag "${tag}"` : stage === "push-main" ? `push "${mainBranch}" (with tags) to origin` : `push "${developBranch}" to origin`;
-  const recoverySteps = stage === "tag" ? [
-    `git tag -a ${tag} -F .gitwise/release-${newVersion}.md`,
-    `git push origin ${mainBranch} --follow-tags`
-  ] : [
-    `git ls-remote --tags origin ${tag}  # check whether the tag already reached origin`,
-    `git fetch origin`,
-    `git merge origin/${mainBranch}  # do NOT rebase \u2014 that changes the hash ${tag} points to`,
-    `git push origin ${mainBranch} --follow-tags`
-  ];
-  return new GitwiseError({
-    code: "FINISH_PUSH_FAILED",
-    message: `Failed to ${action} while finishing v${newVersion}: ${cause}. The release plan file has already been deleted, so "gw release finish" cannot be re-run, and the release commit already exists locally, so "gw release prepare" will refuse with NO_COMMITS. Recover manually:
-${recoverySteps.map((s) => `  ${s}`).join("\n")}`,
-    exitCode: EXIT_CODES.GIT_FAILED,
-    cause: err,
-    details: { stage, tag, mainBranch, developBranch, newVersion }
-  });
-}
-async function finishRelease(opts) {
-  const {
-    cwd,
-    tagAndPush = true,
-    createGhRelease = true,
-    deleteReleaseBranch = true,
-    workspacePropagation = false,
-    signTags = true
-  } = opts;
-  if (signTags === false) {
-    process.stderr.write(
-      "[gitwise] WARNING: --no-sign / signTags:false is a testing-only escape hatch. Release tags will NOT be GPG-signed. Do not use in production releases.\n"
-    );
-  }
-  const plan = await loadReleasePlan(cwd);
-  if (!plan) {
-    throw new GitwiseError({
-      code: "NO_RELEASE_PLAN",
-      message: `No release plan found at .gitwise/release-plan.json. Run "gw release prepare" first.`,
-      exitCode: EXIT_CODES.RELEASE_PLAN_STALE
-    });
-  }
-  debug("release.finish.start", {
-    strategy: plan.strategy,
-    newVersion: plan.newVersion,
-    targetBranch: plan.targetBranch
-  });
-  const strategy = createReleaseStrategy(plan.strategy);
-  const tag = `v${plan.newVersion}`;
-  if (await tagExists(cwd, tag)) {
-    debug("release.finish.validate.failed", {
-      code: "STALE_PLAN_TAG_EXISTS",
-      tag
-    });
-    throw new GitwiseError({
-      code: "STALE_PLAN_TAG_EXISTS",
-      message: `Tag ${tag} already exists \u2014 the saved plan is stale. Run "gw release abort" or delete the tag before retrying.`,
-      exitCode: EXIT_CODES.RELEASE_PLAN_STALE
-    });
-  }
-  const currentBranch = await getBranch(cwd);
-  if (currentBranch !== plan.targetBranch) {
-    debug("release.finish.validate.failed", {
-      code: "STALE_PLAN_BRANCH_MISMATCH",
-      expected: plan.targetBranch,
-      actual: currentBranch
-    });
-    throw new GitwiseError({
-      code: "STALE_PLAN_BRANCH_MISMATCH",
-      message: `Release plan targets "${plan.targetBranch}" but the current branch is "${currentBranch}". Check out the target branch before running finish.`,
-      exitCode: EXIT_CODES.RELEASE_PLAN_STALE
-    });
-  }
-  const expectedDirtyPaths = /* @__PURE__ */ new Set([
-    ".gitwise/",
-    ".gitwise/release-plan.json",
-    `.gitwise/release-${plan.newVersion}.md`
-  ]);
-  if (await gitignoreMatchesPrepareOutput(cwd)) {
-    expectedDirtyPaths.add(".gitignore");
-  }
-  const dirtyEntries = (await status(cwd)).split("\n").map((line) => line.replace(/\s+$/, "")).filter((line) => line.length >= 3).filter((line) => !expectedDirtyPaths.has(line.slice(3).trim()));
-  if (dirtyEntries.length > 0) {
-    debug("release.finish.validate.failed", {
-      code: "WORKING_TREE_DIRTY"
-    });
-    throw new GitwiseError({
-      code: "WORKING_TREE_DIRTY",
-      message: `Working tree must be clean before finishing a release \u2014 commit or stash first.
-${dirtyEntries.join("\n")}`,
-      exitCode: EXIT_CODES.REPO_STATE_INVALID
-    });
-  }
-  const repoConfig = await readRepoConfig(cwd);
-  const developBranch = repoConfig?.developBranch ?? "develop";
-  if (strategy.requiresDevelop()) {
-    if (!await branchExists(cwd, developBranch)) {
-      debug("release.finish.validate.failed", {
-        code: "STRATEGY_DEVELOP_MISSING",
-        developBranch
-      });
-      throw new GitwiseError({
-        code: "STRATEGY_DEVELOP_MISSING",
-        message: `GitFlow requires a "${developBranch}" branch but it does not exist.`,
-        exitCode: EXIT_CODES.REPO_STATE_INVALID
-      });
-    }
-  }
-  const mainBranch = strategy.requiresDevelop() ? await detectBaseBranch(cwd) : plan.targetBranch;
-  const notesPath = join6(cwd, ".gitwise", `release-${plan.newVersion}.md`);
-  let notes;
-  try {
-    notes = await readFile6(notesPath, "utf-8");
-  } catch (err) {
-    if (err.code === "ENOENT") {
-      debug("release.finish.notes.missing", { path: notesPath });
-      notes = plan.notes;
-    } else {
-      const cause = err instanceof Error ? err.message : String(err);
-      debug("release.finish.notes.read.failed", { path: notesPath, error: cause });
-      throw new GitwiseError({
-        code: "NOTES_READ_FAILED",
-        message: `Failed to read release notes at ${notesPath}: ${cause}. Recreate the file from the plan or run "gw release abort" to discard the in-flight release.`,
-        cause: err
-      });
-    }
-  }
-  if (!plan.releaseBranchCreated) {
-    const pkgPath = join6(cwd, "package.json");
-    const pkg = await readJSON(pkgPath);
-    pkg["version"] = plan.newVersion;
-    await writeJSON(pkgPath, pkg);
-    let propagatedManifests = [];
-    if (workspacePropagation) {
-      propagatedManifests = await propagateVersionToWorkspaces(cwd, plan.newVersion);
-    }
-    const changelogPath = join6(cwd, "CHANGELOG.md");
-    const date = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-    const versionHeader = `## [${plan.newVersion}] - ${date}
-
-${plan.changelog}
-
-`;
-    if (await fileExists(changelogPath)) {
-      const existing = await readFile6(changelogPath, "utf-8");
-      const headerEnd = existing.indexOf("## [");
-      if (headerEnd > 0) {
-        await writeFile3(
-          changelogPath,
-          existing.slice(0, headerEnd) + versionHeader + existing.slice(headerEnd),
-          "utf-8"
-        );
-      } else {
-        const body = existing.startsWith(CHANGELOG_HEADER) ? existing.slice(CHANGELOG_HEADER.length) : existing;
-        await writeFile3(
-          changelogPath,
-          CHANGELOG_HEADER + versionHeader + body,
-          "utf-8"
-        );
-      }
-    } else {
-      await writeFile3(changelogPath, CHANGELOG_HEADER + versionHeader, "utf-8");
-    }
-    const stagePaths = ["package.json", "CHANGELOG.md"];
-    if (await fileExists(join6(cwd, ".gitignore"))) {
-      stagePaths.push(".gitignore");
-    }
-    stagePaths.push(...propagatedManifests);
-    await applyCommit({
-      message: `chore(release): v${plan.newVersion}`,
-      files: stagePaths,
-      cwd
-    });
-  }
-  await deleteReleasePlan(cwd);
-  const mergeTargets = strategy.mergeTargets(mainBranch, developBranch);
-  for (const target of mergeTargets) {
-    if (target === plan.targetBranch) continue;
-    await checkout(cwd, target);
-    try {
-      await mergeNoFf(cwd, plan.targetBranch);
-    } catch (err) {
-      const cause = err instanceof Error ? err.message : String(err);
-      debug("release.finish.merge.failed", {
-        target,
-        source: plan.targetBranch,
-        error: cause
-      });
-      throw new GitwiseError({
-        code: "FINISH_MERGE_CONFLICT",
-        message: `Failed to merge "${plan.targetBranch}" into "${target}" while finishing v${plan.newVersion}. The release plan file has already been deleted, so finish cannot be re-run. Resolve the conflicts, run "git merge --continue", then tag and push manually: git tag -a v${plan.newVersion} -F .gitwise/release-${plan.newVersion}.md && git push --follow-tags origin ${mainBranch}.
-${cause}`,
-        exitCode: EXIT_CODES.GIT_FAILED,
-        cause: err,
-        details: {
-          target,
-          source: plan.targetBranch,
-          newVersion: plan.newVersion
-        }
-      });
-    }
-    debug("release.finish.merge.target", {
-      target,
-      source: plan.targetBranch
-    });
-  }
-  if (await getBranch(cwd) !== mainBranch) {
-    await checkout(cwd, mainBranch);
-  }
-  if (tagAndPush) {
-    try {
-      await createTag(cwd, tag, notes, { signed: signTags !== false });
-    } catch (err) {
-      throw finishPushFailure({ stage: "tag", tag, mainBranch, newVersion: plan.newVersion, err });
-    }
-    try {
-      await pushWithTags(cwd, "origin", mainBranch);
-    } catch (err) {
-      throw finishPushFailure({ stage: "push-main", tag, mainBranch, newVersion: plan.newVersion, err });
-    }
-    debug("release.finish.tag.pushed", {
-      tag,
-      branch: mainBranch,
-      remote: "origin"
-    });
-    if (strategy.requiresDevelop()) {
-      try {
-        await push(cwd, "origin", developBranch);
-      } catch (err) {
-        throw finishPushFailure({ stage: "push-develop", tag, mainBranch, developBranch, newVersion: plan.newVersion, err });
-      }
-    }
-  }
-  if (createGhRelease) {
-    if (await isGhAvailable()) {
-      try {
-        await createGitHubRelease({
-          tag,
-          title: tag,
-          body: notes,
-          cwd
-        });
-      } catch (err) {
-        debug("release.finish.gh.failed", {
-          tag,
-          error: err instanceof Error ? err.message : String(err)
-        });
-      }
-    } else {
-      debug("gh not available, skipping GitHub release creation");
-    }
-  }
-  if (plan.releaseBranchCreated && deleteReleaseBranch) {
-    try {
-      await deleteBranch(cwd, plan.targetBranch);
-    } catch (err) {
-      debug("release.finish.branch.delete.failed", {
-        branch: plan.targetBranch,
-        error: err instanceof Error ? err.message : String(err)
-      });
-    }
-  }
-}
-async function abortRelease(opts) {
-  const { cwd, deleteBranch: deleteBranch2 = false } = opts;
-  debug("release.abort.start", { cwd, deleteBranch: deleteBranch2 });
-  const plan = await loadReleasePlan(cwd);
-  if (!plan) {
-    throw new GitwiseError({
-      code: "NO_RELEASE_PLAN",
-      message: `No release plan found at .gitwise/release-plan.json. Nothing to abort.`,
-      exitCode: EXIT_CODES.RELEASE_PLAN_STALE
-    });
-  }
-  const shouldDeleteBranch = deleteBranch2 && plan.releaseBranchCreated;
-  let mainBranch = "";
-  if (shouldDeleteBranch) {
-    const strategy = createReleaseStrategy(plan.strategy);
-    const repoConfig = await readRepoConfig(cwd);
-    const developBranch = repoConfig?.developBranch ?? "develop";
-    mainBranch = strategy.requiresDevelop() ? await detectBaseBranch(cwd) : plan.targetBranch;
-    for (const target of strategy.mergeTargets(mainBranch, developBranch)) {
-      if (target === plan.targetBranch) continue;
-      if (!await isBranchMerged(cwd, plan.targetBranch, target)) {
-        throw new GitwiseError({
-          code: "RELEASE_BRANCH_UNMERGED",
-          message: `Refusing to delete release branch "${plan.targetBranch}" \u2014 it has commits not present in "${target}". Merge or cherry-pick them first, or remove the branch manually.`,
-          exitCode: EXIT_CODES.RELEASE_BRANCH_CONFLICT
-        });
-      }
-    }
-  }
-  await deleteReleasePlan(cwd);
-  if (shouldDeleteBranch) {
-    if (await getBranch(cwd) === plan.targetBranch) {
-      await checkout(cwd, mainBranch);
-    }
-    await deleteBranch(cwd, plan.targetBranch);
-    debug("release.abort.branch.deleted", { branch: plan.targetBranch });
-  }
-}
-async function gitignoreMatchesPrepareOutput(cwd) {
-  const headContent = await showFileAtHead(cwd, ".gitignore") ?? "";
-  const gitignorePath = join6(cwd, ".gitignore");
-  const currentContent = await fileExists(gitignorePath) ? await readFile6(gitignorePath, "utf-8") : "";
-  let expected = applyGitignoreEntry(headContent, RELEASE_PLAN_REL_PATH);
-  expected = applyGitignoreEntry(expected, RELEASE_NOTES_GLOB_REL_PATH);
-  return currentContent === expected;
-}
-function writeWorkspaceVersionStep(manifestPath, newVersion) {
-  return {
-    name: `write-version:${manifestPath}`,
-    apply: async () => {
-      const priorBytes = await readFile6(manifestPath);
-      const parsed = JSON.parse(priorBytes.toString("utf-8"));
-      parsed["version"] = newVersion;
-      await writeJSON(manifestPath, parsed);
-      return priorBytes;
-    },
-    compensate: async (priorBytes) => {
-      await writeFile3(manifestPath, priorBytes);
-    }
-  };
-}
-var txLogger = {
-  warn(message, context) {
-    warn(`[gitwise] ${message}`, context);
-  }
-};
-async function propagateVersionToWorkspaces(cwd, version2) {
-  const releaseLock = await acquireRepoLock(cwd, {
-    command: "release propagate-version"
-  });
-  try {
-    const tx = new Transaction();
-    try {
-      return await runWorkspaceVersionStepsInto(tx, cwd, version2);
-    } catch (err) {
-      const reason = err instanceof GitwiseError ? err : new GitwiseError({
-        code: "WORKSPACE_VERSION_WRITE_FAILED",
-        message: `Failed to propagate version ${version2} to workspaces: ${err instanceof Error ? err.message : String(err)}`,
-        exitCode: EXIT_CODES.GIT_FAILED,
-        cause: err
-      });
-      await tx.rollback(reason, txLogger);
-      throw reason;
-    }
-  } finally {
-    await releaseLock();
-  }
-}
-async function runWorkspaceVersionStepsInto(tx, cwd, version2) {
-  const patterns = await readWorkspacePatterns(cwd);
-  const workspaceDirs = (await expandWorkspacePatterns(cwd, patterns)).sort();
-  const modified = [];
-  for (const dir of workspaceDirs) {
-    const pkgPath = join6(dir, "package.json");
-    if (await fileExists(pkgPath)) {
-      await tx.run(writeWorkspaceVersionStep(pkgPath, version2));
-      modified.push(relative(cwd, pkgPath));
-    }
-    const pluginPath = join6(dir, "plugin.json");
-    if (await fileExists(pluginPath)) {
-      await tx.run(writeWorkspaceVersionStep(pluginPath, version2));
-      modified.push(relative(cwd, pluginPath));
-    }
-  }
-  return modified;
-}
-async function detectWorkspaceRoot(cwd) {
-  const patterns = await readWorkspacePatterns(cwd);
-  const dirs = await expandWorkspacePatterns(cwd, patterns);
-  for (const dir of dirs) {
-    if (await fileExists(join6(dir, "package.json"))) return true;
-  }
-  return false;
-}
-async function readWorkspacePatterns(cwd) {
-  const pkgPath = join6(cwd, "package.json");
-  if (!await fileExists(pkgPath)) return ["packages/*"];
-  let parsed;
-  try {
-    parsed = await readJSON(pkgPath);
-  } catch {
-    return ["packages/*"];
-  }
-  const ws = parsed.workspaces;
-  const fromArray = Array.isArray(ws) ? ws.filter((p) => typeof p === "string" && p.length > 0) : [];
-  if (fromArray.length > 0) return fromArray;
-  if (ws && typeof ws === "object" && !Array.isArray(ws)) {
-    const inner = ws.packages;
-    if (Array.isArray(inner)) {
-      const fromObject = inner.filter(
-        (p) => typeof p === "string" && p.length > 0
-      );
-      if (fromObject.length > 0) return fromObject;
-    }
-  }
-  return ["packages/*"];
-}
-async function expandWorkspacePatterns(cwd, patterns) {
-  const { readdir: readdir3 } = await import("fs/promises");
-  const readdirFn = readdir3;
-  const matched = /* @__PURE__ */ new Set();
-  for (const pattern of patterns) {
-    if (pattern.startsWith("!")) continue;
-    const segments = pattern.split("/").filter((s) => s.length > 0);
-    if (segments.length === 0) continue;
-    await walkWorkspaceSegments(cwd, segments, 0, matched, readdirFn);
-  }
-  return Array.from(matched);
-}
-async function walkWorkspaceSegments(current, segments, index, out, readdirFn) {
-  if (index >= segments.length) {
-    out.add(current);
-    return;
-  }
-  const segment = segments[index] ?? "";
-  if (!segment.includes("*")) {
-    await walkWorkspaceSegments(
-      join6(current, segment),
-      segments,
-      index + 1,
-      out,
-      readdirFn
-    );
-    return;
-  }
-  let entries;
-  try {
-    entries = await readdirFn(current, { withFileTypes: true });
-  } catch {
-    return;
-  }
-  const regex = segmentToRegex(segment);
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    if (!regex.test(entry.name)) continue;
-    await walkWorkspaceSegments(
-      join6(current, entry.name),
-      segments,
-      index + 1,
-      out,
-      readdirFn
-    );
-  }
-}
-function segmentToRegex(segment) {
-  const escaped = segment.split(/(\*|\?)/).map((part) => {
-    if (part === "*") return "[^/]*";
-    if (part === "?") return "[^/]";
-    return part.replace(/[.+^${}()|[\]\\]/g, "\\$&");
-  }).join("");
-  return new RegExp(`^${escaped}$`);
-}
 
 // ../core/src/providers/factory.ts
 init_esm_shims();
@@ -14202,203 +12941,87 @@ function createProvider(config) {
 // ../core/src/index.ts
 var version = package_default.version;
 
-// scripts/release-args.ts
-init_esm_shims();
-var UnknownPhaseError = class extends Error {
-  code = "UNKNOWN_PHASE";
-  constructor(phase) {
-    super(
-      `Unknown release phase "${phase}". Use one of: prepare, finish, abort (or omit for the legacy one-shot).`
-    );
-    this.name = "UnknownPhaseError";
-  }
-};
-function takeFlag(args, name) {
-  const idx = args.indexOf(name);
-  if (idx === -1) return false;
-  args.splice(idx, 1);
-  return true;
+// scripts/issue.ts
+var args = process.argv.slice(2);
+var applyIdx = args.indexOf("--apply");
+var apply = applyIdx !== -1;
+if (apply) args.splice(applyIdx, 1);
+var labelIdx = args.indexOf("--label");
+var labels;
+if (labelIdx !== -1) {
+  labels = (args[labelIdx + 1] ?? "").split(",").map((l) => l.trim()).filter(Boolean);
+  args.splice(labelIdx, 2);
 }
-function takeValue(args, name) {
-  const idx = args.indexOf(name);
-  if (idx === -1) return void 0;
-  const value = args[idx + 1];
-  args.splice(idx, 2);
-  return value;
-}
-function normalizeBump(value) {
-  return value === "major" || value === "minor" || value === "patch" ? value : void 0;
-}
-function parseReleaseArgs(argv) {
-  const args = [...argv];
-  let phase;
-  const first = args[0];
-  if (first !== void 0 && !first.startsWith("--")) {
-    if (first === "prepare" || first === "finish" || first === "abort") {
-      phase = first;
-      args.shift();
-    } else {
-      throw new UnknownPhaseError(first);
+var assignees = [];
+var assigneeIdx = args.indexOf("--assignee");
+while (assigneeIdx !== -1) {
+  const value = args[assigneeIdx + 1];
+  if (value) {
+    for (const a of value.split(",").map((x) => x.trim()).filter(Boolean)) {
+      assignees.push(a);
     }
   }
-  const result = { phase };
-  const bump = normalizeBump(takeValue(args, "--bump"));
-  if (bump) result.bump = bump;
-  if (takeFlag(args, "--apply")) result.apply = true;
-  if (takeFlag(args, "--no-gh-release")) result.noGhRelease = true;
-  if (takeFlag(args, "--no-workspace-propagation")) {
-    result.noWorkspacePropagation = true;
-  }
-  if (takeFlag(args, "--no-delete-branch")) result.deleteReleaseBranch = false;
-  if (takeFlag(args, "--delete-branch")) result.deleteBranch = true;
-  if (takeFlag(args, "--no-sign")) result.noSign = true;
-  return result;
+  args.splice(assigneeIdx, 2);
+  assigneeIdx = args.indexOf("--assignee");
 }
-
-// scripts/release.ts
-function writeError(err) {
-  const message = err instanceof Error ? err.message : String(err);
-  const code = typeof err === "object" && err !== null && "code" in err ? String(err.code ?? "") : "";
-  const prefix = code ? `Error [${code}]` : "Error";
-  process.stderr.write(`${prefix}: ${message}
-`);
+var promptIdx = args.indexOf("--prompt");
+var extraPrompt;
+if (promptIdx !== -1) {
+  extraPrompt = args[promptIdx + 1];
+  args.splice(promptIdx, 2);
 }
-function renderPlan(plan) {
-  process.stdout.write(`## Release Plan
-
-`);
-  process.stdout.write(
-    `**Version:** ${plan.currentVersion} \u2192 ${plan.newVersion} (${plan.suggestedBump} bump, strategy: ${plan.strategy})
-
-`
-  );
-  if (plan.releaseBranchCreated) {
-    process.stdout.write(`**Release branch:** ${plan.targetBranch}
-
-`);
-  }
-  process.stdout.write(`### Changelog
-
-${plan.changelog}
-
-`);
-  process.stdout.write(`### Release Notes
-
-${plan.notes}
-
-`);
-  process.stdout.write(
-    `**Tokens used:** ${plan.tokens.input} in / ${plan.tokens.output} out
-
-`
-  );
-}
-async function loadProvider(cwd) {
+var description = args.join(" ").trim();
+async function main() {
+  const cwd = process.cwd();
   const config = await getMergedConfig({ cwd });
   const apiKey = await getApiKey();
-  return createProvider({
-    kind: config.provider,
-    models: config.models,
-    apiKey,
-    claudeCliPath: config.claudeCliPath
+  const provider = createProvider({ kind: config.provider, models: config.models, apiKey, claudeCliPath: config.claudeCliPath });
+  const draft = await issue({
+    description,
+    prompt: extraPrompt,
+    labels,
+    assignees: assignees.length ? assignees : void 0,
+    provider,
+    cwd
   });
-}
-async function runLegacy(parsed, cwd) {
-  const provider = await loadProvider(cwd);
-  const plan = await release({ bump: parsed.bump, provider, cwd });
-  process.stdout.write(`## Release Plan
+  process.stdout.write(`## Issue Draft
+
+`);
+  process.stdout.write(`**Title:** ${draft.title}
+
+`);
+  if (draft.labels?.length) {
+    process.stdout.write(`**Labels:** ${draft.labels.join(", ")}
+
+`);
+  }
+  if (draft.assignees?.length) {
+    process.stdout.write(`**Assignees:** ${draft.assignees.join(", ")}
+
+`);
+  }
+  process.stdout.write(`**Body:**
+
+${draft.body}
 
 `);
   process.stdout.write(
-    `**Version:** ${plan.newVersion} (${plan.suggestedBump})
+    `**Tokens used:** ${draft.tokens.input} in / ${draft.tokens.output} out
 
 `
   );
-  process.stdout.write(`### Changelog
-
-${plan.changelog}
-
-`);
-  process.stdout.write(`### Release Notes
-
-${plan.notes}
-
-`);
-  process.stdout.write(
-    `**Tokens used:** ${plan.tokens.input} in / ${plan.tokens.output} out
-
-`
-  );
-  if (!parsed.apply) {
-    process.stdout.write(
-      "_Run with `--apply` to tag, update CHANGELOG.md, and create a release._\n"
-    );
+  if (!apply) {
+    process.stdout.write("_Run with `--apply` to create the GitHub issue._\n");
     return;
   }
-  const workspacePropagation = parsed.noWorkspacePropagation ? false : await detectWorkspaceRoot(cwd);
-  await applyRelease(plan, {
-    cwd,
-    createGhRelease: !parsed.noGhRelease,
-    workspacePropagation,
-    signTags: parsed.noSign ? false : void 0
-  });
-  process.stdout.write(`**Done.** Released ${plan.newVersion}.
+  const result = await applyIssue(draft, { cwd });
+  process.stdout.write(`**Issue:** ${result.url}
 `);
 }
-async function runPrepare(parsed, cwd) {
-  const provider = await loadProvider(cwd);
-  const plan = await prepareRelease({ bump: parsed.bump, provider, cwd });
-  renderPlan(plan);
-  const next = plan.releaseBranchCreated ? `_Edit \`.gitwise/release-${plan.newVersion}.md\` if needed, then run \`gw release finish\` from \`${plan.targetBranch}\`._
-` : `_Edit \`.gitwise/release-${plan.newVersion}.md\` if needed, then run \`gw release finish\`._
-`;
-  process.stdout.write(next);
-}
-async function runFinish(parsed, cwd) {
-  const workspacePropagation = parsed.noWorkspacePropagation ? false : await detectWorkspaceRoot(cwd);
-  await finishRelease({
-    cwd,
-    createGhRelease: !parsed.noGhRelease,
-    workspacePropagation,
-    deleteReleaseBranch: parsed.deleteReleaseBranch,
-    signTags: parsed.noSign ? false : void 0
-  });
-  process.stdout.write("**Done.** Release finished.\n");
-}
-async function runAbort(parsed, cwd) {
-  await abortRelease({ cwd, deleteBranch: parsed.deleteBranch === true });
-  process.stdout.write("**Done.** Release plan discarded.\n");
-}
-async function runReleaseSkill(parsed, cwd = process.cwd()) {
-  switch (parsed.phase) {
-    case "prepare":
-      return runPrepare(parsed, cwd);
-    case "finish":
-      return runFinish(parsed, cwd);
-    case "abort":
-      return runAbort(parsed, cwd);
-    case void 0:
-      return runLegacy(parsed, cwd);
-  }
-}
-async function main() {
-  let parsed;
-  try {
-    parsed = parseReleaseArgs(process.argv.slice(2));
-  } catch (err) {
-    writeError(err);
-    process.exit(err instanceof UnknownPhaseError ? 2 : 1);
-  }
-  await runReleaseSkill(parsed);
-}
-var invokedDirectly = process.argv[1] !== void 0 && process.argv[1] === fileURLToPath3(import.meta.url);
-if (invokedDirectly) {
-  main().catch((err) => {
-    writeError(err);
-    process.exit(1);
-  });
-}
-export {
-  runReleaseSkill
-};
-//# sourceMappingURL=release.js.map
+main().catch((err) => {
+  const msg = err instanceof Error ? err.message : String(err);
+  process.stderr.write(`Error: ${msg}
+`);
+  process.exit(1);
+});
+//# sourceMappingURL=issue.js.map

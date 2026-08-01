@@ -89,6 +89,69 @@ describe("github infra (core)", () => {
       expect(err).toMatchObject({ code: "GH_FAILED" });
     });
 
+    it("createIssue throws GitwiseError code GH_FAILED on empty stdout", async () => {
+      jest.resetModules();
+      jest.unstable_mockModule("node:child_process", () => ({
+        execFile: (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, result: { stdout: string; stderr: string }) => void,
+        ): void => {
+          cb(null, { stdout: "", stderr: "" });
+        },
+      }));
+      const { createIssue } = await import("../../../src/infra/github.js");
+      const { GitwiseError: GE } = await import("../../../src/errors.js");
+      const err = await createIssue({ title: "t", body: "b", cwd: "/tmp" }).catch(
+        (e: unknown) => e,
+      );
+      expect(err).toBeInstanceOf(GE);
+      expect(err).toMatchObject({ code: "GH_FAILED" });
+    });
+
+    it("createIssue calls gh with an args array (never a shell string) including labels and assignees", async () => {
+      jest.resetModules();
+      const captured: { cmd?: string; args?: string[] } = {};
+      jest.unstable_mockModule("node:child_process", () => ({
+        execFile: (
+          cmd: string,
+          cmdArgs: string[],
+          _opts: unknown,
+          cb: (err: Error | null, result: { stdout: string; stderr: string }) => void,
+        ): void => {
+          captured.cmd = cmd;
+          captured.args = cmdArgs;
+          cb(null, { stdout: "https://github.com/o/r/issues/1\n", stderr: "" });
+        },
+      }));
+      const { createIssue } = await import("../../../src/infra/github.js");
+      const result = await createIssue({
+        title: "t",
+        body: "b",
+        cwd: "/tmp",
+        labels: ["bug", "ui"],
+        assignees: ["alice"],
+      });
+      expect(result.url).toBe("https://github.com/o/r/issues/1");
+      expect(captured.cmd).toBe("gh");
+      expect(Array.isArray(captured.args)).toBe(true);
+      expect(captured.args).toEqual([
+        "issue",
+        "create",
+        "--title",
+        "t",
+        "--body",
+        "b",
+        "--label",
+        "bug",
+        "--label",
+        "ui",
+        "--assignee",
+        "alice",
+      ]);
+    });
+
     it("createGitHubRelease throws GitwiseError code GH_FAILED on empty stdout", async () => {
       jest.resetModules();
       jest.unstable_mockModule("node:child_process", () => ({

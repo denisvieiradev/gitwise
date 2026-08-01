@@ -55,7 +55,7 @@ Skills inherit Claude Code's auth; no API key prompt.
 
 ## Commands
 
-Four orthogonal commands. Each works standalone — no `init`, no persistent state.
+Five orthogonal commands. Each works standalone — no `init`, no persistent state.
 
 | Command | Description |
 |---|---|
@@ -63,6 +63,7 @@ Four orthogonal commands. Each works standalone — no `init`, no persistent sta
 | `gw review [intent]` | AI review of the current branch vs. base. Findings categorized as **Critical / Suggestions / Nitpicks**. `--json` for scripting. |
 | `gw pr [intent]` | Drafts a PR title + body from the branch commits. Opens the PR via `gh` if installed; otherwise prints title + body for manual creation. `--update` refreshes an existing PR. |
 | `gw release` | Inspects commits since the last tag, recommends a semver bump, updates `CHANGELOG.md`, writes release notes (English default; PT / ES / FR available), bumps `package.json`, tags, pushes, and creates a GitHub release via `gh` when available. |
+| `gw issue "<description>"` | Drafts a structured issue title + body from a free-text description, detecting bug report vs. feature request. Creates the issue via `gh` with `--apply`; `--label` and `--assignee` attach metadata. |
 
 Every LLM call prints input/output token counts after the operation. The model tier (`fast` / `balanced` / `powerful`) is routed per-command and configurable per repo.
 

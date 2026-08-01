@@ -1,12 +1,13 @@
 import type { ModelTier } from "./types.js";
 
-// Four supported commands and their default tiers
-// commit/pr/release default to fast; review defaults to powerful
+// Supported commands and their default tiers
+// commit/pr/release/issue default to fast; review defaults to powerful
 const COMMAND_TIER_MAP: Record<string, ModelTier> = {
   commit: "fast",
   review: "powerful",
   pr: "fast",
   release: "fast",
+  issue: "fast",
 };
 
 export function resolveModelTier(command: string): ModelTier {
