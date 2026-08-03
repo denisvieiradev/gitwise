@@ -14044,10 +14044,14 @@ async function runWorkspaceVersionStepsInto(tx, cwd, version2) {
       await tx.run(writeWorkspaceVersionStep(pkgPath, version2, workspaceNames));
       modified.push(relative(cwd, pkgPath));
     }
-    const pluginPath = join6(dir, "plugin.json");
-    if (await fileExists(pluginPath)) {
-      await tx.run(writeWorkspaceVersionStep(pluginPath, version2));
-      modified.push(relative(cwd, pluginPath));
+    for (const pluginPath of [
+      join6(dir, ".claude-plugin", "plugin.json"),
+      join6(dir, "plugin.json")
+    ]) {
+      if (await fileExists(pluginPath)) {
+        await tx.run(writeWorkspaceVersionStep(pluginPath, version2));
+        modified.push(relative(cwd, pluginPath));
+      }
     }
   }
   return modified;
