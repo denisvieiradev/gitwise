@@ -1454,9 +1454,47 @@ async function gitignoreMatchesPrepareOutput(cwd: string): Promise<boolean> {
  * apply path produced. Steps are intended to run sequentially so ordering is
  * deterministic per ADR-004.
  */
+const CROSS_WORKSPACE_DEPENDENCY_FIELDS = [
+  "dependencies",
+  "devDependencies",
+  "optionalDependencies",
+  "peerDependencies",
+] as const;
+
+/**
+ * Rewrite any dependency entry in `parsed` whose key names another workspace
+ * package, pointing it at `newVersion`. Preserves the existing `^`/`~` range
+ * prefix (or leaves it exact if the prior spec had none) so a sibling bump
+ * doesn't silently loosen or tighten the caller's intended range strictness.
+ *
+ * Without this, `writeWorkspaceVersionStep` only bumps a package's own
+ * `version` field — a package's `dependencies` entry on another workspace
+ * package (e.g. the CLI's pin on gitwise-core) is left stale, drifting away
+ * from the sibling's real version every release until `npm ci` fails with
+ * ETARGET because the stale pinned version was never published.
+ */
+function updateCrossWorkspaceDependencies(
+  parsed: Record<string, unknown>,
+  workspaceNames: ReadonlySet<string>,
+  newVersion: string,
+): void {
+  for (const field of CROSS_WORKSPACE_DEPENDENCY_FIELDS) {
+    const deps = parsed[field];
+    if (!deps || typeof deps !== "object") continue;
+    const depsRecord = deps as Record<string, unknown>;
+    for (const depName of Object.keys(depsRecord)) {
+      const spec = depsRecord[depName];
+      if (!workspaceNames.has(depName) || typeof spec !== "string") continue;
+      const prefix = spec.startsWith("^") || spec.startsWith("~") ? spec[0] : "";
+      depsRecord[depName] = `${prefix}${newVersion}`;
+    }
+  }
+}
+
 export function writeWorkspaceVersionStep(
   manifestPath: string,
   newVersion: string,
+  workspaceNames?: ReadonlySet<string>,
 ): Step<Buffer> {
   return {
     name: `write-version:${manifestPath}`,
@@ -1467,6 +1505,9 @@ export function writeWorkspaceVersionStep(
         unknown
       >;
       parsed["version"] = newVersion;
+      if (workspaceNames && workspaceNames.size > 0) {
+        updateCrossWorkspaceDependencies(parsed, workspaceNames, newVersion);
+      }
       await writeJSON(manifestPath, parsed);
       return priorBytes;
     },
@@ -1556,19 +1597,35 @@ export async function runWorkspaceVersionStepsInto(
 ): Promise<string[]> {
   const patterns = await readWorkspacePatterns(cwd);
   const workspaceDirs = (await expandWorkspacePatterns(cwd, patterns)).sort();
+  // Gather every workspace package's name up front (before any writes) so
+  // sibling dependency pins can be identified and rewritten alongside each
+  // package's own version bump.
+  const workspaceNames = new Set<string>();
+  for (const dir of workspaceDirs) {
+    const pkgPath = join(dir, "package.json");
+    if (!(await fileExists(pkgPath))) continue;
+    const parsed = await readJSON<{ name?: unknown }>(pkgPath);
+    if (typeof parsed.name === "string") workspaceNames.add(parsed.name);
+  }
   const modified: string[] = [];
   for (const dir of workspaceDirs) {
     const pkgPath = join(dir, "package.json");
     if (await fileExists(pkgPath)) {
-      await tx.run(writeWorkspaceVersionStep(pkgPath, version));
+      await tx.run(writeWorkspaceVersionStep(pkgPath, version, workspaceNames));
       modified.push(relative(cwd, pkgPath));
     }
-    // Keep a sibling plugin.json (Claude Code plugin manifest) in lockstep
-    // with package.json so its surfaced version doesn't drift after release.
-    const pluginPath = join(dir, "plugin.json");
-    if (await fileExists(pluginPath)) {
-      await tx.run(writeWorkspaceVersionStep(pluginPath, version));
-      modified.push(relative(cwd, pluginPath));
+    // Keep the Claude Code plugin manifest in lockstep with package.json so
+    // its surfaced version doesn't drift after release. The spec-conformant
+    // location is `.claude-plugin/plugin.json`; a top-level `plugin.json` is
+    // checked too for repos still on the legacy layout.
+    for (const pluginPath of [
+      join(dir, ".claude-plugin", "plugin.json"),
+      join(dir, "plugin.json"),
+    ]) {
+      if (await fileExists(pluginPath)) {
+        await tx.run(writeWorkspaceVersionStep(pluginPath, version));
+        modified.push(relative(cwd, pluginPath));
+      }
     }
   }
   return modified;

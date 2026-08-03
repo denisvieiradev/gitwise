@@ -12091,7 +12091,7 @@ init_esm_shims();
 // ../core/package.json
 var package_default = {
   name: "@denisvieiradev/gitwise-core",
-  version: "1.1.0",
+  version: "1.1.1",
   description: "Shared logic for gitwise: non-interactive commit/review/pr/release commands, LLM providers, git/github primitives, prompt templates.",
   type: "module",
   main: "./dist/index.js",
@@ -13963,13 +13963,35 @@ async function gitignoreMatchesPrepareOutput(cwd) {
   expected = applyGitignoreEntry(expected, RELEASE_NOTES_GLOB_REL_PATH);
   return currentContent === expected;
 }
-function writeWorkspaceVersionStep(manifestPath, newVersion) {
+var CROSS_WORKSPACE_DEPENDENCY_FIELDS = [
+  "dependencies",
+  "devDependencies",
+  "optionalDependencies",
+  "peerDependencies"
+];
+function updateCrossWorkspaceDependencies(parsed, workspaceNames, newVersion) {
+  for (const field of CROSS_WORKSPACE_DEPENDENCY_FIELDS) {
+    const deps = parsed[field];
+    if (!deps || typeof deps !== "object") continue;
+    const depsRecord = deps;
+    for (const depName of Object.keys(depsRecord)) {
+      const spec = depsRecord[depName];
+      if (!workspaceNames.has(depName) || typeof spec !== "string") continue;
+      const prefix = spec.startsWith("^") || spec.startsWith("~") ? spec[0] : "";
+      depsRecord[depName] = `${prefix}${newVersion}`;
+    }
+  }
+}
+function writeWorkspaceVersionStep(manifestPath, newVersion, workspaceNames) {
   return {
     name: `write-version:${manifestPath}`,
     apply: async () => {
       const priorBytes = await readFile6(manifestPath);
       const parsed = JSON.parse(priorBytes.toString("utf-8"));
       parsed["version"] = newVersion;
+      if (workspaceNames && workspaceNames.size > 0) {
+        updateCrossWorkspaceDependencies(parsed, workspaceNames, newVersion);
+      }
       await writeJSON(manifestPath, parsed);
       return priorBytes;
     },
@@ -14008,11 +14030,18 @@ async function propagateVersionToWorkspaces(cwd, version2) {
 async function runWorkspaceVersionStepsInto(tx, cwd, version2) {
   const patterns = await readWorkspacePatterns(cwd);
   const workspaceDirs = (await expandWorkspacePatterns(cwd, patterns)).sort();
+  const workspaceNames = /* @__PURE__ */ new Set();
+  for (const dir of workspaceDirs) {
+    const pkgPath = join6(dir, "package.json");
+    if (!await fileExists(pkgPath)) continue;
+    const parsed = await readJSON(pkgPath);
+    if (typeof parsed.name === "string") workspaceNames.add(parsed.name);
+  }
   const modified = [];
   for (const dir of workspaceDirs) {
     const pkgPath = join6(dir, "package.json");
     if (await fileExists(pkgPath)) {
-      await tx.run(writeWorkspaceVersionStep(pkgPath, version2));
+      await tx.run(writeWorkspaceVersionStep(pkgPath, version2, workspaceNames));
       modified.push(relative(cwd, pkgPath));
     }
     const pluginPath = join6(dir, "plugin.json");

@@ -2009,6 +2009,69 @@ describe("propagateVersionToWorkspaces (rollback boundary + lock)", () => {
     }
   });
 
+  it("updates cross-workspace dependency pins when the referenced package is also a workspace member", async () => {
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({ name: "root", version: "1.0.0", workspaces: ["packages/*"] }, null, 2) + "\n",
+    );
+    const coreDir = join(tempDir, "packages", "core");
+    const cliDir = join(tempDir, "packages", "cli");
+    await mkdir(coreDir, { recursive: true });
+    await mkdir(cliDir, { recursive: true });
+    const corePkgPath = join(coreDir, "package.json");
+    const cliPkgPath = join(cliDir, "package.json");
+    await writeFile(
+      corePkgPath,
+      JSON.stringify({ name: "@scope/core", version: "1.0.0" }, null, 2) + "\n",
+    );
+    await writeFile(
+      cliPkgPath,
+      JSON.stringify(
+        {
+          name: "@scope/cli",
+          version: "1.0.0",
+          dependencies: { "@scope/core": "1.0.0", chalk: "^5.3.0" },
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+
+    await propagateVersionToWorkspaces(tempDir, "1.2.3");
+
+    const cliParsed = JSON.parse(await readFile(cliPkgPath, "utf-8")) as {
+      dependencies: Record<string, string>;
+    };
+    expect(cliParsed.dependencies["@scope/core"]).toBe("1.2.3");
+    expect(cliParsed.dependencies["chalk"]).toBe("^5.3.0");
+  });
+
+  it("bumps a nested .claude-plugin/plugin.json alongside its package.json", async () => {
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({ name: "root", version: "1.0.0", workspaces: ["packages/*"] }, null, 2) + "\n",
+    );
+    const skillsDir = join(tempDir, "packages", "skills");
+    const pluginDir = join(skillsDir, ".claude-plugin");
+    await mkdir(pluginDir, { recursive: true });
+    await writeFile(
+      join(skillsDir, "package.json"),
+      JSON.stringify({ name: "@scope/skills", version: "1.0.0" }, null, 2) + "\n",
+    );
+    const pluginManifestPath = join(pluginDir, "plugin.json");
+    await writeFile(
+      pluginManifestPath,
+      JSON.stringify({ name: "gitwise", version: "1.0.0" }, null, 2) + "\n",
+    );
+
+    await propagateVersionToWorkspaces(tempDir, "1.2.3");
+
+    const manifest = JSON.parse(await readFile(pluginManifestPath, "utf-8")) as {
+      version: string;
+    };
+    expect(manifest.version).toBe("1.2.3");
+  });
+
   it("rolls back already-written manifests when a mid-loop write fails", async () => {
     const pkgPaths = await seedWorkspaces([
       { name: "a", version: "1.0.0" },
