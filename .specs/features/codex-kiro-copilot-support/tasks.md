@@ -145,10 +145,10 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `CliSubprocessProvider` and `CliProviderSpec` exist per design.md's interface definitions
-- [ ] `ClaudeCodeProvider`'s public behavior is unchanged — all tests from T1 still pass unmodified
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: all tests from T1 pass (8+), no test deleted or weakened
+- [x] `CliSubprocessProvider` and `CliProviderSpec` exist per design.md's interface definitions
+- [x] `ClaudeCodeProvider`'s public behavior is unchanged — all tests from T1 still pass unmodified
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: all tests from T1 pass (8+), no test deleted or weakened
 
 **Tests**: unit
 **Gate**: quick
