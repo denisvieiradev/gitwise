@@ -373,10 +373,10 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] A `<repo>/.gitwise.json` `models` override changes only the currently-active provider's tier values
-- [ ] Every other provider's model block is byte-for-byte unchanged by a repo override
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: `merge`-adjacent tests (new file or extended `config.test.ts`) gain 3+ cases covering this exact scoping
+- [x] A `<repo>/.gitwise.json` `models` override changes only the currently-active provider's tier values
+- [x] Every other provider's model block is byte-for-byte unchanged by a repo override
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: `merge`-adjacent tests (new file or extended `config.test.ts`) gain 3+ cases covering this exact scoping
 
 **Tests**: unit
 **Gate**: quick

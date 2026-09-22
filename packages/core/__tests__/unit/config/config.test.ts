@@ -212,6 +212,60 @@ describe("config (core)", () => {
     });
   });
 
+  describe("repo-level models override scoping (MDL-06)", () => {
+    it("applies a .gitwise.json models override to the active provider's tiers only", async () => {
+      await writeUserConfig({ provider: "codex" }, homeDir);
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({ models: { fast: "codex-custom-fast" } }),
+        "utf-8",
+      );
+
+      const config = await getMergedConfig({ cwd, homeDir });
+
+      expect(config.provider).toBe("codex");
+      expect(config.models.codex.fast).toBe("codex-custom-fast");
+      // Untouched tiers of the active provider stay at their defaults.
+      expect(config.models.codex.balanced).toBe(DEFAULT_USER_CONFIG.models.codex.balanced);
+      expect(config.models.codex.powerful).toBe(DEFAULT_USER_CONFIG.models.codex.powerful);
+    });
+
+    it("leaves every other provider's model block byte-for-byte unchanged by a repo override", async () => {
+      await writeUserConfig({ provider: "codex" }, homeDir);
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({ models: { fast: "codex-custom-fast", balanced: "codex-custom-balanced" } }),
+        "utf-8",
+      );
+
+      const config = await getMergedConfig({ cwd, homeDir });
+
+      expect(config.models.api).toEqual(DEFAULT_USER_CONFIG.models.api);
+      expect(config.models["claude-code"]).toEqual(DEFAULT_USER_CONFIG.models["claude-code"]);
+      expect(config.models.copilot).toEqual(DEFAULT_USER_CONFIG.models.copilot);
+      expect(config.models.kiro).toEqual(DEFAULT_USER_CONFIG.models.kiro);
+    });
+
+    it("with the default provider (api), a models override lands on models.api, not a stray top-level key", async () => {
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({ models: { powerful: "api-custom-powerful" } }),
+        "utf-8",
+      );
+
+      const config = await getMergedConfig({ cwd, homeDir });
+
+      expect(config.provider).toBe("api");
+      expect(config.models.api.powerful).toBe("api-custom-powerful");
+      expect(config.models.api.fast).toBe(DEFAULT_USER_CONFIG.models.api.fast);
+      // No stray "fast"/"balanced"/"powerful" keys injected at the top level
+      // of the ModelsByProvider map (the pre-fix bug this task corrects).
+      expect(Object.keys(config.models).sort()).toEqual(
+        ["api", "claude-code", "codex", "copilot", "kiro"].sort(),
+      );
+    });
+  });
+
   describe("integration round-trip", () => {
     it("write user config, write repo config, read merged shape", async () => {
       await writeUserConfig(

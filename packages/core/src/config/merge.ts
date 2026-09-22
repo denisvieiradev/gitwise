@@ -13,9 +13,17 @@ export function deepMerge(base: UserConfig, override: RepoConfig): MergedConfig 
     ...(override.templatesPath !== undefined && { templatesPath: override.templatesPath }),
     ...(override.releaseStrategy !== undefined && { releaseStrategy: override.releaseStrategy }),
     ...(override.developBranch !== undefined && { developBranch: override.developBranch }),
+    // MDL-06: `models` is now a per-provider map. A flat spread here would
+    // corrupt it by injecting the repo config's flat tier keys as fake
+    // provider names (design.md Risks & Concerns). The override applies only
+    // to the currently active provider's tier values — every other
+    // provider's block is left byte-for-byte untouched.
     models: {
       ...base.models,
-      ...(override.models ?? {}),
+      [base.provider]: {
+        ...base.models[base.provider],
+        ...(override.models ?? {}),
+      },
     },
   };
 }
