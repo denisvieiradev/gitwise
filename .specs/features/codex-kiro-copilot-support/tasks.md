@@ -398,10 +398,10 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] All 8 call sites use `buildProviderConfig` — no remaining inline `{ kind: config.provider, models: config.models, ... }` literal in the codebase
-- [ ] Each of the 4 `gw` commands still produces correct output against a mocked provider for every one of the 5 `ProviderKind` values
-- [ ] Gate check passes: `npm test` (root — this task spans 3 workspaces)
-- [ ] Test count: existing command tests in `packages/core/__tests__/unit/commands/*.test.ts` and `packages/cli/__tests__/commands.test.ts` still pass unmodified; `factory.test.ts` gains a `buildProviderConfig` unit test per provider kind (5+)
+- [x] All 8 call sites use `buildProviderConfig` — no remaining inline `{ kind: config.provider, models: config.models, ... }` literal in the codebase
+- [x] Each of the 4 `gw` commands still produces correct output against a mocked provider for every one of the 5 `ProviderKind` values
+- [x] Gate check passes: `npm test` (root — this task spans 3 workspaces) — modulo pre-existing, unrelated failures verified identical at baseline (chalk 5.6.2 ESM init race in `program.test.ts`/`run-cli.test.ts`/`commands.test.ts`; a `gitwise-core` dependency-version lockstep drift in `manifest.test.ts`/`skills.test.ts`); zero new failures from this task
+- [x] Test count: existing command tests in `packages/core/__tests__/unit/commands/*.test.ts` and `packages/cli/__tests__/commands.test.ts` still pass unmodified; `factory.test.ts` gains a `buildProviderConfig` unit test per provider kind (5+)
 
 **Tests**: integration
 **Gate**: full

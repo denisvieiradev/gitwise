@@ -43,7 +43,12 @@ jest.unstable_mockModule("@denisvieiradev/gitwise-core", () => ({
   })),
   getApiKey: jest.fn(async () => "fake-key"),
   createProvider: jest.fn(() => ({
-    chat: async () => ({ content: "", tokens: { input: 0, output: 0 } }),
+    chat: async () => ({ content: "", tokens: { input: 0, output: 0 }, tokensAvailable: true }),
+  })),
+  buildProviderConfig: jest.fn((merged: unknown, apiKey?: string) => ({
+    kind: (merged as { provider?: string })?.provider ?? "api",
+    models: { fast: "f", balanced: "b", powerful: "p" },
+    apiKey,
   })),
 }));
 

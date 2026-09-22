@@ -2,11 +2,12 @@ import { describe, it, expect } from "@jest/globals";
 import { mkdtempSync, rmSync, writeFileSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createProvider } from "../../../src/providers/factory.js";
+import { createProvider, buildProviderConfig } from "../../../src/providers/factory.js";
 import { AnthropicProvider } from "../../../src/providers/anthropic.js";
 import { ClaudeCodeProvider } from "../../../src/providers/claude-code.js";
 import { CliSubprocessProvider } from "../../../src/providers/cli-subprocess.js";
 import type { ProviderConfig } from "../../../src/providers/types.js";
+import { DEFAULT_USER_CONFIG, type MergedConfig } from "../../../src/config/types.js";
 
 const MODELS = { fast: "f", balanced: "b", powerful: "p" };
 
@@ -128,5 +129,58 @@ describe("createProvider", () => {
     expect(err?.code).toBe("CONFIG_INVALID");
     expect(err?.message).toContain('"anthropic"');
     expect(err?.message).toContain("gw provider");
+  });
+});
+
+describe("buildProviderConfig", () => {
+  function mergedWith(overrides: Partial<MergedConfig>): MergedConfig {
+    return {
+      ...DEFAULT_USER_CONFIG,
+      claudeCliPath: "/x/claude",
+      codexCliPath: "/x/codex",
+      copilotCliPath: "/x/copilot",
+      kiroCliPath: "/x/kiro-cli",
+      ...overrides,
+    };
+  }
+
+  const PROVIDER_KINDS = ["api", "claude-code", "codex", "copilot", "kiro"] as const;
+
+  it.each(PROVIDER_KINDS)("resolves models[%s] and every CLI path field for kind %s", (kind) => {
+    const merged = mergedWith({ provider: kind });
+    const result = buildProviderConfig(merged, "test-api-key");
+
+    expect(result.kind).toBe(kind);
+    expect(result.models).toEqual(DEFAULT_USER_CONFIG.models[kind]);
+    expect(result.apiKey).toBe("test-api-key");
+    expect(result.claudeCliPath).toBe("/x/claude");
+    expect(result.codexCliPath).toBe("/x/codex");
+    expect(result.copilotCliPath).toBe("/x/copilot");
+    expect(result.kiroCliPath).toBe("/x/kiro-cli");
+  });
+
+  it("never reads another provider's model block", () => {
+    const merged = mergedWith({
+      provider: "codex",
+      models: {
+        ...DEFAULT_USER_CONFIG.models,
+        codex: { fast: "codex-fast", balanced: "codex-balanced", powerful: "codex-powerful" },
+        api: { fast: "should-not-be-used", balanced: "should-not-be-used", powerful: "should-not-be-used" },
+      },
+    });
+    const result = buildProviderConfig(merged);
+    expect(result.models).toEqual({ fast: "codex-fast", balanced: "codex-balanced", powerful: "codex-powerful" });
+  });
+
+  it("omits apiKey when not provided", () => {
+    const merged = mergedWith({ provider: "api" });
+    const result = buildProviderConfig(merged);
+    expect(result.apiKey).toBeUndefined();
+  });
+
+  it("returns a ProviderConfig usable directly by createProvider", () => {
+    const merged = mergedWith({ provider: "api" });
+    const config = buildProviderConfig(merged, "sk-test");
+    expect(createProvider(config)).toBeInstanceOf(AnthropicProvider);
   });
 });

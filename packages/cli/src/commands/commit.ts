@@ -5,6 +5,7 @@ import {
   getMergedConfig,
   getApiKey,
   createProvider,
+  buildProviderConfig,
   commit,
   applyCommitPlan,
   git,
@@ -341,12 +342,7 @@ export function makeCommitCommand(): Command {
               "ANTHROPIC_API_KEY is not configured. Set it in the environment or run `gw config` to add it to ~/.gitwise/.env.",
           });
         }
-        provider = createProvider({
-          kind: config.provider,
-          models: config.models,
-          apiKey,
-          claudeCliPath: config.claudeCliPath,
-        });
+        provider = createProvider(buildProviderConfig(config, apiKey));
       }
 
       let splitMode: SplitMode = (["auto", "never", "always"].includes(opts.split) ? opts.split : "auto") as SplitMode;

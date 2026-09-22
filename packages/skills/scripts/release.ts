@@ -20,6 +20,7 @@ import {
   getMergedConfig,
   getApiKey,
   createProvider,
+  buildProviderConfig,
   release,
   applyRelease,
   prepareRelease,
@@ -62,12 +63,7 @@ function renderPlan(plan: PersistedReleasePlan): void {
 async function loadProvider(cwd: string): Promise<LLMProvider> {
   const config = await getMergedConfig({ cwd });
   const apiKey = await getApiKey();
-  return createProvider({
-    kind: config.provider,
-    models: config.models,
-    apiKey,
-    claudeCliPath: config.claudeCliPath,
-  });
+  return createProvider(buildProviderConfig(config, apiKey));
 }
 
 async function runLegacy(parsed: ParsedReleaseArgs, cwd: string): Promise<void> {

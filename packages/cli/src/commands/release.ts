@@ -6,6 +6,7 @@ import {
   getMergedConfig,
   getApiKey,
   createProvider,
+  buildProviderConfig,
   prepareRelease,
   finishRelease,
   abortRelease,
@@ -70,12 +71,7 @@ async function loadProvider(cwd: string, homeDir: string) {
     process.exit(1);
   }
   const apiKey = await getApiKey(homeDir);
-  const provider = createProvider({
-    kind: config.provider,
-    models: config.models,
-    apiKey,
-    claudeCliPath: config.claudeCliPath,
-  });
+  const provider = createProvider(buildProviderConfig(config, apiKey));
   return provider;
 }
 

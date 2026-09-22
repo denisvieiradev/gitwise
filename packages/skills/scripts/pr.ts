@@ -8,6 +8,7 @@ import {
   getMergedConfig,
   getApiKey,
   createProvider,
+  buildProviderConfig,
   pr,
   applyPr,
 } from "@denisvieiradev/gitwise-core";
@@ -37,7 +38,7 @@ async function main(): Promise<void> {
   const cwd = process.cwd();
   const config = await getMergedConfig({ cwd });
   const apiKey = await getApiKey();
-  const provider = createProvider({ kind: config.provider, models: config.models, apiKey, claudeCliPath: config.claudeCliPath });
+  const provider = createProvider(buildProviderConfig(config, apiKey));
 
   const draft = await pr({ baseBranch: base, prompt: extraPrompt, provider, cwd });
 
