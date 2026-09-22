@@ -220,11 +220,11 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `resolveCodexBinary()` follows the same precedence as `resolveClaudeBinary`
-- [ ] `buildArgs`/`parseOutput` verified against real Codex CLI behavior (documented in a code comment citing what was checked, per the spec's logged assumption) — not left as an untested guess
-- [ ] `tokensAvailable` is set correctly based on the verified presence/absence of a usage field
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: new `codex.test.ts` with binary-resolution + buildArgs + parseOutput (success, no-usage, malformed-output) cases — 6+ tests
+- [x] `resolveCodexBinary()` follows the same precedence as `resolveClaudeBinary`
+- [x] `buildArgs`/`parseOutput` verified against real Codex CLI behavior (documented in a code comment citing what was checked, per the spec's logged assumption) — not left as an untested guess
+- [x] `tokensAvailable` is set correctly based on the verified presence/absence of a usage field
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: new `codex.test.ts` with binary-resolution + buildArgs + parseOutput (success, no-usage, malformed-output) cases — 6+ tests
 
 **Tests**: unit
 **Gate**: quick
