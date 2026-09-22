@@ -60,7 +60,7 @@ describe("MockLLMProvider", () => {
     const mock = new MockLLMProvider();
     mock.queueByIndex({ content: "test", tokens: { input: 5, output: 3 } });
     const r = await mock.chat({ systemPrompt: "s", userMessage: "u", tier: "fast" });
-    expect(r).toEqual({ content: "test", tokens: { input: 5, output: 3 } });
+    expect(r).toEqual({ content: "test", tokens: { input: 5, output: 3 }, tokensAvailable: true });
   });
 
   it("getCalls returns all recorded call requests", async () => {

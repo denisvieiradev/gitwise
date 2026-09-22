@@ -72,6 +72,7 @@ export class AnthropicProvider implements LLMProvider {
         input: response.usage.input_tokens,
         output: response.usage.output_tokens,
       },
+      tokensAvailable: true,
     };
   }
 

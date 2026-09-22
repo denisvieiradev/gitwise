@@ -42,6 +42,7 @@ export class CliSubprocessProvider implements LLMProvider {
     return {
       content: parsed.content,
       tokens: parsed.tokens ?? { input: 0, output: 0 },
+      tokensAvailable: parsed.tokens !== null,
     };
   }
 

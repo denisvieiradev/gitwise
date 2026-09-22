@@ -170,10 +170,10 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `ProviderKind` is defined once in `providers/types.ts`, not duplicated elsewhere
-- [ ] `LLMChatResponse.tokensAvailable` exists and is `true` for both existing providers' every test case
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: all prior tests pass + new assertions on `tokensAvailable: true` added to `anthropic.test.ts` and `claude-code.test.ts`
+- [x] `ProviderKind` is defined once in `providers/types.ts`, not duplicated elsewhere
+- [x] `LLMChatResponse.tokensAvailable` exists and is `true` for both existing providers' every test case
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: all prior tests pass + new assertions on `tokensAvailable: true` added to `anthropic.test.ts` and `claude-code.test.ts`
 
 **Tests**: unit
 **Gate**: quick

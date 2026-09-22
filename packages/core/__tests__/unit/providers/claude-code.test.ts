@@ -135,6 +135,7 @@ describe("ClaudeCodeProvider — characterization", () => {
 
     expect(response.content).toBe("generated text");
     expect(response.tokens).toEqual({ input: 123, output: 45 });
+    expect(response.tokensAvailable).toBe(true);
   });
 
   it("small prompt: passes the user message via argv (-p) with system prompt, tier model, and json output format; stdin is empty", async () => {
@@ -244,6 +245,8 @@ describe("ClaudeCodeProvider — characterization", () => {
 
     expect(response.content).toBe("no usage here");
     expect(response.tokens).toEqual({ input: 0, output: 0 });
+    // Claude Code always reports usage: a missing block is genuine zero, not "unavailable".
+    expect(response.tokensAvailable).toBe(true);
   });
 
   it("binary missing (ENOENT): rejects with GitwiseError PROVIDER_UNAVAILABLE naming the binary path", async () => {

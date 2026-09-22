@@ -1,5 +1,8 @@
 export type ModelTier = "fast" | "balanced" | "powerful";
 
+// Single source of truth for provider kinds — import it, never redefine it.
+export type ProviderKind = "api" | "claude-code" | "codex" | "copilot" | "kiro";
+
 // TechSpec "Core Interfaces" LLMProvider shape
 export interface LLMChatRequest {
   systemPrompt: string;
@@ -10,6 +13,8 @@ export interface LLMChatRequest {
 export interface LLMChatResponse {
   content: string;
   tokens: { input: number; output: number };
+  /** AD-002: false when the provider does not report usage; `tokens` is then 0/0 and must not be shown as real. */
+  tokensAvailable: boolean;
 }
 
 export interface LLMProvider {

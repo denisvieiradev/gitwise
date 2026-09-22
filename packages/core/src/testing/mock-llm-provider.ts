@@ -66,7 +66,7 @@ export class MockLLMProvider implements LLMProvider {
     const tokens = r.tokens ?? { input: 10, output: 5 };
     this.totalInputTokens += tokens.input;
     this.totalOutputTokens += tokens.output;
-    return { content: r.content, tokens };
+    return { content: r.content, tokens, tokensAvailable: true };
   }
 
   /** Returns all recorded calls. */
