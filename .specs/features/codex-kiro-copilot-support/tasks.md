@@ -246,11 +246,11 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `resolveCopilotBinary()` follows the same precedence pattern
-- [ ] `buildArgs` verified against real Copilot CLI flags
-- [ ] `parseOutput` always sets `tokensAvailable: false`
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: new `copilot.test.ts`, 5+ tests (binary resolution, buildArgs, parseOutput, ENOENT, non-zero exit)
+- [x] `resolveCopilotBinary()` follows the same precedence pattern
+- [x] `buildArgs` verified against real Copilot CLI flags
+- [x] `parseOutput` always sets `tokensAvailable: false`
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: new `copilot.test.ts`, 5+ tests (binary resolution, buildArgs, parseOutput, ENOENT, non-zero exit)
 
 **Tests**: unit
 **Gate**: quick
