@@ -298,9 +298,9 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `createProvider({ kind: "codex" | "copilot" | "kiro", ... })` returns a working `LLMProvider` for each
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: `factory.test.ts` (new or extended) covers all 5 `kind` values — 5+ tests
+- [x] `createProvider({ kind: "codex" | "copilot" | "kiro", ... })` returns a working `LLMProvider` for each
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: `factory.test.ts` (new or extended) covers all 5 `kind` values — 5+ tests
 
 **Tests**: unit
 **Gate**: full
