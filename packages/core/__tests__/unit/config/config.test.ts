@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
-import { mkdtemp, rm, mkdir, writeFile, stat } from "node:fs/promises";
+import { mkdtemp, rm, mkdir, writeFile, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { getMergedConfig, getApiKey } from "../../../src/config/merge.js";
@@ -232,6 +232,93 @@ describe("config (core)", () => {
       expect(config.language).toBe("de");
       expect(config.models.api.fast).toBe("haiku");
       expect(config.templatesPath).toBe("/tmp/templates");
+    });
+  });
+
+  describe("legacy flat models migration (MDL-05)", () => {
+    async function writeLegacyConfig(cfg: Record<string, unknown>): Promise<string> {
+      const dir = join(homeDir, ".gitwise");
+      await mkdir(dir, { recursive: true });
+      const path = join(dir, "config.json");
+      await writeFile(path, JSON.stringify(cfg, null, 2), "utf-8");
+      return path;
+    }
+
+    it("migrates a pre-feature flat models config into the configured provider's block and persists it", async () => {
+      const path = await writeLegacyConfig({
+        provider: "claude-code",
+        models: { fast: "legacy-fast", balanced: "legacy-balanced", powerful: "legacy-powerful" },
+        language: "en",
+        commitConvention: "conventional",
+      });
+
+      const loaded = await readUserConfig(homeDir);
+      expect(loaded.models["claude-code"]).toEqual({
+        fast: "legacy-fast",
+        balanced: "legacy-balanced",
+        powerful: "legacy-powerful",
+      });
+      // Every other provider key is backfilled from defaults, not left empty.
+      expect(loaded.models.api).toEqual(DEFAULT_USER_CONFIG.models.api);
+      expect(loaded.models.codex).toEqual(DEFAULT_USER_CONFIG.models.codex);
+      expect(loaded.models.copilot).toEqual(DEFAULT_USER_CONFIG.models.copilot);
+      expect(loaded.models.kiro).toEqual(DEFAULT_USER_CONFIG.models.kiro);
+
+      // Persisted to disk — a second read must see the already-migrated shape.
+      const onDisk = JSON.parse(await readFile(path, "utf-8")) as { models: unknown };
+      expect(onDisk.models).toEqual(loaded.models);
+    });
+
+    it("backfills every provider key from defaults when the legacy config's provider value is unrecognized", async () => {
+      await writeLegacyConfig({
+        provider: "bogus-provider",
+        models: { fast: "legacy-fast", balanced: "legacy-balanced", powerful: "legacy-powerful" },
+        language: "en",
+        commitConvention: "conventional",
+      });
+
+      const loaded = await readUserConfig(homeDir);
+      // The unrecognized provider's flat block is discarded, not guessed at —
+      // every key gets its own default, matching spec Edge Cases.
+      expect(loaded.models.api).toEqual(DEFAULT_USER_CONFIG.models.api);
+      expect(loaded.models["claude-code"]).toEqual(DEFAULT_USER_CONFIG.models["claude-code"]);
+      expect(loaded.models.codex).toEqual(DEFAULT_USER_CONFIG.models.codex);
+      expect(loaded.models.copilot).toEqual(DEFAULT_USER_CONFIG.models.copilot);
+      expect(loaded.models.kiro).toEqual(DEFAULT_USER_CONFIG.models.kiro);
+    });
+
+    it("does not re-migrate a config already in the per-provider shape (no double migration)", async () => {
+      const path = await writeLegacyConfig({
+        provider: "codex",
+        models: {
+          api: DEFAULT_USER_CONFIG.models.api,
+          "claude-code": DEFAULT_USER_CONFIG.models["claude-code"],
+          codex: { fast: "current-fast", balanced: "current-balanced", powerful: "current-powerful" },
+          copilot: DEFAULT_USER_CONFIG.models.copilot,
+          kiro: DEFAULT_USER_CONFIG.models.kiro,
+        },
+        language: "en",
+        commitConvention: "conventional",
+      });
+      const before = await readFile(path, "utf-8");
+
+      const loaded = await readUserConfig(homeDir);
+      expect(loaded.models.codex).toEqual({ fast: "current-fast", balanced: "current-balanced", powerful: "current-powerful" });
+
+      // Already-current shape: no migration write should have touched the file.
+      const after = await readFile(path, "utf-8");
+      expect(after).toBe(before);
+    });
+
+    it("a legacy config with no models field at all is not treated as a migration and gets full defaults", async () => {
+      await writeLegacyConfig({
+        provider: "api",
+        language: "en",
+        commitConvention: "conventional",
+      });
+
+      const loaded = await readUserConfig(homeDir);
+      expect(loaded.models).toEqual(DEFAULT_USER_CONFIG.models);
     });
   });
 });

@@ -347,11 +347,11 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] A pre-feature flat-shape config file migrates correctly on first read, with the migrated shape persisted to disk
-- [ ] An invalid/unrecognized `provider` value in a legacy config backfills all 5 keys from defaults rather than guessing
-- [ ] A config already in the new shape is read through unchanged (no double-migration)
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: `config.test.ts` gains 4+ new migration-specific tests
+- [x] A pre-feature flat-shape config file migrates correctly on first read, with the migrated shape persisted to disk
+- [x] An invalid/unrecognized `provider` value in a legacy config backfills all 5 keys from defaults rather than guessing
+- [x] A config already in the new shape is read through unchanged (no double-migration)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: `config.test.ts` gains 4+ new migration-specific tests
 
 **Tests**: unit
 **Gate**: quick
