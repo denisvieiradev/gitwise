@@ -24,7 +24,7 @@ describe("config (core)", () => {
     it("returns defaults when neither user nor repo config exists", async () => {
       const config = await getMergedConfig({ cwd, homeDir });
       expect(config.provider).toBe(DEFAULT_USER_CONFIG.provider);
-      expect(config.models.fast).toBe(DEFAULT_USER_CONFIG.models.fast);
+      expect(config.models[config.provider].fast).toBe(DEFAULT_USER_CONFIG.models.api.fast);
       expect(config.language).toBe("en");
       expect(config.commitConvention).toBe("conventional");
     });
@@ -36,16 +36,17 @@ describe("config (core)", () => {
       expect(config.language).toBe("pt-br");
     });
 
-    it("repo config alone overrides defaults (deep-merged into models)", async () => {
-      await writeFile(
-        join(cwd, ".gitwise.json"),
-        JSON.stringify({ models: { fast: "claude-haiku-custom" } }),
-        "utf-8",
-      );
+    // MDL-01: `models` is now a per-provider map (ModelsByProvider). The
+    // `.gitwise.json` `models` override's scoping to the active provider's
+    // block only (MDL-06) is fixed and covered by dedicated tests in T11 —
+    // this test only re-confirms the default per-provider shape is readable
+    // via `config.provider` after the type change.
+    it("with no repo override, every provider keeps its own default model block", async () => {
       const config = await getMergedConfig({ cwd, homeDir });
-      expect(config.models.fast).toBe("claude-haiku-custom");
-      // Other model tiers stay as defaults
-      expect(config.models.balanced).toBe(DEFAULT_USER_CONFIG.models.balanced);
+      expect(config.models.api).toEqual(DEFAULT_USER_CONFIG.models.api);
+      expect(config.models.codex).toEqual(DEFAULT_USER_CONFIG.models.codex);
+      expect(config.models.copilot).toEqual(DEFAULT_USER_CONFIG.models.copilot);
+      expect(config.models.kiro).toEqual(DEFAULT_USER_CONFIG.models.kiro);
     });
 
     it("repo config takes precedence over user config in all fields", async () => {
@@ -213,7 +214,14 @@ describe("config (core)", () => {
 
   describe("integration round-trip", () => {
     it("write user config, write repo config, read merged shape", async () => {
-      await writeUserConfig({ provider: "api", language: "en", models: { fast: "haiku", balanced: "sonnet", powerful: "opus" } }, homeDir);
+      await writeUserConfig(
+        {
+          provider: "api",
+          language: "en",
+          models: { ...DEFAULT_USER_CONFIG.models, api: { fast: "haiku", balanced: "sonnet", powerful: "opus" } },
+        },
+        homeDir,
+      );
       await writeFile(
         join(cwd, ".gitwise.json"),
         JSON.stringify({ language: "de", templatesPath: "/tmp/templates" }),
@@ -222,7 +230,7 @@ describe("config (core)", () => {
       const config = await getMergedConfig({ cwd, homeDir });
       expect(config.provider).toBe("api");
       expect(config.language).toBe("de");
-      expect(config.models.fast).toBe("haiku");
+      expect(config.models.api.fast).toBe("haiku");
       expect(config.templatesPath).toBe("/tmp/templates");
     });
   });

@@ -32,7 +32,7 @@ export type { LockPayload, AcquireRepoLockOptions } from "./infra/lockfile.js";
 export { resolveClaudeBinary } from "./providers/claude-code.js";
 
 // Config exports — note: ModelConfig here is the config-layer version
-export type { UserConfig, RepoConfig, MergedConfig, Language, CommitConvention } from "./config/types.js";
+export type { UserConfig, RepoConfig, MergedConfig, Language, CommitConvention, ModelsByProvider } from "./config/types.js";
 export type { ModelConfig as ConfigModelConfig } from "./config/types.js";
 export { DEFAULT_USER_CONFIG } from "./config/types.js";
 export { getMergedConfig, getApiKey } from "./config/merge.js";

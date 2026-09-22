@@ -322,10 +322,10 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `ModelsByProvider` type exists, keyed by all 5 `ProviderKind` values
-- [ ] `DEFAULT_USER_CONFIG.models` has real, verified default model IDs for every provider (documented via comment citing the source checked)
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: existing `config.test.ts` updated for the new shape, no test silently deleted
+- [x] `ModelsByProvider` type exists, keyed by all 5 `ProviderKind` values
+- [x] `DEFAULT_USER_CONFIG.models` has real, verified default model IDs for every provider (documented via comment citing the source checked)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: existing `config.test.ts` updated for the new shape, no test silently deleted
 
 **Tests**: unit
 **Gate**: quick
