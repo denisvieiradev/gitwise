@@ -1,7 +1,6 @@
-import { execSync } from "node:child_process";
-import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { resolveCliBinary } from "./cli-subprocess.js";
 import type { CliProviderSpec } from "./types.js";
 
 // CLI contract verified 2026-09-22 against the installed codex-cli 0.155.1
@@ -29,42 +28,9 @@ const COMMON_CODEX_PATHS = [
   path.join(os.homedir(), ".npm-global", "bin", "codex"),
 ];
 
-function isExecutable(filePath: string): boolean {
-  try {
-    fs.accessSync(filePath, fs.constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// Same precedence as resolveClaudeBinary: explicit path → common install
-// paths → PATH lookup → nvm global installs.
+// Same precedence as the other CLI providers (see resolveCliBinary).
 export function resolveCodexBinary(customPath?: string): string | null {
-  if (customPath) return isExecutable(customPath) ? customPath : null;
-
-  for (const candidate of COMMON_CODEX_PATHS) {
-    if (isExecutable(candidate)) return candidate;
-  }
-
-  try {
-    const found = execSync("which codex", { stdio: "pipe" }).toString().trim();
-    if (found && isExecutable(found)) return found;
-  } catch {
-    // not in PATH
-  }
-
-  const nvmDir = path.join(os.homedir(), ".nvm", "versions", "node");
-  try {
-    for (const version of fs.readdirSync(nvmDir)) {
-      const candidate = path.join(nvmDir, version, "bin", "codex");
-      if (isExecutable(candidate)) return candidate;
-    }
-  } catch {
-    // nvm not installed
-  }
-
-  return null;
+  return resolveCliBinary("codex", COMMON_CODEX_PATHS, customPath);
 }
 
 interface CodexEvent {

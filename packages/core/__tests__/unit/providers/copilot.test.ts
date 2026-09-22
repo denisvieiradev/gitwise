@@ -46,6 +46,7 @@ const chat = (provider: CliSubprocessProvider, userMessage = "the diff", tier: "
 describe("resolveCopilotBinary (PROV-04 AC5: same precedence pattern as resolveClaudeBinary)", () => {
   it("returns an explicit custom path when it is executable", async () => {
     const m = await importWithFakeFs<typeof CopilotModule>(COPILOT_MODULE, {
+      binary: "copilot",
       executables: ["/custom/copilot", "/opt/homebrew/bin/copilot"],
       which: "/usr/bin/copilot",
       nvmVersions: null,
@@ -55,6 +56,7 @@ describe("resolveCopilotBinary (PROV-04 AC5: same precedence pattern as resolveC
 
   it("returns null for a non-executable explicit path without falling back", async () => {
     const m = await importWithFakeFs<typeof CopilotModule>(COPILOT_MODULE, {
+      binary: "copilot",
       executables: ["/opt/homebrew/bin/copilot"],
       which: "/opt/homebrew/bin/copilot",
       nvmVersions: null,
@@ -64,6 +66,7 @@ describe("resolveCopilotBinary (PROV-04 AC5: same precedence pattern as resolveC
 
   it("prefers a common install path over the PATH lookup", async () => {
     const m = await importWithFakeFs<typeof CopilotModule>(COPILOT_MODULE, {
+      binary: "copilot",
       executables: ["/opt/homebrew/bin/copilot", "/elsewhere/bin/copilot"],
       which: "/elsewhere/bin/copilot",
       nvmVersions: null,
@@ -71,8 +74,20 @@ describe("resolveCopilotBinary (PROV-04 AC5: same precedence pattern as resolveC
     expect(m.resolveCopilotBinary()).toBe("/opt/homebrew/bin/copilot");
   });
 
+  it("finds the install-script location (~/.local/bin/copilot) as a common path", async () => {
+    const local = join(homedir(), ".local", "bin", "copilot");
+    const m = await importWithFakeFs<typeof CopilotModule>(COPILOT_MODULE, {
+      binary: "copilot",
+      executables: [local],
+      which: null,
+      nvmVersions: null,
+    });
+    expect(m.resolveCopilotBinary()).toBe(local);
+  });
+
   it("falls back to the PATH lookup when no common path exists", async () => {
     const m = await importWithFakeFs<typeof CopilotModule>(COPILOT_MODULE, {
+      binary: "copilot",
       executables: ["/elsewhere/bin/copilot"],
       which: "/elsewhere/bin/copilot",
       nvmVersions: null,
@@ -83,6 +98,7 @@ describe("resolveCopilotBinary (PROV-04 AC5: same precedence pattern as resolveC
   it("falls back to nvm global installs when not in PATH", async () => {
     const nvmBin = join(homedir(), ".nvm", "versions", "node", "v22.12.0", "bin", "copilot");
     const m = await importWithFakeFs<typeof CopilotModule>(COPILOT_MODULE, {
+      binary: "copilot",
       executables: [nvmBin],
       which: null,
       nvmVersions: ["v22.12.0"],
@@ -92,6 +108,7 @@ describe("resolveCopilotBinary (PROV-04 AC5: same precedence pattern as resolveC
 
   it("returns null when Copilot CLI is installed nowhere", async () => {
     const m = await importWithFakeFs<typeof CopilotModule>(COPILOT_MODULE, {
+      binary: "copilot",
       executables: [],
       which: null,
       nvmVersions: null,
@@ -134,6 +151,13 @@ describe("Copilot provider spec (PROV-03, PROV-04)", () => {
     const cli = fakeCopilot("feat(core): add thing\n\nBody line\n\n");
     const res = await chat(new CliSubprocessProvider(copilotSpec, MODELS, cli.path));
     expect(res.content).toBe("feat(core): add thing\n\nBody line");
+  });
+
+  it("an exit-0 run with no response text rejects instead of returning empty content", async () => {
+    const cli = fakeCopilot("\n");
+    await expect(chat(new CliSubprocessProvider(copilotSpec, MODELS, cli.path))).rejects.toThrow(
+      "Copilot CLI returned an empty response",
+    );
   });
 
   it("AC2: Copilot output carries no token usage, so tokens are 0/0 and tokensAvailable is false", async () => {

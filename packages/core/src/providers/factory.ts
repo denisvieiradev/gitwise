@@ -4,6 +4,7 @@ import { CliSubprocessProvider } from "./cli-subprocess.js";
 import { codexSpec } from "./codex.js";
 import { copilotSpec } from "./copilot.js";
 import { kiroSpec } from "./kiro.js";
+import { GitwiseError } from "../errors.js";
 import type { LLMProvider, ProviderConfig } from "./types.js";
 
 export function createProvider(config: ProviderConfig): LLMProvider {
@@ -20,7 +21,10 @@ export function createProvider(config: ProviderConfig): LLMProvider {
       return new AnthropicProvider(config.apiKey, config.models);
     default: {
       const unhandled: never = config.kind;
-      throw new Error(`Unknown provider kind: ${String(unhandled)}`);
+      throw new GitwiseError({
+        code: "CONFIG_INVALID",
+        message: `Unknown provider "${String(unhandled)}" in config. Re-run \`gw provider\` to choose a supported provider.`,
+      });
     }
   }
 }

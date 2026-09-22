@@ -3,6 +3,8 @@ import * as realFs from "node:fs";
 import * as realChildProcess from "node:child_process";
 
 export interface FakeFilesystem {
+  /** Binary name the resolver must look up in PATH (`which <binary>`). */
+  binary: string;
   /** Absolute paths that should pass the X_OK access check. */
   executables: string[];
   /** Result of `which <command>`; null means "not in PATH" (which exits non-zero). */
@@ -30,7 +32,8 @@ export async function importWithFakeFs<T>(modulePath: string, fake: FakeFilesyst
     };
     const fsMock = { ...realFs, accessSync, readdirSync };
     jest.unstable_mockModule("node:fs", () => ({ ...fsMock, default: fsMock }));
-    const execSync = (): Buffer => {
+    const execSync = (command: string): Buffer => {
+      if (command !== `which ${fake.binary}`) throw new Error(`unexpected command: ${command}`);
       if (fake.which === null) throw new Error("not found");
       return Buffer.from(`${fake.which}\n`);
     };

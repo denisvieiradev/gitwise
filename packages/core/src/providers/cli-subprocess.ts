@@ -1,4 +1,7 @@
-import { spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { StringDecoder } from "node:string_decoder";
 import { debug } from "../infra/logger.js";
 import { EXIT_CODES, GitwiseError } from "../errors.js";
@@ -9,6 +12,51 @@ import type {
   LLMProvider,
   ModelConfig,
 } from "./types.js";
+
+function isExecutable(filePath: string): boolean {
+  try {
+    fs.accessSync(filePath, fs.constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Shared CLI binary resolution (resolveClaudeBinary's original precedence):
+ * explicit path (no fallback when it is not executable) → common install
+ * paths → `which <name>` → nvm global installs.
+ */
+export function resolveCliBinary(
+  name: string,
+  commonPaths: readonly string[],
+  customPath?: string,
+): string | null {
+  if (customPath) return isExecutable(customPath) ? customPath : null;
+
+  for (const candidate of commonPaths) {
+    if (isExecutable(candidate)) return candidate;
+  }
+
+  try {
+    const found = execSync(`which ${name}`, { stdio: "pipe" }).toString().trim();
+    if (found && isExecutable(found)) return found;
+  } catch {
+    // not in PATH
+  }
+
+  const nvmDir = path.join(os.homedir(), ".nvm", "versions", "node");
+  try {
+    for (const version of fs.readdirSync(nvmDir)) {
+      const candidate = path.join(nvmDir, version, "bin", name);
+      if (isExecutable(candidate)) return candidate;
+    }
+  } catch {
+    // nvm not installed
+  }
+
+  return null;
+}
 
 export const LARGE_PROMPT_THRESHOLD = 100_000;
 const DEFAULT_TIMEOUT_MS = 120_000;

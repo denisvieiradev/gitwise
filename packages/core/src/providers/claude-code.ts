@@ -1,8 +1,6 @@
-import { execSync } from "node:child_process";
-import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { CliSubprocessProvider } from "./cli-subprocess.js";
+import { CliSubprocessProvider, resolveCliBinary } from "./cli-subprocess.js";
 import type { CliProviderSpec, ModelConfig } from "./types.js";
 
 const COMMON_CLAUDE_PATHS = [
@@ -14,47 +12,9 @@ const COMMON_CLAUDE_PATHS = [
   path.join(os.homedir(), ".npm-global", "bin", "claude"),
 ];
 
-function isExecutable(filePath: string): boolean {
-  try {
-    fs.accessSync(filePath, fs.constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
+// Same precedence as the other CLI providers (see resolveCliBinary).
 export function resolveClaudeBinary(customPath?: string): string | null {
-  if (customPath) {
-    if (isExecutable(customPath)) return customPath;
-    return null;
-  }
-
-  // 1. Check known native install paths first (Homebrew, manual)
-  for (const candidate of COMMON_CLAUDE_PATHS) {
-    if (isExecutable(candidate)) return candidate;
-  }
-
-  // 2. Fall back to PATH lookup (may find nvm/npm version)
-  try {
-    const found = execSync("which claude", { stdio: "pipe" }).toString().trim();
-    if (found && isExecutable(found)) return found;
-  } catch {
-    // not in PATH
-  }
-
-  // 3. Check nvm installations as last resort
-  const nvmDir = path.join(os.homedir(), ".nvm", "versions", "node");
-  try {
-    const versions = fs.readdirSync(nvmDir);
-    for (const version of versions) {
-      const candidate = path.join(nvmDir, version, "bin", "claude");
-      if (isExecutable(candidate)) return candidate;
-    }
-  } catch {
-    // nvm not installed
-  }
-
-  return null;
+  return resolveCliBinary("claude", COMMON_CLAUDE_PATHS, customPath);
 }
 
 export const claudeCodeSpec: CliProviderSpec = {

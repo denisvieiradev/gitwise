@@ -1,7 +1,7 @@
-import { execSync } from "node:child_process";
-import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { stripVTControlCharacters } from "node:util";
+import { resolveCliBinary } from "./cli-subprocess.js";
 import type { CliProviderSpec } from "./types.js";
 
 // CLI contract, verified 2026-09-22 without a live Kiro account (spec
@@ -14,8 +14,9 @@ import type { CliProviderSpec } from "./types.js";
 //   the full stream as the instruction" (used for large prompts).
 // - Neither source documents a token-usage field for text output, so tokens
 //   are always null. The docs also leave the text-mode stdout shape and the
-//   error channel unspecified, so ANSI styling is stripped defensively, and a
-//   failure surfaces stderr verbatim, or stdout when stderr is empty.
+//   error channel unspecified, so terminal escapes are stripped from the
+//   response defensively, and a failure surfaces stderr verbatim, or stdout
+//   when stderr is empty.
 // - Kiro has no system-prompt flag, so the system prompt is folded in.
 
 const COMMON_KIRO_PATHS = [
@@ -26,46 +27,10 @@ const COMMON_KIRO_PATHS = [
   "/usr/local/bin/kiro-cli",
 ];
 
-function isExecutable(filePath: string): boolean {
-  try {
-    fs.accessSync(filePath, fs.constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// Same precedence pattern as resolveClaudeBinary: explicit path → common
-// install paths → PATH lookup → nvm-managed bins.
+// Same precedence as the other CLI providers (see resolveCliBinary).
 export function resolveKiroBinary(customPath?: string): string | null {
-  if (customPath) return isExecutable(customPath) ? customPath : null;
-
-  for (const candidate of COMMON_KIRO_PATHS) {
-    if (isExecutable(candidate)) return candidate;
-  }
-
-  try {
-    const found = execSync("which kiro-cli", { stdio: "pipe" }).toString().trim();
-    if (found && isExecutable(found)) return found;
-  } catch {
-    // not in PATH
-  }
-
-  const nvmDir = path.join(os.homedir(), ".nvm", "versions", "node");
-  try {
-    for (const version of fs.readdirSync(nvmDir)) {
-      const candidate = path.join(nvmDir, version, "bin", "kiro-cli");
-      if (isExecutable(candidate)) return candidate;
-    }
-  } catch {
-    // nvm not installed
-  }
-
-  return null;
+  return resolveCliBinary("kiro-cli", COMMON_KIRO_PATHS, customPath);
 }
-
-// eslint-disable-next-line no-control-regex
-const ANSI_PATTERN = /\u001b\[[0-9;?]*[A-Za-z]/g;
 
 export const kiroSpec: CliProviderSpec = {
   toolName: "Kiro CLI",
@@ -83,16 +48,20 @@ export const kiroSpec: CliProviderSpec = {
       "never",
       "--model",
       modelId,
-      ...(large ? [] : [prompt]),
+      // `--` (standard for kiro-cli's clap-style parser) keeps a prompt that
+      // starts with "-" from being read as an option.
+      ...(large ? [] : ["--", prompt]),
     ];
   },
 
   parseOutput(stdout) {
-    return { content: stdout.replace(ANSI_PATTERN, "").trim(), tokens: null };
+    const content = stripVTControlCharacters(stdout).trim();
+    if (!content) throw new Error("Kiro CLI returned an empty response");
+    return { content, tokens: null };
   },
 
   formatExitError(code, stdout, stderr) {
-    const detail = stderr.trim() || stdout.replace(ANSI_PATTERN, "").trim();
+    const detail = stderr.trim() || stripVTControlCharacters(stdout).trim();
     return `Kiro CLI exited with code ${code}${detail ? `: ${detail}` : ""}`;
   },
 };

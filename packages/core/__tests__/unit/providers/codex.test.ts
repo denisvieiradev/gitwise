@@ -64,6 +64,7 @@ const chat = (provider: CliSubprocessProvider, userMessage = "the diff", tier: "
 describe("resolveCodexBinary (PROV-01 AC6: same precedence as resolveClaudeBinary)", () => {
   it("returns an explicit custom path when it is executable", async () => {
     const m = await importWithFakeFs<typeof CodexModule>(CODEX_MODULE, {
+      binary: "codex",
       executables: ["/custom/codex", "/opt/homebrew/bin/codex"],
       which: "/usr/bin/codex",
       nvmVersions: null,
@@ -73,6 +74,7 @@ describe("resolveCodexBinary (PROV-01 AC6: same precedence as resolveClaudeBinar
 
   it("returns null for a non-executable explicit path without falling back", async () => {
     const m = await importWithFakeFs<typeof CodexModule>(CODEX_MODULE, {
+      binary: "codex",
       executables: ["/opt/homebrew/bin/codex"],
       which: "/opt/homebrew/bin/codex",
       nvmVersions: null,
@@ -82,6 +84,7 @@ describe("resolveCodexBinary (PROV-01 AC6: same precedence as resolveClaudeBinar
 
   it("prefers a common install path over the PATH lookup", async () => {
     const m = await importWithFakeFs<typeof CodexModule>(CODEX_MODULE, {
+      binary: "codex",
       executables: ["/opt/homebrew/bin/codex", "/elsewhere/bin/codex"],
       which: "/elsewhere/bin/codex",
       nvmVersions: null,
@@ -92,6 +95,7 @@ describe("resolveCodexBinary (PROV-01 AC6: same precedence as resolveClaudeBinar
   it("finds the standalone installer location (~/.local/bin/codex) as a common path", async () => {
     const standalone = join(homedir(), ".local", "bin", "codex");
     const m = await importWithFakeFs<typeof CodexModule>(CODEX_MODULE, {
+      binary: "codex",
       executables: [standalone],
       which: null,
       nvmVersions: null,
@@ -101,6 +105,7 @@ describe("resolveCodexBinary (PROV-01 AC6: same precedence as resolveClaudeBinar
 
   it("falls back to the PATH lookup when no common path exists", async () => {
     const m = await importWithFakeFs<typeof CodexModule>(CODEX_MODULE, {
+      binary: "codex",
       executables: ["/elsewhere/bin/codex"],
       which: "/elsewhere/bin/codex",
       nvmVersions: null,
@@ -111,6 +116,7 @@ describe("resolveCodexBinary (PROV-01 AC6: same precedence as resolveClaudeBinar
   it("falls back to nvm global installs when not in PATH", async () => {
     const nvmBin = join(homedir(), ".nvm", "versions", "node", "v22.12.0", "bin", "codex");
     const m = await importWithFakeFs<typeof CodexModule>(CODEX_MODULE, {
+      binary: "codex",
       executables: [nvmBin],
       which: null,
       nvmVersions: ["v20.0.0", "v22.12.0"],
@@ -120,6 +126,7 @@ describe("resolveCodexBinary (PROV-01 AC6: same precedence as resolveClaudeBinar
 
   it("returns null when Codex is installed nowhere", async () => {
     const m = await importWithFakeFs<typeof CodexModule>(CODEX_MODULE, {
+      binary: "codex",
       executables: [],
       which: null,
       nvmVersions: ["v22.12.0"],

@@ -47,6 +47,7 @@ const chat = (provider: CliSubprocessProvider, userMessage = "the diff", tier: "
 describe("resolveKiroBinary (PROV-06 AC4: same precedence pattern as resolveClaudeBinary)", () => {
   it("returns an explicit custom path when it is executable", async () => {
     const m = await importWithFakeFs<typeof KiroModule>(KIRO_MODULE, {
+      binary: "kiro-cli",
       executables: ["/custom/kiro-cli", MAC_APP],
       which: "/usr/bin/kiro-cli",
       nvmVersions: null,
@@ -56,6 +57,7 @@ describe("resolveKiroBinary (PROV-06 AC4: same precedence pattern as resolveClau
 
   it("returns null for a non-executable explicit path without falling back", async () => {
     const m = await importWithFakeFs<typeof KiroModule>(KIRO_MODULE, {
+      binary: "kiro-cli",
       executables: [MAC_APP],
       which: MAC_APP,
       nvmVersions: null,
@@ -65,6 +67,7 @@ describe("resolveKiroBinary (PROV-06 AC4: same precedence pattern as resolveClau
 
   it("prefers a common install path (macOS app bundle) over the PATH lookup", async () => {
     const m = await importWithFakeFs<typeof KiroModule>(KIRO_MODULE, {
+      binary: "kiro-cli",
       executables: [MAC_APP, "/elsewhere/bin/kiro-cli"],
       which: "/elsewhere/bin/kiro-cli",
       nvmVersions: null,
@@ -75,6 +78,7 @@ describe("resolveKiroBinary (PROV-06 AC4: same precedence pattern as resolveClau
   it("finds the installer location (~/.local/bin/kiro-cli) as a common path", async () => {
     const local = join(homedir(), ".local", "bin", "kiro-cli");
     const m = await importWithFakeFs<typeof KiroModule>(KIRO_MODULE, {
+      binary: "kiro-cli",
       executables: [local],
       which: null,
       nvmVersions: null,
@@ -84,6 +88,7 @@ describe("resolveKiroBinary (PROV-06 AC4: same precedence pattern as resolveClau
 
   it("falls back to the PATH lookup when no common path exists", async () => {
     const m = await importWithFakeFs<typeof KiroModule>(KIRO_MODULE, {
+      binary: "kiro-cli",
       executables: ["/elsewhere/bin/kiro-cli"],
       which: "/elsewhere/bin/kiro-cli",
       nvmVersions: null,
@@ -94,6 +99,7 @@ describe("resolveKiroBinary (PROV-06 AC4: same precedence pattern as resolveClau
   it("falls back to nvm-managed bins when not in PATH", async () => {
     const nvmBin = join(homedir(), ".nvm", "versions", "node", "v22.12.0", "bin", "kiro-cli");
     const m = await importWithFakeFs<typeof KiroModule>(KIRO_MODULE, {
+      binary: "kiro-cli",
       executables: [nvmBin],
       which: null,
       nvmVersions: ["v22.12.0"],
@@ -103,6 +109,7 @@ describe("resolveKiroBinary (PROV-06 AC4: same precedence pattern as resolveClau
 
   it("returns null when Kiro CLI is installed nowhere", async () => {
     const m = await importWithFakeFs<typeof KiroModule>(KIRO_MODULE, {
+      binary: "kiro-cli",
       executables: [],
       which: null,
       nvmVersions: null,
@@ -127,6 +134,7 @@ describe("Kiro provider spec (PROV-05, PROV-06)", () => {
       "never",
       "--model",
       "kiro-pow",
+      "--",
       "You are gitwise.\n\nthe diff",
     ]);
     expect(stdin).toBe("");
@@ -148,6 +156,29 @@ describe("Kiro provider spec (PROV-05, PROV-06)", () => {
     const cli = fakeKiro("\u001b[32mfeat(core): add thing\u001b[0m\n\nBody line\n");
     const res = await chat(new CliSubprocessProvider(kiroSpec, MODELS, cli.path));
     expect(res.content).toBe("feat(core): add thing\n\nBody line");
+  });
+
+  it("AC1: a prompt starting with '-' still travels as the positional input after `--`", async () => {
+    const cli = fakeKiro("ok");
+    const provider = new CliSubprocessProvider(kiroSpec, MODELS, cli.path);
+
+    await provider.chat({ systemPrompt: "- Use imperative mood", userMessage: "diff", tier: "fast" });
+
+    const { argv } = cli.recorded();
+    expect(argv.slice(-2)).toEqual(["--", "- Use imperative mood\n\ndiff"]);
+  });
+
+  it("AC1: OSC hyperlink escapes are stripped from the response content", async () => {
+    const cli = fakeKiro("see \u001b]8;;https://kiro.dev\u0007docs\u001b]8;;\u0007\n");
+    const res = await chat(new CliSubprocessProvider(kiroSpec, MODELS, cli.path));
+    expect(res.content).toBe("see docs");
+  });
+
+  it("an exit-0 run with no response text rejects instead of returning empty content", async () => {
+    const cli = fakeKiro("\n\n");
+    await expect(chat(new CliSubprocessProvider(kiroSpec, MODELS, cli.path))).rejects.toThrow(
+      "Kiro CLI returned an empty response",
+    );
   });
 
   it("AC2: Kiro output carries no token usage, so tokens are 0/0 and tokensAvailable is false", async () => {

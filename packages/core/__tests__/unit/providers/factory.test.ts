@@ -116,5 +116,17 @@ describe("createProvider", () => {
       expect(err.message).toContain(missing);
     }
   });
-});
 
+  it("an unrecognized kind (e.g. a hand-edited config) raises CONFIG_INVALID pointing at `gw provider`", () => {
+    const bad = { kind: "anthropic", models: MODELS } as unknown as ProviderConfig;
+    let err: { code?: string; message?: string } | undefined;
+    try {
+      createProvider(bad);
+    } catch (e) {
+      err = e as { code?: string; message?: string };
+    }
+    expect(err?.code).toBe("CONFIG_INVALID");
+    expect(err?.message).toContain('"anthropic"');
+    expect(err?.message).toContain("gw provider");
+  });
+});
