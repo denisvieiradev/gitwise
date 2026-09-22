@@ -50,8 +50,11 @@ export interface CliProviderSpec {
 }
 
 export interface ProviderConfig {
-  kind: "api" | "claude-code";
+  kind: ProviderKind;
   models: ModelConfig;
   apiKey?: string;
   claudeCliPath?: string;
+  codexCliPath?: string;
+  copilotCliPath?: string;
+  kiroCliPath?: string;
 }

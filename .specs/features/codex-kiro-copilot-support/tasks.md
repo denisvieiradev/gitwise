@@ -195,10 +195,10 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `ProviderConfig` has all 4 CLI-path fields, all optional
-- [ ] `createProvider()` still returns the correct provider for `"api"`/`"claude-code"` (Codex/Copilot/Kiro branches added in Phase 2, currently absent is fine — type-checks either way)
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: existing `factory`-adjacent tests (if any) still pass; no regression
+- [x] `ProviderConfig` has all 4 CLI-path fields, all optional
+- [x] `createProvider()` still returns the correct provider for `"api"`/`"claude-code"` (Codex/Copilot/Kiro branches added in Phase 2, currently absent is fine — type-checks either way)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: existing `factory`-adjacent tests (if any) still pass; no regression
 
 **Tests**: unit
 **Gate**: quick
