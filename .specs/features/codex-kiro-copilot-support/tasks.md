@@ -272,11 +272,11 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `resolveKiroBinary()` follows the same precedence pattern
-- [ ] `buildArgs`/`parseOutput` match Kiro's documented CLI contract (mocked subprocess I/O in tests, per the spec's logged assumption — no live-account test)
-- [ ] `parseOutput` always sets `tokensAvailable: false`
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: new `kiro.test.ts`, 5+ tests (binary resolution, buildArgs, parseOutput against a mocked documented response shape, ENOENT, non-zero exit)
+- [x] `resolveKiroBinary()` follows the same precedence pattern
+- [x] `buildArgs`/`parseOutput` match Kiro's documented CLI contract (mocked subprocess I/O in tests, per the spec's logged assumption — no live-account test)
+- [x] `parseOutput` always sets `tokensAvailable: false`
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: new `kiro.test.ts`, 5+ tests (binary resolution, buildArgs, parseOutput against a mocked documented response shape, ENOENT, non-zero exit)
 
 **Tests**: unit
 **Gate**: quick
