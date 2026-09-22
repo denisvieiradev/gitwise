@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { StringDecoder } from "node:string_decoder";
 import { debug } from "../infra/logger.js";
 import { EXIT_CODES, GitwiseError } from "../errors.js";
 import type {
@@ -22,7 +23,8 @@ export class CliSubprocessProvider implements LLMProvider {
     private readonly models: ModelConfig,
     cliPath?: string,
   ) {
-    this.binaryPath = cliPath ?? spec.resolveBinary() ?? spec.defaultCommand;
+    // `||` (not `??`): an empty configured path means "not configured".
+    this.binaryPath = cliPath || spec.resolveBinary() || spec.defaultCommand;
   }
 
   async chat(req: LLMChatRequest): Promise<LLMChatResponse> {
@@ -32,7 +34,8 @@ export class CliSubprocessProvider implements LLMProvider {
     const prompt = this.spec.foldSystemPrompt
       ? `${req.systemPrompt}\n\n${req.userMessage}`
       : req.userMessage;
-    const large = prompt.length > LARGE_PROMPT_THRESHOLD;
+    // Bytes, not UTF-16 units: OS argv limits (e.g. Linux MAX_ARG_STRLEN) are byte-based.
+    const large = Buffer.byteLength(prompt, "utf8") > LARGE_PROMPT_THRESHOLD;
     const args = this.spec.buildArgs({ prompt, systemPrompt: req.systemPrompt, modelId, large });
 
     // Small prompts travel via argv; stdin is still closed immediately so a
@@ -56,14 +59,23 @@ export class CliSubprocessProvider implements LLMProvider {
       let stdout = "";
       let stderr = "";
 
+      // StringDecoder keeps multi-byte UTF-8 characters intact across chunk boundaries.
+      const outDecoder = new StringDecoder("utf8");
+      const errDecoder = new StringDecoder("utf8");
       child.stdout.on("data", (data: Buffer) => {
-        stdout += data.toString();
+        stdout += outDecoder.write(data);
       });
       child.stderr.on("data", (data: Buffer) => {
-        stderr += data.toString();
+        stderr += errDecoder.write(data);
       });
 
-      child.on("close", (code) => {
+      child.on("close", (code, signal) => {
+        stdout += outDecoder.end();
+        stderr += errDecoder.end();
+        if (code === null && signal) {
+          reject(new Error(`${this.spec.toolName} was terminated by signal ${signal}`));
+          return;
+        }
         if (code !== 0) {
           reject(new Error(this.exitErrorMessage(code, stdout, stderr)));
           return;
@@ -75,6 +87,9 @@ export class CliSubprocessProvider implements LLMProvider {
         reject(this.wrapError(err));
       });
 
+      // A CLI that exits before draining stdin raises EPIPE here; the close
+      // handler already reports the real failure, so the write error is ignored.
+      child.stdin.on("error", () => undefined);
       child.stdin.write(input);
       child.stdin.end();
     });

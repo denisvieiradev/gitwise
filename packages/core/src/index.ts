@@ -90,6 +90,6 @@ export type { ReviewOptions, ReviewResult, ReviewFinding } from "./commands/revi
 export type { CommitOptions, CommitPlan, CommitEntry, SplitMode, ApplyCommitPlanOptions, CommitStepResult, CommitAlternatives } from "./commands/commit.js";
 
 // Provider exports — ModelConfig here is the provider-layer version
-export type { LLMProvider, LLMChatRequest, LLMChatResponse, ModelTier, ModelConfig, ProviderConfig } from "./providers/types.js";
+export type { LLMProvider, LLMChatRequest, LLMChatResponse, ModelTier, ModelConfig, ProviderConfig, ProviderKind } from "./providers/types.js";
 export { createProvider } from "./providers/factory.js";
 export { resolveModelTier, SUPPORTED_COMMANDS } from "./providers/model-router.js";

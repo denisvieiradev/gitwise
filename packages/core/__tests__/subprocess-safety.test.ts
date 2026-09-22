@@ -214,11 +214,11 @@ describe("subprocess argument safety — runtime array-args assertion (claude-co
     const child = new EventEmitter() as EventEmitter & {
       stdout: EventEmitter;
       stderr: EventEmitter;
-      stdin: { write: (chunk: string) => void; end: () => void };
+      stdin: EventEmitter & { write: (chunk: string) => void; end: () => void };
     };
     child.stdout = stdout;
     child.stderr = stderr;
-    child.stdin = {
+    child.stdin = Object.assign(new EventEmitter(), {
       write: (chunk: string) => {
         stdinWrites.push(chunk);
       },
@@ -229,7 +229,7 @@ describe("subprocess argument safety — runtime array-args assertion (claude-co
           child.emit("close", 0);
         });
       },
-    };
+    });
     return { child, stdinWrites, isStdinEnded: () => stdinEnded };
   }
 

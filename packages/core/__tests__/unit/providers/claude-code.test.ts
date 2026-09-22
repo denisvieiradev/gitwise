@@ -262,11 +262,11 @@ describe("ClaudeCodeProvider — characterization", () => {
           const child = new EventEmitter() as EventEmitter & {
             stdout: EventEmitter;
             stderr: EventEmitter;
-            stdin: { write: () => void; end: () => void };
+            stdin: EventEmitter & { write: () => void; end: () => void };
           };
           child.stdout = new EventEmitter();
           child.stderr = new EventEmitter();
-          child.stdin = { write: () => undefined, end: () => undefined };
+          child.stdin = Object.assign(new EventEmitter(), { write: () => undefined, end: () => undefined });
           process.nextTick(() => {
             const err = Object.assign(new Error(`spawn ${binary} ENOENT`), { code: "ENOENT" });
             child.emit("error", err);
