@@ -98,7 +98,7 @@ process.stdin.on("end", () => {
     const f = script(`process.stdin.resume(); process.stdin.on("end", () => process.kill(process.pid, "SIGTERM"));`);
     const provider = new CliSubprocessProvider(makeSpec(), MODELS, f.path);
 
-    const err = await provider.chat(req("x")).catch((e: unknown) => e as Error);
+    const err = (await provider.chat(req("x")).catch((e: unknown) => e)) as Error;
 
     expect(err.message).toBe("Fake CLI was terminated by signal SIGTERM");
   });
