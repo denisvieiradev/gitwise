@@ -976,16 +976,16 @@ User-approved follow-ups after the Verifier's PASS: a release-blocking dependenc
 **Requirement**: MDL-02
 
 **Done when**:
-- [x] Kiro defaults are `claude-haiku-4.5` / `claude-sonnet-4.6` / `claude-opus-4.7`
-- [x] The comment states: docs page lists these models on all plans and shows the ID format by example; the installed 2.23.1 catalog is narrower (haiku-4.5, sonnet-4.5, no Sonnet 4.6, no Opus); older CLIs override with `gw config models.kiro.powerful <id>`
+- [x] Kiro defaults are `claude-haiku-4.5` / `claude-sonnet-4.5` / `claude-sonnet-4.5` (final, per the amendment above)
+- [x] The comment states: the docs name Sonnet 4.6 / Opus 4.7 by display name only, so their IDs are unverified and unused; the IDs come from `kiro-cli chat --list-models` 2.23.1; newer CLIs override with `gw config models.kiro.powerful <id>`
 - [x] A new test pins the exact Kiro block (no test pinned Kiro IDs before); it fails against the old values
-- [x] `configuration.md` example shows the new Kiro block
+- [x] `configuration.md` example shows the final Kiro block
 - [x] Gate check passes: `npm test` (root): 1068 passed / 28 failed / 7 skipped; the 28 are the G1 chalk baseline
 
 **Tests**: unit
 **Gate**: full
 
-**Commit**: `fix(core): default kiro to claude sonnet 4.6 and opus 4.7`
+**Commit**: `fix(core): default kiro to claude sonnet 4.6 and opus 4.7` (first attempt); amended by `fix(core): default kiro to the model IDs its CLI lists`
 
 ---
 

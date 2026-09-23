@@ -273,52 +273,52 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Requirement ID | Story | Phase | Status |
 |---|---|---|---|
-| PROV-01 | P1: Codex as an LLM provider | Design | Pending |
-| PROV-02 | P1: Codex as an LLM provider | Design | Pending |
-| PROV-03 | P1: Copilot as an LLM provider | Design | Pending |
-| PROV-04 | P1: Copilot as an LLM provider | Design | Pending |
-| PROV-05 | P1: Kiro as an LLM provider | Design | Pending |
-| PROV-06 | P1: Kiro as an LLM provider | Design | Pending |
-| PROV-07 | P1: Codex/Copilot/Kiro as an LLM provider (cross-cutting) | Design | Pending |
-| CFG-01 | P1: Easy provider switching | Design | Pending |
-| CFG-02 | P1: Easy provider switching | Design | Pending |
-| CFG-03 | P1: Easy provider switching | Design | Pending |
-| MDL-01 | P1: Per-provider model configuration | Design | Pending |
-| MDL-02 | P1: Per-provider model configuration | Design | Pending |
-| MDL-03 | P1: Per-provider model configuration | Design | Pending |
-| MDL-04 | P1: Per-provider model configuration | Design | Pending |
-| MDL-05 | P1: Per-provider model configuration | Design | Pending |
-| MDL-06 | P1: Per-provider model configuration | Design | Pending |
-| MDL-07 | P1: Per-provider model configuration | Design | Pending |
-| DIST-01 | P1: `gw skills install` — real native-surface distribution | Design | Pending |
-| DIST-02 | P1: `gw skills install` — real native-surface distribution | Design | Pending |
-| DIST-03 | P1: `gw skills install` — real native-surface distribution | Design | Pending |
-| DIST-04 | P1: `gw skills install` — real native-surface distribution | Design | Pending |
-| DIST-05 | P1: `gw skills install` — real native-surface distribution | Design | Pending |
-| DIST-06 | P1: `gw skills install` — real native-surface distribution | Design | Pending |
-| SKILL-01 | P1: Codex native skill bundle | Design | Pending |
-| SKILL-02 | P1: Codex native skill bundle | Design | Pending |
-| SKILL-03 | P1: Codex native skill bundle | Design | Pending |
-| SKILL-04 | P1: Kiro native skill bundle | Design | Pending |
-| SKILL-05 | P1: Kiro native skill bundle | Design | Pending |
-| SKILL-06 | P1: Copilot native instructions surface | Design | Pending |
-| SKILL-07 | P1: Copilot native instructions surface | Design | Pending |
-| SKILL-08 | P1: Copilot native instructions surface | Design | Pending |
-| GEM-01 | P1: Retire unused Gemini surface | Design | Pending |
-| GEM-02 | P1: Retire unused Gemini surface | Design | Pending |
-| DOC-01 | P1: Documentation accuracy — install, switch, and update | Design | Pending |
-| DOC-02 | P1: Documentation accuracy — install, switch, and update | Design | Pending |
-| DOC-03 | P1: Documentation accuracy — install, switch, and update | Design | Pending |
-| DOC-04 | P1: Documentation accuracy — install, switch, and update | Design | Pending |
-| DOC-05 | P1: Documentation accuracy — install, switch, and update | Design | Pending |
-| DOC-06 | P2: Documentation parity | Design | Pending |
-| DOC-07 | P2: Documentation parity | Design | Pending |
+| PROV-01 | P1: Codex as an LLM provider | Tasks | Implementing |
+| PROV-02 | P1: Codex as an LLM provider | Tasks | Implementing |
+| PROV-03 | P1: Copilot as an LLM provider | Tasks | Implementing |
+| PROV-04 | P1: Copilot as an LLM provider | Tasks | Implementing |
+| PROV-05 | P1: Kiro as an LLM provider | Tasks | Implementing |
+| PROV-06 | P1: Kiro as an LLM provider | Tasks | Implementing |
+| PROV-07 | P1: Codex/Copilot/Kiro as an LLM provider (cross-cutting) | Tasks | Implementing |
+| CFG-01 | P1: Easy provider switching | Tasks | Implementing |
+| CFG-02 | P1: Easy provider switching | Tasks | Implementing |
+| CFG-03 | P1: Easy provider switching | Tasks | Implementing |
+| MDL-01 | P1: Per-provider model configuration | Tasks | Implementing |
+| MDL-02 | P1: Per-provider model configuration | Tasks | Implementing |
+| MDL-03 | P1: Per-provider model configuration | Tasks | Implementing |
+| MDL-04 | P1: Per-provider model configuration | Tasks | Implementing |
+| MDL-05 | P1: Per-provider model configuration | Tasks | Implementing |
+| MDL-06 | P1: Per-provider model configuration | Tasks | Implementing |
+| MDL-07 | P1: Per-provider model configuration | Tasks | Implementing |
+| DIST-01 | P1: `gw skills install` — real native-surface distribution | Tasks | Implementing |
+| DIST-02 | P1: `gw skills install` — real native-surface distribution | Tasks | Implementing |
+| DIST-03 | P1: `gw skills install` — real native-surface distribution | Tasks | Implementing |
+| DIST-04 | P1: `gw skills install` — real native-surface distribution | Tasks | Implementing |
+| DIST-05 | P1: `gw skills install` — real native-surface distribution | Tasks | Implementing |
+| DIST-06 | P1: `gw skills install` — real native-surface distribution | Tasks | Implementing |
+| SKILL-01 | P1: Codex native skill bundle | Tasks | Implementing |
+| SKILL-02 | P1: Codex native skill bundle | Tasks | Implementing |
+| SKILL-03 | P1: Codex native skill bundle | Tasks | Implementing |
+| SKILL-04 | P1: Kiro native skill bundle | Tasks | Implementing |
+| SKILL-05 | P1: Kiro native skill bundle | Tasks | Implementing |
+| SKILL-06 | P1: Copilot native instructions surface | Tasks | Implementing |
+| SKILL-07 | P1: Copilot native instructions surface | Tasks | Implementing |
+| SKILL-08 | P1: Copilot native instructions surface | Tasks | Implementing |
+| GEM-01 | P1: Retire unused Gemini surface | Tasks | Implementing |
+| GEM-02 | P1: Retire unused Gemini surface | Tasks | Implementing |
+| DOC-01 | P1: Documentation accuracy — install, switch, and update | Tasks | Implementing |
+| DOC-02 | P1: Documentation accuracy — install, switch, and update | Tasks | Implementing |
+| DOC-03 | P1: Documentation accuracy — install, switch, and update | Tasks | Implementing |
+| DOC-04 | P1: Documentation accuracy — install, switch, and update | Tasks | Implementing |
+| DOC-05 | P1: Documentation accuracy — install, switch, and update | Tasks | Implementing |
+| DOC-06 | P2: Documentation parity | Tasks | Implementing |
+| DOC-07 | P2: Documentation parity | Tasks | Implementing |
 
 **ID format:** `[CATEGORY]-[NUMBER]` — `PROV` (provider backends, cross-cutting behaviors like usage-n/a and system-prompt folding), `CFG` (config/switching UX), `MDL` (per-provider model configuration), `DIST` (the `gw skills install` distribution mechanism), `SKILL` (per-tool generated adapter content), `GEM` (Gemini removal), `DOC` (documentation).
 
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified
 
-**Coverage:** 40 total, 0 mapped to tasks, 40 unmapped ⚠️ (expected pre-Design)
+**Coverage:** 40 total, 40 mapped to tasks, 0 unmapped (status becomes Verified only after a PASS validation)
 
 ---
 
