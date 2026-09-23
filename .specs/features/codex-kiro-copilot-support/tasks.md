@@ -688,7 +688,7 @@ Added after the Verifier's FAIL verdict in `validation.md` (4 surviving mutants,
 
 **Done when**:
 - [x] `packages/cli` builds successfully with the new dependency
-- [ ] NOT MET (environmental blocker, see note): Gate check passes: `npm run build -w @denisvieiradev/gitwise && npm run typecheck -w @denisvieiradev/gitwise` — build passes; typecheck fails identically at baseline because `packages/cli/node_modules/@denisvieiradev/gitwise-core` is a stale registry 1.1.1 copy (cli pins core at 1.1.1 while the workspace is 1.2.0); verified with a scratch tsconfig mapping core/skills to source that cli typechecks clean, leaving one core-side error from T15 (`release-plan.ts:87` TS2783), unrelated to this dependency
+- [ ] NOT MET (environmental blocker, see note): Gate check passes: `npm run build -w @denisvieiradev/gitwise && npm run typecheck -w @denisvieiradev/gitwise` — build passes; typecheck fails at HEAD (base 6e1fd11 typechecks clean — corrected by the Verifier; the stale copy only surfaces because this feature's new imports from core are missing in 1.1.1) because `packages/cli/node_modules/@denisvieiradev/gitwise-core` is a stale registry 1.1.1 copy (cli pins core at 1.1.1 while the workspace is 1.2.0); verified with a scratch tsconfig mapping core/skills to source that cli typechecks clean, leaving one core-side error from T15 (`release-plan.ts:87` TS2783), unrelated to this dependency
 - [x] Test count: N/A — config-only change, build gate only
 
 **Tests**: none
