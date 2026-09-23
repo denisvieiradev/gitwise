@@ -8,7 +8,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, chmod, readdir } from "node:fs
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { installSkills, makeSkillsCommand, resolveBundledAdapters } from "../src/commands/skills.js";
+import { installSkills, makeSkillsCommand, resolveBundledAdapters, isSkillsPackageResolvableFrom } from "../src/commands/skills.js";
 
 const COMMANDS = ["commit", "review", "pr", "release"];
 
@@ -133,6 +133,20 @@ describe("bundled adapters location", () => {
     expect(adaptersDir.split("/").slice(-2)).toEqual(["dist", "adapters"]);
     const pkg = JSON.parse(await readFile(join(adaptersDir, "..", "..", "package.json"), "utf8")) as { name: string };
     expect(pkg.name).toBe("@denisvieiradev/gitwise-skills");
+  });
+});
+
+describe("skills package prerequisite check", () => {
+  it("reports the package as unresolvable from a project that does not depend on it", () => {
+    expect(isSkillsPackageResolvableFrom(project)).toBe(false);
+  });
+
+  it("reports the package as resolvable once the project has it in node_modules", async () => {
+    const pkgDir = join(project, "node_modules", "@denisvieiradev", "gitwise-skills");
+    await mkdir(pkgDir, { recursive: true });
+    await writeFile(join(pkgDir, "package.json"), '{"name":"@denisvieiradev/gitwise-skills","version":"0.0.0"}');
+
+    expect(isSkillsPackageResolvableFrom(project)).toBe(true);
   });
 });
 

@@ -67,6 +67,21 @@ export function resolveBundledAdapters(): string {
   return join(dirname(pkgJson), "dist", "adapters");
 }
 
+/**
+ * The installed skills run the scripts of @denisvieiradev/gitwise-skills via
+ * Node module resolution from the user's project, so the package must be
+ * resolvable there (a project dependency); being installed only next to a
+ * global `gw` is not enough.
+ */
+export function isSkillsPackageResolvableFrom(cwd: string): boolean {
+  try {
+    createRequire(join(resolve(cwd), "noop.js")).resolve("@denisvieiradev/gitwise-skills/package.json");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export interface InstallOptions {
   /** Project directory to install into. */
   cwd: string;
@@ -126,6 +141,11 @@ export function makeSkillsCommand(): Command {
         const installed = installSkills(tool, { cwd: process.cwd() });
         for (const file of installed) console.log(`  ${file}`);
         console.log(`Installed gitwise for ${tool} (${installed.length} files).`);
+        if (!isSkillsPackageResolvableFrom(process.cwd())) {
+          console.warn(
+            "Note: the installed skills run scripts from @denisvieiradev/gitwise-skills, which this project cannot resolve yet. Add it with: npm install --save-dev @denisvieiradev/gitwise-skills",
+          );
+        }
       } catch (err) {
         console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
         process.exit(1);
