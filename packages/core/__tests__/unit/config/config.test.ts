@@ -31,11 +31,11 @@ describe("config (core)", () => {
       expect(DEFAULT_USER_CONFIG.models["claude-code"]).toEqual(preFeatureClaude);
     });
 
-    it("defaults kiro to the Claude tiers in Kiro's dotted model ID format", () => {
+    it("defaults kiro to the model IDs listed by kiro-cli chat --list-models", () => {
       expect(DEFAULT_USER_CONFIG.models.kiro).toEqual({
         fast: "claude-haiku-4.5",
-        balanced: "claude-sonnet-4.6",
-        powerful: "claude-opus-4.7",
+        balanced: "claude-sonnet-4.5",
+        powerful: "claude-sonnet-4.5",
       });
     });
 

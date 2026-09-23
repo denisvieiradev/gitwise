@@ -21,7 +21,7 @@ gitwise reads configuration from two layered locations:
     "claude-code": { "fast": "claude-haiku-4-5-20251001", "balanced": "claude-sonnet-4-6", "powerful": "claude-opus-4-7" },
     "codex": { "fast": "gpt-6-luna", "balanced": "gpt-6-sol", "powerful": "gpt-6-astra" },
     "copilot": { "fast": "claude-haiku-4.5", "balanced": "claude-sonnet-4.6", "powerful": "claude-opus-4.7" },
-    "kiro": { "fast": "claude-haiku-4.5", "balanced": "claude-sonnet-4.6", "powerful": "claude-opus-4.7" }
+    "kiro": { "fast": "claude-haiku-4.5", "balanced": "claude-sonnet-4.5", "powerful": "claude-sonnet-4.5" }
   },
   "language": "en",
   "commitConvention": "conventional"

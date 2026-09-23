@@ -965,7 +965,9 @@ User-approved follow-ups after the Verifier's PASS: a release-blocking dependenc
 
 ---
 
-### G2: Move the Kiro defaults to Sonnet 4.6 and Opus 4.7
+### G2: Kiro defaults — verified against the real catalog (amended after G2's first attempt)
+
+> Amendment: the Kiro docs page lists Sonnet 4.6 / Opus 4.7 by display name only, no exact `--model` ID (a summarizer had inferred IDs). Guessed IDs would fail on the installed CLI, so the defaults were reverted to the IDs `kiro-cli chat --list-models` actually lists (`claude-haiku-4.5` / `claude-sonnet-4.5` / `claude-sonnet-4.5`), with the override documented in the source comment. The checked boxes below describe the first attempt and are superseded by this amendment.
 
 **What**: Kiro defaulted to `claude-haiku-4.5 / claude-sonnet-4.5 / claude-sonnet-4.5` because the installed kiro-cli 2.23.1 catalog has no Opus. The current Kiro docs (https://kiro.dev/docs/cli/chat/model-selection/) list Claude Haiku 4.5, Sonnet 4.6 and Opus 4.7 on every plan and show the dotted ID format by example (`claude-opus-4.8`). Mirror the Claude tiers and rewrite the source comment to say what was verified where, with the override for older CLIs.
 **Where**: `packages/core/src/config/types.ts`, `packages/core/__tests__/unit/config/config.test.ts`, `docs/src/content/docs/configuration.md`
