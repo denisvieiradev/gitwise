@@ -32,6 +32,12 @@ jest.unstable_mockModule("@denisvieiradev/gitwise-core", async () => {
     getApiKey: getApiKeyMock,
     getMergedConfig: getMergedConfigMock,
     createProvider: createProviderMock,
+    buildProviderConfig: jest.fn((merged: unknown, apiKey?: string) => ({
+      kind: (merged as { provider?: string })?.provider ?? "api",
+      models: { fast: "f", balanced: "b", powerful: "p" },
+      apiKey,
+    })),
+    PROVIDER_KINDS: ["api", "claude-code", "codex", "copilot", "kiro"],
     writeUserConfig: jest.fn(),
     git: {
       parseStatus: parseStatusMock,
