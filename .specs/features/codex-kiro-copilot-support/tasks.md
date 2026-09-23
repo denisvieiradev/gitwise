@@ -630,9 +630,9 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `gw provider` lists all detected/available providers and persists the user's selection correctly, including the CLI path when relevant
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise`
-- [ ] Test count: new `provider.test.ts`, 4+ cases (selection persists correctly for a CLI-based provider, for `api`, cancellation leaves config untouched, command is registered in `program.ts`)
+- [x] `gw provider` lists all detected/available providers and persists the user's selection correctly, including the CLI path when relevant
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise`
+- [x] Test count: new `provider.test.ts`, 4+ cases (selection persists correctly for a CLI-based provider, for `api`, cancellation leaves config untouched, command is registered in `program.ts`)
 
 **Tests**: unit
 **Gate**: full
