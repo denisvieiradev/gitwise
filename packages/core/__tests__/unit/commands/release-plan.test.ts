@@ -27,6 +27,7 @@ function makePlan(overrides: Partial<PersistedReleasePlan> = {}): PersistedRelea
     targetBranch: "release/1.1.0",
     releaseBranchCreated: true,
     tokens: { input: 1234, output: 567 },
+    tokensAvailable: true,
     ...overrides,
   };
 }

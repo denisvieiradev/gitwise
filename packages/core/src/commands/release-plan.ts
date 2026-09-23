@@ -25,6 +25,12 @@ export interface PersistedReleasePlan {
   targetBranch: string;
   releaseBranchCreated: boolean;
   tokens: { input: number; output: number };
+  /**
+   * AD-002: false when the active provider didn't report token usage.
+   * Missing on a plan persisted before this field existed — the validator
+   * (isPersistedReleasePlan) defaults an absent field to `true` (T15).
+   */
+  tokensAvailable: boolean;
 }
 
 const PLAN_REL_PATH = ".gitwise/release-plan.json";

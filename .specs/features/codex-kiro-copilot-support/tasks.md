@@ -448,10 +448,10 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] Every one of the 4 result types carries `tokensAvailable`
-- [ ] Every place that currently reads `response.tokens.input/output` also reads/propagates `response.tokensAvailable`
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: `commit.test.ts`, `review.test.ts`, `pr.test.ts`, `release.test.ts` each gain a `tokensAvailable: false` case using the `MockLLMProvider` test harness (updated in this task to support it) — 4+ new tests
+- [x] Every one of the 4 result types carries `tokensAvailable`
+- [x] Every place that currently reads `response.tokens.input/output` also reads/propagates `response.tokensAvailable`
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: `commit.test.ts`, `review.test.ts`, `pr.test.ts`, `release.test.ts` each gain a `tokensAvailable: false` case using the `MockLLMProvider` test harness (updated in this task to support it) — 4+ new tests
 
 **Tests**: unit
 **Gate**: quick

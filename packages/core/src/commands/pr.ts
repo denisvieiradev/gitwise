@@ -18,6 +18,8 @@ export interface PrDraft {
   body: string;
   existingPrNumber?: number;
   tokens: { input: number; output: number };
+  /** AD-002: false when the active provider doesn't report token usage. */
+  tokensAvailable: boolean;
 }
 
 export interface PrOptions {
@@ -138,6 +140,7 @@ export async function pr(opts: PrOptions): Promise<PrDraft> {
     body,
     existingPrNumber,
     tokens,
+    tokensAvailable: response.tokensAvailable,
   };
 }
 

@@ -272,6 +272,17 @@ describe("commit()", () => {
     expect(plan.tokens.output).toBe(15);
   });
 
+  it("propagates tokensAvailable: false when the provider doesn't report usage", async () => {
+    const mock = new MockLLMProvider();
+    mock.queueByIndex({ content: '{"type":"single","message":"chore: update"}', tokensAvailable: false });
+
+    await writeFile(join(tempDir, "update2.ts"), "const v = 3;");
+    await exec("git", ["add", "update2.ts"], { cwd: tempDir });
+
+    const plan = await commit({ cwd: tempDir, provider: mock });
+    expect(plan.tokensAvailable).toBe(false);
+  });
+
   it("split plan: appends staged files omitted by the LLM to the last commit", async () => {
     const mock = new MockLLMProvider();
     // LLM mentions only a.ts and b.ts but c.ts is also staged

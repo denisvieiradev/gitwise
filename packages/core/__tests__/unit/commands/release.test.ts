@@ -166,6 +166,16 @@ describe("release()", () => {
     expect(plan.tokens.output).toBe(10 + 20 + 15);
   });
 
+  it("propagates tokensAvailable: false when the provider doesn't report usage", async () => {
+    const mock = new MockLLMProvider();
+    mock.queueByIndex({ content: JSON.stringify({ suggestion: "minor", reasoning: "has features" }), tokensAvailable: false });
+    mock.queueByIndex({ content: "### Added\n- New feature", tokensAvailable: false });
+    mock.queueByIndex({ content: "Version 1.1.0 brings exciting features.", tokensAvailable: false });
+
+    const plan = await release({ cwd: tempDir, provider: mock });
+    expect(plan.tokensAvailable).toBe(false);
+  });
+
   it("returns changelog and notes strings", async () => {
     const mock = makeMock("minor");
     const plan = await release({ cwd: tempDir, provider: mock });
@@ -259,6 +269,7 @@ describe("applyRelease()", () => {
     notes: "Version 1.1.0 is here",
     commits: "feat: add feature",
     tokens: { input: 10, output: 5 },
+    tokensAvailable: true,
   };
 
   it("updates root package.json version", async () => {
