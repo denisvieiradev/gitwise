@@ -65,6 +65,10 @@ jest.unstable_mockModule("@denisvieiradev/gitwise-core", async () => {
     readUserConfig: jest.fn(),
     writeApiKey: jest.fn(),
     resolveClaudeBinary: jest.fn(() => undefined),
+    // first-run.ts now detects all providers via detect-providers.ts (T19).
+    resolveCodexBinary: jest.fn(() => undefined),
+    resolveCopilotBinary: jest.fn(() => undefined),
+    resolveKiroBinary: jest.fn(() => undefined),
     setVerbose: setVerboseMock,
   };
 });

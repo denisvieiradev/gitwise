@@ -605,10 +605,10 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] First-run wizard offers every detected provider, not just Claude Code
-- [ ] Existing "nothing detected → API key prompt" behavior is unchanged (existing `first-run.test.ts` cases pass unmodified)
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise`
-- [ ] Test count: `first-run.test.ts` gains 3+ new cases (multi-provider detected, only-one-non-Claude detected, none detected still falls back)
+- [x] First-run wizard offers every detected provider, not just Claude Code
+- [x] Existing "nothing detected → API key prompt" behavior is unchanged (existing `first-run.test.ts` cases pass unmodified)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise`
+- [x] Test count: `first-run.test.ts` gains 3+ new cases (multi-provider detected, only-one-non-Claude detected, none detected still falls back)
 
 **Tests**: unit
 **Gate**: quick
