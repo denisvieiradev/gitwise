@@ -679,9 +679,9 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `packages/cli` builds successfully with the new dependency
-- [ ] Gate check passes: `npm run build -w @denisvieiradev/gitwise && npm run typecheck -w @denisvieiradev/gitwise`
-- [ ] Test count: N/A — config-only change, build gate only
+- [x] `packages/cli` builds successfully with the new dependency
+- [x] Gate check passes: `npm run build -w @denisvieiradev/gitwise && npm run typecheck -w @denisvieiradev/gitwise` — build passes; typecheck fails identically at baseline because `packages/cli/node_modules/@denisvieiradev/gitwise-core` is a stale registry 1.1.1 copy (cli pins core at 1.1.1 while the workspace is 1.2.0); verified with a scratch tsconfig mapping core/skills to source that cli typechecks clean, leaving one core-side error from T15 (`release-plan.ts:87` TS2783), unrelated to this dependency
+- [x] Test count: N/A — config-only change, build gate only
 
 **Tests**: none
 **Gate**: build
