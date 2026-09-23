@@ -93,6 +93,47 @@ describe("gw skills install", () => {
     );
   });
 
+  it("kiro: re-running overwrites gitwise-owned files but leaves unrelated files in .kiro/skills untouched", async () => {
+    await mkdir(join(project, ".kiro/skills/my-skill"), { recursive: true });
+    await writeFile(join(project, ".kiro/skills/my-skill/SKILL.md"), "my kiro skill");
+    await writeFile(join(project, ".kiro/skills/README.md"), "kiro notes");
+
+    install("kiro");
+    expect(await readFile(join(project, ".kiro/skills/my-skill/SKILL.md"), "utf8")).toBe("my kiro skill");
+    expect(await readFile(join(project, ".kiro/skills/README.md"), "utf8")).toBe("kiro notes");
+
+    await seedAdapters("v2");
+    install("kiro");
+
+    expect(await readFile(join(project, ".kiro/skills/gitwise-commit/SKILL.md"), "utf8")).toBe("gitwise-commit v2");
+    expect(await readFile(join(project, ".kiro/skills/my-skill/SKILL.md"), "utf8")).toBe("my kiro skill");
+    expect(await readFile(join(project, ".kiro/skills/README.md"), "utf8")).toBe("kiro notes");
+    expect((await readdir(join(project, ".kiro/skills"))).sort()).toEqual(
+      ["README.md", "gitwise-commit", "gitwise-pr", "gitwise-release", "gitwise-review", "my-skill"],
+    );
+  });
+
+  it("copilot: re-running overwrites gitwise.instructions.md but leaves unrelated instruction files and copilot-instructions.md untouched", async () => {
+    await mkdir(join(project, ".github/instructions"), { recursive: true });
+    await writeFile(join(project, ".github/instructions/team.instructions.md"), "team rules");
+    const ownRules = "# My rules\n\nUse tabs.\n";
+    await writeFile(join(project, ".github/copilot-instructions.md"), ownRules);
+
+    install("copilot");
+    expect(await readFile(join(project, ".github/instructions/team.instructions.md"), "utf8")).toBe("team rules");
+    expect(await readFile(join(project, ".github/copilot-instructions.md"), "utf8")).toBe(ownRules);
+
+    await seedAdapters("v2");
+    install("copilot");
+
+    expect(await readFile(join(project, ".github/instructions/gitwise.instructions.md"), "utf8")).toBe("copilot v2");
+    expect(await readFile(join(project, ".github/instructions/team.instructions.md"), "utf8")).toBe("team rules");
+    expect(await readFile(join(project, ".github/copilot-instructions.md"), "utf8")).toBe(ownRules);
+    expect((await readdir(join(project, ".github/instructions"))).sort()).toEqual(
+      ["gitwise.instructions.md", "team.instructions.md"],
+    );
+  });
+
   it("rejects an unknown tool listing the valid names, without creating any file", async () => {
     expect(() => install("bogus-tool")).toThrow("Valid tools: codex, kiro, copilot");
     expect(await readdir(project)).toEqual([".git"]);

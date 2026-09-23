@@ -112,6 +112,14 @@ T24 → T25 → T26
 
 (T24 → T25 is the cross-phase edge from Phase 6.)
 
+### Phase 8: Verifier fix tasks (iteration 1)
+
+```
+F1 → F2 → F3 → F4 → F5 → F6
+```
+
+Added after the Verifier's FAIL verdict in `validation.md` (4 surviving mutants, 1 spec-precision gap on MDL-02, 1 privacy-claim contradiction in `SECURITY.md`). Each F-task closes one ranked gap.
+
 ---
 
 ## Task Breakdown
@@ -795,10 +803,33 @@ T24 → T25 → T26
 
 ---
 
+### Phase 8: Verifier fix tasks (iteration 1)
+
+### F1: Test DIST-04 unrelated-file preservation for kiro and copilot
+
+**What**: Extend the "unrelated files survive install and reinstall" coverage from `.agents/skills/` (codex) to `.kiro/skills/` (kiro) and `.github/instructions/` (copilot), and assert a pre-existing `.github/copilot-instructions.md` is byte-identical afterward. Kills Verifier mutant M2b.
+**Where**: `packages/cli/__tests__/skills-install.test.ts`
+**Depends on**: Phase 7 complete
+**Reuses**: The existing codex preservation test's seed → install → reseed v2 → reinstall pattern
+**Requirement**: DIST-04, SKILL-07
+
+**Done when**:
+- [x] Kiro: a seeded `.kiro/skills/my-skill/SKILL.md` and `.kiro/skills/README.md` keep their content after install and reinstall; the directory listing is exactly the 4 gitwise skills plus the 2 unrelated entries
+- [x] Copilot: a seeded `.github/instructions/team.instructions.md` and `.github/copilot-instructions.md` keep their exact content after install and reinstall; `gitwise.instructions.md` is overwritten with v2
+- [x] The mutation "wipe the `.kiro/skills` / `.github/instructions` target root before copying" fails 2 tests (checked locally, then reverted)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise` (skills-install suite 16/16; other failures are the pre-existing chalk/lockstep set)
+
+**Tests**: integration
+**Gate**: quick
+
+**Commit**: `test(cli): cover unrelated-file preservation for kiro and copilot installs`
+
+---
+
 ## Phase Execution Map
 
 ```
-Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 4b → Phase 5 → Phase 6 → Phase 7
+Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 4b → Phase 5 → Phase 6 → Phase 7 → Phase 8
 
 Phase 1:   T1 ------→ T2 ------→ T3 ------→ T4
 Phase 2:                                     T4 -→ T5 ------→ T6 ------→ T7 ------→ T8
@@ -808,6 +839,7 @@ Phase 4b:                                                                       
 Phase 5:                                                                             T8 -→ T18 -----→ T19 -----→ T20
 Phase 6:   T21 -----→ T22 -----→ T23 -----→ T24
 Phase 7:                                     T24 -→ T25 -----→ T26
+Phase 8:                                                         T26 ⇒ F1 -→ F2 -→ F3 -→ F4 -→ F5 -→ F6
 ```
 
 Execution is strictly sequential — there is no intra-phase parallelism. A single agent (or batch worker) works one task at a time, in order. Total: 26 tasks across 7 phases — above the ~8-task single-batch threshold, so batch sub-agents will be offered at Execute (see Sub-Agent Delegation in `SKILL.md`).
