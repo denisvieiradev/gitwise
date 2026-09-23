@@ -13,6 +13,7 @@ import {
 } from "@denisvieiradev/gitwise-core";
 import type { SplitMode, LLMProvider, CommitPlan, CommitAlternatives } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
+import { formatTokens } from "./token-format.js";
 
 interface CommitCommandOptions {
   split: string;
@@ -133,12 +134,6 @@ async function promptStageAdditional(cwd: string): Promise<"staged" | "kept" | n
 
   await git.add(cwd, picked);
   return "staged";
-}
-
-// PROV-07: shows the real counts when the active provider reports usage,
-// "n/a" when it doesn't (AD-002) — never a misleading "0 in / 0 out".
-function formatTokens(tokens: { input: number; output: number }, tokensAvailable: boolean): string {
-  return tokensAvailable ? `${tokens.input} in / ${tokens.output} out` : "n/a";
 }
 
 function displayPlan(plan: CommitPlan): void {

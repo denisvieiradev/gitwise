@@ -20,17 +20,12 @@ import type {
 } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
 import { formatReleaseError } from "./release-errors.js";
+import { formatTokens } from "./token-format.js";
 
 function exitWithReleaseError(err: unknown, fallbackPrefix = "Error"): never {
   const { message, hint } = formatReleaseError(err);
   p.cancel(`${fallbackPrefix}: ${message}\n  Hint: ${hint}`);
   process.exit(1);
-}
-
-// PROV-07: shows the real counts when the active provider reports usage,
-// "n/a" when it doesn't (AD-002) — never a misleading "0 in / 0 out".
-function formatTokens(tokens: { input: number; output: number }, tokensAvailable: boolean): string {
-  return tokensAvailable ? `${tokens.input} in / ${tokens.output} out` : "n/a";
 }
 
 function renderPlan(plan: PersistedReleasePlan): void {

@@ -10,12 +10,7 @@ import {
   applyPr,
 } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
-
-// PROV-07: shows the real counts when the active provider reports usage,
-// "n/a" when it doesn't (AD-002) — never a misleading "0 in / 0 out".
-function formatTokens(tokens: { input: number; output: number }, tokensAvailable: boolean): string {
-  return tokensAvailable ? `${tokens.input} in / ${tokens.output} out` : "n/a";
-}
+import { formatTokens } from "./token-format.js";
 
 export function makePrCommand(): Command {
   return new Command("pr")
