@@ -60,6 +60,8 @@ export const codexSpec: CliProviderSpec = {
   installHint: "Install it (`npm install -g @openai/codex`) or re-run `gw provider` to choose another provider.",
   defaultCommand: "codex",
   foldSystemPrompt: true,
+  // Full agent turns take longer than a single Claude Code completion.
+  timeoutMs: 300_000,
   resolveBinary: resolveCodexBinary,
 
   buildArgs({ prompt, modelId, large }) {

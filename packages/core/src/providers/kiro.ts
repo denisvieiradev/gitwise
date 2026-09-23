@@ -37,6 +37,8 @@ export const kiroSpec: CliProviderSpec = {
   installHint: "Install it from https://kiro.dev/docs/cli/ or re-run `gw provider` to choose another provider.",
   defaultCommand: "kiro-cli",
   foldSystemPrompt: true,
+  // Full agent turns take longer than a single Claude Code completion.
+  timeoutMs: 300_000,
   resolveBinary: resolveKiroBinary,
 
   buildArgs({ prompt, modelId, large }) {

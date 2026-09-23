@@ -1,4 +1,5 @@
-import { describe, it, expect, afterEach } from "@jest/globals";
+import { describe, it, expect, afterEach, jest } from "@jest/globals";
+import { EventEmitter } from "node:events";
 import { mkdtempSync, rmSync, writeFileSync, chmodSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -110,5 +111,74 @@ process.stdin.on("end", () => {
     const res = await provider.chat(req("x"));
 
     expect(res.content).toBe("resolved");
+  });
+});
+
+// Spawns through a mocked `node:child_process` and returns the options object
+// the provider passed to `spawn`. `loadSpec` runs inside the isolated registry
+// so a real provider spec can be imported against the same mock.
+async function spawnOptionsFor(
+  loadSpec: () => Promise<CliProviderSpec>,
+): Promise<{ timeout?: number }> {
+  let captured: { timeout?: number } | undefined;
+  await jest.isolateModulesAsync(async () => {
+    jest.unstable_mockModule("node:child_process", () => ({
+      execSync: jest.fn(),
+      spawn: jest.fn((_binary: string, _args: string[], options: { timeout?: number }) => {
+        captured = options;
+        const child = new EventEmitter() as EventEmitter & {
+          stdout: EventEmitter;
+          stderr: EventEmitter;
+          stdin: EventEmitter & { write: () => void; end: () => void };
+        };
+        child.stdout = new EventEmitter();
+        child.stderr = new EventEmitter();
+        child.stdin = Object.assign(new EventEmitter(), { write: () => undefined, end: () => undefined });
+        process.nextTick(() => {
+          child.stdout.emit("data", Buffer.from("ok"));
+          child.emit("close", 0, null);
+        });
+        return child;
+      }),
+    }));
+    const { CliSubprocessProvider: Isolated } = await import("../../../src/providers/cli-subprocess.js");
+    const spec = await loadSpec();
+    // Real specs parse tool-specific stdout; only the spawn options matter here.
+    const provider = new Isolated({ ...spec, parseOutput: () => ({ content: "ok", tokens: null }) }, MODELS, "/fake/bin");
+    await provider.chat(req("x"));
+  });
+  if (!captured) throw new Error("spawn was not called");
+  return captured;
+}
+
+describe("CliSubprocessProvider subprocess timeout", () => {
+  it("passes the spec's timeoutMs to spawn when the spec sets one", async () => {
+    const options = await spawnOptionsFor(async () => makeSpec({ timeoutMs: 45_000 }));
+    expect(options.timeout).toBe(45_000);
+  });
+
+  it("falls back to 120_000 ms when the spec sets no timeoutMs", async () => {
+    const options = await spawnOptionsFor(async () => makeSpec());
+    expect(options.timeout).toBe(120_000);
+  });
+
+  it("keeps Claude Code at 120_000 ms", async () => {
+    const options = await spawnOptionsFor(async () => (await import("../../../src/providers/claude-code.js")).claudeCodeSpec);
+    expect(options.timeout).toBe(120_000);
+  });
+
+  it("gives Codex 300_000 ms", async () => {
+    const options = await spawnOptionsFor(async () => (await import("../../../src/providers/codex.js")).codexSpec);
+    expect(options.timeout).toBe(300_000);
+  });
+
+  it("gives Copilot 300_000 ms", async () => {
+    const options = await spawnOptionsFor(async () => (await import("../../../src/providers/copilot.js")).copilotSpec);
+    expect(options.timeout).toBe(300_000);
+  });
+
+  it("gives Kiro 300_000 ms", async () => {
+    const options = await spawnOptionsFor(async () => (await import("../../../src/providers/kiro.js")).kiroSpec);
+    expect(options.timeout).toBe(300_000);
   });
 });

@@ -101,7 +101,7 @@ export class CliSubprocessProvider implements LLMProvider {
     return new Promise((resolve, reject) => {
       const child = spawn(this.binaryPath, args, {
         stdio: ["pipe", "pipe", "pipe"],
-        timeout: DEFAULT_TIMEOUT_MS,
+        timeout: this.spec.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       });
 
       let stdout = "";

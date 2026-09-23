@@ -39,6 +39,8 @@ export const copilotSpec: CliProviderSpec = {
   installHint: "Install it (`npm install -g @github/copilot`) or re-run `gw provider` to choose another provider.",
   defaultCommand: "copilot",
   foldSystemPrompt: true,
+  // Full agent turns take longer than a single Claude Code completion.
+  timeoutMs: 300_000,
   resolveBinary: resolveCopilotBinary,
 
   buildArgs({ prompt, modelId, large }) {

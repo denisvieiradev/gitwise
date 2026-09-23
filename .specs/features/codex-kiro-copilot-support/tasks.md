@@ -1008,6 +1008,28 @@ User-approved follow-ups after the Verifier's PASS: a release-blocking dependenc
 
 ---
 
+### G4: Give Codex, Copilot and Kiro a 300s subprocess timeout
+
+**What**: `DEFAULT_TIMEOUT_MS` (120s) was shared by every CLI provider, but Codex/Copilot/Kiro run full agent turns. Add an optional `timeoutMs` to `CliProviderSpec` (marked `SPEC_DEVIATION`, since design.md does not define it), have `CliSubprocessProvider` pass `spec.timeoutMs ?? 120_000` to `spawn`, keep Claude Code on the default, and set Codex/Copilot/Kiro to `300_000`.
+**Where**: `packages/core/src/providers/types.ts`, `packages/core/src/providers/cli-subprocess.ts`, `packages/core/src/providers/{codex,copilot,kiro}.ts`, `packages/core/__tests__/unit/providers/cli-subprocess.test.ts`
+**Depends on**: G3
+**Reuses**: The `jest.unstable_mockModule("node:child_process")` spawn mock from the ENOENT test in `claude-code.test.ts`
+**Requirement**: PROV-01, PROV-03, PROV-05 (the provider call completes for agent-turn CLIs)
+
+**Done when**:
+- [x] A spec with `timeoutMs` → `spawn` receives that value as `options.timeout`; a spec without it → `120_000`
+- [x] Claude Code spawns with `120_000`; Codex, Copilot and Kiro each spawn with `300_000` (one test per spec, asserted on the `spawn` options)
+- [x] Reverting the provider to the shared constant fails 4 of the 6 new tests (checked locally, then reverted)
+- [x] `npm run typecheck` and `npm run lint` exit 0
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`: 655 passed, 0 failed
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(core): give agent-turn provider CLIs a 300s timeout`
+
+---
+
 ## Phase Execution Map
 
 ```
