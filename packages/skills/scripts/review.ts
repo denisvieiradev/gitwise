@@ -4,6 +4,7 @@
  * Usage: node scripts/review.js [--base <branch>] [--prompt "<text>"]
  */
 
+import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
   getMergedConfig,
@@ -89,7 +90,7 @@ export async function runReviewSkill(
 // keeps `runReviewSkill` testable without triggering side effects.
 const invokedDirectly =
   process.argv[1] !== undefined &&
-  process.argv[1] === fileURLToPath(import.meta.url);
+  realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
 
 if (invokedDirectly) {
   runReviewSkill(process.argv.slice(2)).catch((err: unknown) => {
