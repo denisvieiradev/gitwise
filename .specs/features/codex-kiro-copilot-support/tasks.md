@@ -680,7 +680,7 @@ T24 → T25 → T26
 
 **Done when**:
 - [x] `packages/cli` builds successfully with the new dependency
-- [x] Gate check passes: `npm run build -w @denisvieiradev/gitwise && npm run typecheck -w @denisvieiradev/gitwise` — build passes; typecheck fails identically at baseline because `packages/cli/node_modules/@denisvieiradev/gitwise-core` is a stale registry 1.1.1 copy (cli pins core at 1.1.1 while the workspace is 1.2.0); verified with a scratch tsconfig mapping core/skills to source that cli typechecks clean, leaving one core-side error from T15 (`release-plan.ts:87` TS2783), unrelated to this dependency
+- [ ] NOT MET (environmental blocker, see note): Gate check passes: `npm run build -w @denisvieiradev/gitwise && npm run typecheck -w @denisvieiradev/gitwise` — build passes; typecheck fails identically at baseline because `packages/cli/node_modules/@denisvieiradev/gitwise-core` is a stale registry 1.1.1 copy (cli pins core at 1.1.1 while the workspace is 1.2.0); verified with a scratch tsconfig mapping core/skills to source that cli typechecks clean, leaving one core-side error from T15 (`release-plan.ts:87` TS2783), unrelated to this dependency
 - [x] Test count: N/A — config-only change, build gate only
 
 **Tests**: none
@@ -785,7 +785,7 @@ T24 → T25 → T26
 - [x] `configuration.md` accurately documents the new `models` shape and all 4 CLI-path keys
 - [x] Update instructions for all 3 surfaces are present and accurate
 - [x] `gw skills install <tool>` is documented with its prerequisite
-- [x] Gate check passes: `npm run build && npm run lint && npm run typecheck && npm test` (Build gate — final task of the feature) — `npm run build` passes and core typechecks/tests clean (640 passed). Remaining non-zero exits are environmental and pre-existing, not from this feature's code: (1) `tsc` on cli fails because `packages/cli/node_modules/@denisvieiradev/gitwise-core` is a stale registry 1.1.1 copy (cli/skills pin core at 1.1.1, workspace is 1.2.0); verified 0 errors when the pins are set to 1.2.0 and the stale copy is absent (change reverted, not committed); (2) chalk 5.6.2 TDZ race in 5 cli suites (verified identical without this feature's diff, all pass under a chalk-stub config); (3) lockstep tests in `manifest.test.ts`/`skills.test.ts` (core pin 1.1.1 and `.claude-plugin/plugin.json` 1.1.1 vs 1.2.0)
+- [ ] NOT MET (environmental blocker, see note): Gate check passes: `npm run build && npm run lint && npm run typecheck && npm test` (Build gate — final task of the feature) — `npm run build` passes and core typechecks/tests clean (640 passed). Remaining non-zero exits are environmental and pre-existing, not from this feature's code: (1) `tsc` on cli fails because `packages/cli/node_modules/@denisvieiradev/gitwise-core` is a stale registry 1.1.1 copy (cli/skills pin core at 1.1.1, workspace is 1.2.0); verified 0 errors when the pins are set to 1.2.0 and the stale copy is absent (change reverted, not committed); (2) chalk 5.6.2 TDZ race in 5 cli suites (verified identical without this feature's diff, all pass under a chalk-stub config); (3) lockstep tests in `manifest.test.ts`/`skills.test.ts` (core pin 1.1.1 and `.claude-plugin/plugin.json` 1.1.1 vs 1.2.0)
 - [x] Test count: `docs-presence.test.ts` gains 5+ new assertions
 
 **Tests**: unit
