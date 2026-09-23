@@ -28,8 +28,12 @@ export type {
 } from "./infra/transaction.js";
 export { acquireRepoLock, STALE_LOCK_MS } from "./infra/lockfile.js";
 export type { LockPayload, AcquireRepoLockOptions } from "./infra/lockfile.js";
-// Export resolveClaudeBinary for CLI use
+// Export the per-tool binary resolvers for CLI use (CFG-01:
+// detectAvailableProviders reuses these instead of re-implementing detection).
 export { resolveClaudeBinary } from "./providers/claude-code.js";
+export { resolveCodexBinary } from "./providers/codex.js";
+export { resolveCopilotBinary } from "./providers/copilot.js";
+export { resolveKiroBinary } from "./providers/kiro.js";
 
 // Config exports — note: ModelConfig here is the config-layer version
 export type { UserConfig, RepoConfig, MergedConfig, Language, CommitConvention, ModelsByProvider } from "./config/types.js";

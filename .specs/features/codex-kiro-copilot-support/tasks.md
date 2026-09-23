@@ -581,9 +581,9 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] Returns all 5 providers with correct detected/not-detected state based on mocked binary resolution
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise`
-- [ ] Test count: new `detect-providers.test.ts`, 5+ cases (one per provider's detected/not-detected state, plus the "multiple detected" case)
+- [x] Returns all 5 providers with correct detected/not-detected state based on mocked binary resolution
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise`
+- [x] Test count: new `detect-providers.test.ts`, 5+ cases (one per provider's detected/not-detected state, plus the "multiple detected" case)
 
 **Tests**: unit
 **Gate**: quick
