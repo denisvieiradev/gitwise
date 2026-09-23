@@ -205,6 +205,36 @@ describe("release()", () => {
       // The numeric totals are unaffected by the aggregation — tokens still sum.
       expect(plan.tokens.input).toBeGreaterThan(0);
     });
+
+    it("aggregates to false when only the first (version-suggestion) call doesn't report usage", async () => {
+      const mock = new MockLLMProvider();
+      mock.queueByIndex({ content: JSON.stringify({ suggestion: "minor", reasoning: "has features" }), tokensAvailable: false });
+      mock.queueByIndex({ content: "### Added\n- New feature", tokens: { input: 80, output: 20 }, tokensAvailable: true });
+      mock.queueByIndex({
+        content: "Version 1.1.0 brings exciting features.",
+        tokens: { input: 60, output: 15 },
+        tokensAvailable: true,
+      });
+
+      const plan = await release({ cwd: tempDir, provider: mock });
+      expect(mock.getCallCount()).toBe(3);
+      expect(plan.tokensAvailable).toBe(false);
+    });
+
+    it("aggregates to false when only the last (notes) call doesn't report usage", async () => {
+      const mock = new MockLLMProvider();
+      mock.queueByIndex({
+        content: JSON.stringify({ suggestion: "minor", reasoning: "has features" }),
+        tokens: { input: 50, output: 10 },
+        tokensAvailable: true,
+      });
+      mock.queueByIndex({ content: "### Added\n- New feature", tokens: { input: 80, output: 20 }, tokensAvailable: true });
+      mock.queueByIndex({ content: "Version 1.1.0 brings exciting features.", tokensAvailable: false });
+
+      const plan = await release({ cwd: tempDir, provider: mock });
+      expect(mock.getCallCount()).toBe(3);
+      expect(plan.tokensAvailable).toBe(false);
+    });
   });
 
   it("returns changelog and notes strings", async () => {

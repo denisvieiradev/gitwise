@@ -847,6 +847,27 @@ Added after the Verifier's FAIL verdict in `validation.md` (4 surviving mutants,
 
 ---
 
+### F3: Test release `tokensAvailable` aggregation with each call as the lone dissenter
+
+**What**: Only the changelog (middle) call was ever tested as unavailable. Add cases where only the version-suggestion call, and only the release-notes call, reports no usage, each asserting the aggregate `tokensAvailable` is `false`. Kills Verifier mutant M3b.
+**Where**: `packages/core/__tests__/unit/commands/release.test.ts`
+**Depends on**: F2
+**Reuses**: The existing "only the middle (changelog) call" aggregation case and `MockLLMProvider.queueByIndex`
+**Requirement**: PROV-07 (AD-002 aggregation)
+
+**Done when**:
+- [x] Only the version-suggestion call unavailable → all 3 calls made, `plan.tokensAvailable` is `false`
+- [x] Only the notes call unavailable → all 3 calls made, `plan.tokensAvailable` is `false`
+- [x] Dropping the version-call AND line, or the notes-call AND line, each fails 1 test (checked locally, then reverted)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core` (642 passed, 0 failed)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `test(core): cover release token aggregation for the version and notes calls`
+
+---
+
 ## Phase Execution Map
 
 ```
