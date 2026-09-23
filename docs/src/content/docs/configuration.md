@@ -19,9 +19,9 @@ gitwise reads configuration from two layered locations:
   "models": {
     "api": { "fast": "claude-haiku-4-5-20251001", "balanced": "claude-sonnet-4-6", "powerful": "claude-opus-4-7" },
     "claude-code": { "fast": "claude-haiku-4-5-20251001", "balanced": "claude-sonnet-4-6", "powerful": "claude-opus-4-7" },
-    "codex": { "fast": "gpt-5.1-codex-mini", "balanced": "gpt-5.1-codex", "powerful": "gpt-5.1-codex-max" },
-    "copilot": { "fast": "claude-haiku-4.5", "balanced": "claude-sonnet-4.5", "powerful": "claude-opus-4.1" },
-    "kiro": { "fast": "claude-haiku-4.5", "balanced": "claude-sonnet-4.5", "powerful": "claude-opus-4.1" }
+    "codex": { "fast": "gpt-6-luna", "balanced": "gpt-6-sol", "powerful": "gpt-6-astra" },
+    "copilot": { "fast": "claude-haiku-4.5", "balanced": "claude-sonnet-4.6", "powerful": "claude-opus-4.7" },
+    "kiro": { "fast": "claude-haiku-4.5", "balanced": "claude-sonnet-4.5", "powerful": "claude-sonnet-4.5" }
   },
   "language": "en",
   "commitConvention": "conventional"
@@ -76,7 +76,7 @@ Read or write them with `gw config`:
 
 ```bash
 gw config models.balanced my-model            # writes to the active provider's block
-gw config models.codex.fast gpt-5.1-codex-mini # writes to Codex's block, whichever provider is active
+gw config models.codex.fast gpt-6-luna         # writes to Codex's block, whichever provider is active
 ```
 
 `gw provider` never touches `models`, so each provider keeps its saved values across switches. A config from an older release with a single flat `models` block is migrated into the configured provider's block on first read.

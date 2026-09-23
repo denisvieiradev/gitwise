@@ -49,17 +49,25 @@ export interface MergedConfig extends UserConfig {
   developBranch?: string;
 }
 
-// MDL-02: default model IDs per provider, checked 2026-09-22 via the
-// Knowledge Verification Chain's web-search step (no local install of any of
-// the three CLIs to verify `--model` output against). `api`/`claude-code`
-// keep gitwise's pre-existing, already-shipped Claude defaults unchanged.
-// Codex/Copilot/Kiro's exact current catalogue could not be confirmed with
-// high confidence — public search results for all three disagreed with each
-// other and included implausible version strings (e.g. unreleased-sounding
-// major bumps), a known failure mode of AI-model-name search results. These
-// defaults use each vendor's last-confirmed-real model family/naming
-// convention instead of the unverifiable search output, and are always
-// user-overridable via `gw provider` / `gw config models.<provider>.<tier>`.
+// MDL-02: default model IDs per provider, checked 2026-09-23 against the
+// CLIs installed on the maintainer's machine (help text and model listings
+// only, no model calls). Every value is user-overridable via
+// `gw config models.<provider>.<tier>`.
+// - api / claude-code: gitwise's pre-existing Claude defaults, unchanged.
+// - codex: the model catalog of codex-cli 0.156.1 (`codex debug models`,
+//   cached in ~/.codex/models_cache.json) lists gpt-6-luna ("fast and
+//   affordable"), gpt-6-sol ("workhorse model for coding") and gpt-6-astra
+//   ("frontier intelligence"). The old gpt-5.1-codex* IDs are not in it.
+//   The catalog is fetched per account, so another plan may list more models.
+// - copilot: the `model` values listed by `copilot help config` in GitHub
+//   Copilot CLI 1.0.88. The tiers mirror gitwise's Claude defaults
+//   (haiku-4.5 / sonnet-4.6 / opus-4.7); claude-sonnet-4.5 and
+//   claude-opus-4.1 are not in that list.
+// - kiro: model_id values from `kiro-cli chat --list-models` in kiro-cli
+//   2.23.1. That listing has no Opus model, and https://kiro.dev/docs/models/
+//   no longer lists Claude Opus 4.1, so `powerful` uses claude-sonnet-4.5,
+//   the most capable Claude model_id the CLI lists. The docs page names Opus
+//   4.5+ by display name only; its exact model_id string is unverified.
 const CLAUDE_MODELS: ModelConfig = {
   fast: "claude-haiku-4-5-20251001",
   balanced: "claude-sonnet-4-6",
@@ -72,19 +80,19 @@ export const DEFAULT_USER_CONFIG: UserConfig = {
     api: { ...CLAUDE_MODELS },
     "claude-code": { ...CLAUDE_MODELS },
     codex: {
-      fast: "gpt-5.1-codex-mini",
-      balanced: "gpt-5.1-codex",
-      powerful: "gpt-5.1-codex-max",
+      fast: "gpt-6-luna",
+      balanced: "gpt-6-sol",
+      powerful: "gpt-6-astra",
     },
     copilot: {
       fast: "claude-haiku-4.5",
-      balanced: "claude-sonnet-4.5",
-      powerful: "claude-opus-4.1",
+      balanced: "claude-sonnet-4.6",
+      powerful: "claude-opus-4.7",
     },
     kiro: {
       fast: "claude-haiku-4.5",
       balanced: "claude-sonnet-4.5",
-      powerful: "claude-opus-4.1",
+      powerful: "claude-sonnet-4.5",
     },
   },
   language: "en",

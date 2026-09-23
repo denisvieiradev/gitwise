@@ -889,6 +889,29 @@ Added after the Verifier's FAIL verdict in `validation.md` (4 surviving mutants,
 
 ---
 
+### F5: Verify the Codex/Copilot/Kiro default model IDs and pin the defaults with tests
+
+**What**: The Codex/Copilot/Kiro defaults in `DEFAULT_USER_CONFIG.models` were unverified, and no test pinned the Claude defaults. Check each provider against the installed CLI (help text and model listings only; no login, no model calls), replace the IDs shown wrong, cite the source in the code comment, and add tests. Update the matching example in `configuration.md` so the docs show the real defaults.
+**Where**: `packages/core/src/config/types.ts`, `packages/core/__tests__/unit/config/config.test.ts`, `docs/src/content/docs/configuration.md`
+**Depends on**: F4
+**Reuses**: Existing `config.test.ts` suite
+**Requirement**: MDL-02
+
+**Done when**:
+- [x] Codex: `gpt-5.1-codex-mini/-codex/-codex-max` → `gpt-6-luna` / `gpt-6-sol` / `gpt-6-astra`, per the codex-cli 0.156.1 model catalog (`codex debug models` cache), which does not list the old IDs
+- [x] Copilot: `claude-sonnet-4.5` / `claude-opus-4.1` → `claude-sonnet-4.6` / `claude-opus-4.7` (`claude-haiku-4.5` kept), per the `model` list in `copilot help config` (Copilot CLI 1.0.88), which lists neither old ID
+- [x] Kiro: `claude-opus-4.1` → `claude-sonnet-4.5` for `powerful` (fast/balanced kept), per `kiro-cli chat --list-models` (kiro-cli 2.23.1), which has no Opus model_id; kiro.dev/docs/models no longer lists Opus 4.1. Opus 4.5+ exact model_id strings are unverified, so they were not used
+- [x] Test pins `api` and `claude-code` to `claude-haiku-4-5-20251001` / `claude-sonnet-4-6` / `claude-opus-4-7`
+- [x] Test asserts all 5 providers have exactly the 3 tiers, each a non-empty string
+- [x] Gate check passes: `npm test` (root, spans core and docs): 1057 passed / 31 failed / 7 skipped; the 31 failures are the pre-existing chalk/lockstep set
+
+**Tests**: unit
+**Gate**: full
+
+**Commit**: `fix(core): replace unverified codex, copilot, and kiro default model IDs`
+
+---
+
 ## Phase Execution Map
 
 ```

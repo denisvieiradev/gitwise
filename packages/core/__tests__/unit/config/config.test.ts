@@ -20,6 +20,30 @@ describe("config (core)", () => {
     await rm(cwd, { recursive: true, force: true });
   });
 
+  describe("DEFAULT_USER_CONFIG.models (MDL-02)", () => {
+    it("keeps the pre-feature Claude defaults unchanged for api and claude-code", () => {
+      const preFeatureClaude = {
+        fast: "claude-haiku-4-5-20251001",
+        balanced: "claude-sonnet-4-6",
+        powerful: "claude-opus-4-7",
+      };
+      expect(DEFAULT_USER_CONFIG.models.api).toEqual(preFeatureClaude);
+      expect(DEFAULT_USER_CONFIG.models["claude-code"]).toEqual(preFeatureClaude);
+    });
+
+    it.each(["api", "claude-code", "codex", "copilot", "kiro"] as const)(
+      "%s has a non-empty model ID for every tier",
+      (provider) => {
+        const block = DEFAULT_USER_CONFIG.models[provider];
+        expect(Object.keys(block).sort()).toEqual(["balanced", "fast", "powerful"]);
+        for (const tier of ["fast", "balanced", "powerful"] as const) {
+          expect(typeof block[tier]).toBe("string");
+          expect(block[tier].trim()).not.toBe("");
+        }
+      },
+    );
+  });
+
   describe("getMergedConfig", () => {
     it("returns defaults when neither user nor repo config exists", async () => {
       const config = await getMergedConfig({ cwd, homeDir });
