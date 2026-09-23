@@ -473,10 +473,10 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] A plan file with `tokensAvailable` present validates and round-trips correctly
-- [ ] A plan file missing `tokensAvailable` (simulating a pre-upgrade file) validates successfully with the field defaulted to `true`
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: `release-plan.test.ts` (unit) gains 2+ cases; `integration/release-plan.test.ts` extended to cover a `finish` on a legacy-shape plan
+- [x] A plan file with `tokensAvailable` present validates and round-trips correctly
+- [x] A plan file missing `tokensAvailable` (simulating a pre-upgrade file) validates successfully with the field defaulted to `true`
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core` (also verified against `npm test` root — same pre-existing chalk/version-lockstep failures as T12, zero new failures)
+- [x] Test count: `release-plan.test.ts` (unit) gains 2+ cases; `integration/release-plan.test.ts` extended to cover a `finish` on a legacy-shape plan
 
 **Tests**: integration
 **Gate**: full

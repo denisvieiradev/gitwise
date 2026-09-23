@@ -80,7 +80,11 @@ export async function loadReleasePlan(cwd: string): Promise<PersistedReleasePlan
     });
   }
 
-  return parsed;
+  // AD-002 backward compatibility: a plan persisted before tokensAvailable
+  // existed has no such key on disk at all — default it to true (real
+  // providers reported real usage at the time) rather than leaving it
+  // undefined on the returned, statically-typed-as-required value.
+  return { tokensAvailable: true, ...parsed };
 }
 
 function isPersistedReleasePlan(value: unknown): value is PersistedReleasePlan {
@@ -104,6 +108,9 @@ function isPersistedReleasePlan(value: unknown): value is PersistedReleasePlan {
   const tokens = p.tokens as Record<string, unknown>;
   if (typeof tokens.input !== "number" || !Number.isFinite(tokens.input)) return false;
   if (typeof tokens.output !== "number" || !Number.isFinite(tokens.output)) return false;
+  // AD-002: absent (plan persisted before this field existed) is valid —
+  // loadReleasePlan defaults it to true. Present-but-wrong-typed is not.
+  if (p.tokensAvailable !== undefined && typeof p.tokensAvailable !== "boolean") return false;
   return true;
 }
 

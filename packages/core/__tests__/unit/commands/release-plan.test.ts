@@ -51,6 +51,34 @@ describe("release-plan persistence", () => {
       expect(loaded).toEqual(plan);
     });
 
+    it("round-trips tokensAvailable: false when explicitly present (AD-002)", async () => {
+      const plan = makePlan({ tokensAvailable: false });
+      await saveReleasePlan(cwd, plan);
+      const loaded = await loadReleasePlan(cwd);
+      expect(loaded?.tokensAvailable).toBe(false);
+    });
+
+    it("defaults tokensAvailable to true when absent from a legacy-shape plan file (AD-002)", async () => {
+      const { tokensAvailable: _omit, ...legacyPlan } = makePlan();
+      await mkdir(join(cwd, ".gitwise"), { recursive: true });
+      await writeFile(join(cwd, PLAN_REL), JSON.stringify(legacyPlan), "utf-8");
+
+      const loaded = await loadReleasePlan(cwd);
+      expect(loaded?.tokensAvailable).toBe(true);
+      // Every other field is unaffected by the backfill.
+      expect(loaded?.newVersion).toBe(legacyPlan.newVersion);
+    });
+
+    it("throws INVALID_PLAN_SCHEMA when tokensAvailable is present but not a boolean", async () => {
+      const badPlan = { ...makePlan(), tokensAvailable: "yes" };
+      await mkdir(join(cwd, ".gitwise"), { recursive: true });
+      await writeFile(join(cwd, PLAN_REL), JSON.stringify(badPlan), "utf-8");
+
+      await expect(loadReleasePlan(cwd)).rejects.toMatchObject({
+        code: "INVALID_PLAN_SCHEMA",
+      });
+    });
+
     it("creates .gitwise/ when missing", async () => {
       const plan = makePlan();
       await saveReleasePlan(cwd, plan);
