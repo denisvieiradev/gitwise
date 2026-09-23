@@ -868,6 +868,27 @@ Added after the Verifier's FAIL verdict in `validation.md` (4 surviving mutants,
 
 ---
 
+### F4: Assert the exact `models` key set after migrating a legacy config with an unrecognized provider
+
+**What**: The unrecognized-provider migration test checked the five expected keys but not the exact key set, so persisting the flat block under the unknown provider name went unnoticed. Assert `Object.keys(models)` is exactly the five `ProviderKind` values, both in the returned config and in the persisted file. The real code already drops the stray key (`packages/core/src/config/user.ts` `migrateFlatModels`), so no code change. Kills Verifier mutant M4d.
+**Where**: `packages/core/__tests__/unit/config/config.test.ts`
+**Depends on**: F3
+**Reuses**: The existing `writeLegacyConfig` helper and the key-set assertion style of the MDL-06 merge test
+**Requirement**: MDL-05
+
+**Done when**:
+- [x] Returned `models` keys are exactly `api, claude-code, codex, copilot, kiro`
+- [x] Persisted `models` keys on disk are exactly the same five
+- [x] The mutation "store the flat block under any string provider" fails 1 test (checked locally, then reverted)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core` (642 passed, 0 failed)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `test(core): assert exact provider keys after migrating an unknown provider`
+
+---
+
 ## Phase Execution Map
 
 ```

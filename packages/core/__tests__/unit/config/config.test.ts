@@ -324,7 +324,7 @@ describe("config (core)", () => {
     });
 
     it("backfills every provider key from defaults when the legacy config's provider value is unrecognized", async () => {
-      await writeLegacyConfig({
+      const path = await writeLegacyConfig({
         provider: "bogus-provider",
         models: { fast: "legacy-fast", balanced: "legacy-balanced", powerful: "legacy-powerful" },
         language: "en",
@@ -339,6 +339,12 @@ describe("config (core)", () => {
       expect(loaded.models.codex).toEqual(DEFAULT_USER_CONFIG.models.codex);
       expect(loaded.models.copilot).toEqual(DEFAULT_USER_CONFIG.models.copilot);
       expect(loaded.models.kiro).toEqual(DEFAULT_USER_CONFIG.models.kiro);
+      // Exactly the five ProviderKind keys: no stray models["bogus-provider"]
+      // block, neither in the returned config nor in the persisted file.
+      const PROVIDER_KEYS = ["api", "claude-code", "codex", "copilot", "kiro"];
+      expect(Object.keys(loaded.models).sort()).toEqual(PROVIDER_KEYS);
+      const onDisk = JSON.parse(await readFile(path, "utf-8")) as { models: Record<string, unknown> };
+      expect(Object.keys(onDisk.models).sort()).toEqual(PROVIDER_KEYS);
     });
 
     it("does not re-migrate a config already in the per-provider shape (no double migration)", async () => {
