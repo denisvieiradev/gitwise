@@ -423,10 +423,10 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `gw config provider codex` (and copilot/kiro) succeeds; `gw config provider bogus` fails with a clear, valid-values-listing error and does not write
-- [ ] `gw config models.fast <id>` writes to the active provider's block; `gw config models.codex.fast <id>` writes to Codex's block regardless of active provider
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise`
-- [ ] Test count: `config.test.ts` (cli package) gains 5+ new cases
+- [x] `gw config provider codex` (and copilot/kiro) succeeds; `gw config provider bogus` fails with a clear, valid-values-listing error and does not write
+- [x] `gw config models.fast <id>` writes to the active provider's block; `gw config models.codex.fast <id>` writes to Codex's block regardless of active provider
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise` — modulo the same pre-existing chalk/version-lockstep failures noted in T12, unchanged by this task
+- [x] Test count: `config.test.ts` (cli package) gains 5+ new cases
 
 **Tests**: unit
 **Gate**: quick
