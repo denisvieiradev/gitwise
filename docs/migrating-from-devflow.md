@@ -34,7 +34,7 @@ These commands are gone and **not** coming back in MVP. The "Why" column explain
 
 | `devflow-cli` | Replacement | Why |
 |---|---|---|
-| `devflow init` | _(none — no setup required)_ | `gitwise` has no required initialization. The first `gw` invocation prompts once for a provider (Claude Code subprocess or Anthropic API) and writes `~/.gitwise/config.json`. There is no per-repo `.gitwise/` directory created by tooling. |
+| `devflow init` | _(none — no setup required)_ | `gitwise` has no required initialization. The first `gw` invocation prompts once for a provider (Claude Code, Codex, Copilot or Kiro subprocess, or the Anthropic API) and writes `~/.gitwise/config.json`. There is no per-repo `.gitwise/` directory created by tooling. |
 | `devflow prd <description>` | _(none — outside scope)_ | Pipeline command. `gitwise` is positioned as an AI git toolbelt, not a planning pipeline. Use a separate planning tool of your choice (or your own notes) for PRD authoring. |
 | `devflow techspec [ref]` | _(none — outside scope)_ | Pipeline command. Same reasoning as `prd`. |
 | `devflow tasks [ref]` | _(none — outside scope)_ | Pipeline command. Same reasoning as `prd`. |
