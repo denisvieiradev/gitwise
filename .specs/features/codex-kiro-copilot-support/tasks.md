@@ -826,6 +826,27 @@ Added after the Verifier's FAIL verdict in `validation.md` (4 surviving mutants,
 
 ---
 
+### F2: Test the `gw commit` alternatives token print for PROV-07
+
+**What**: Cover the fifth CLI token print site, `packages/cli/src/commands/commit.ts:236` (the "Think again → best single message" alternatives list), for both `tokensAvailable: false` (prints `Tokens: n/a`) and `true` (prints real counts). Kills Verifier mutant M6b.
+**Where**: `packages/cli/__tests__/commands.test.ts`
+**Depends on**: F1
+**Reuses**: The existing PROV-07 print-site cases' `jest.unstable_mockModule` pattern and `BASE_CORE_MOCK`
+**Requirement**: PROV-07
+
+**Done when**:
+- [x] Alternatives with `tokensAvailable: false` print `Tokens: n/a` and no `0 in / 0 out` after the `Alternatives:` header, while the initial plan reports real usage (so the line can only come from this print site)
+- [x] Alternatives with `tokensAvailable: true` print `Tokens: 123 in / 45 out` and no `n/a`
+- [x] The mutation "pass `true` instead of `alts.tokensAvailable`" fails 1 test (checked locally, then reverted)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise` shows the same 29 pre-existing failures (`commands.test.ts` still fails at module load under chalk 5.6.2); under a scratchpad-only chalk-stub config the cli project runs 378 passed / 4 failed (the same 4 pre-existing failures) and `commands.test.ts` 43/43
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `test(cli): cover tokens n/a in the commit alternatives print`
+
+---
+
 ## Phase Execution Map
 
 ```

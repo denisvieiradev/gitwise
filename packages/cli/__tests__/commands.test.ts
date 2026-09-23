@@ -331,6 +331,63 @@ describe("token output shows n/a when the provider doesn't report usage (PROV-07
     jest.resetModules();
   });
 
+  // The "Think again → best single message" path prints its own token line for
+  // the alternatives call. The initial plan reports real usage (11/22) so the
+  // only possible source of the asserted alternatives line is that print site.
+  // Picking "cancel" ends the flow before the picked alternative is redisplayed.
+  async function runCommitAlternatives(alternativesTokens: { input: number; output: number }, tokensAvailable: boolean): Promise<string[]> {
+    jest.resetModules();
+    const select = jest.fn<() => Promise<unknown>>()
+      .mockResolvedValueOnce("think")
+      .mockResolvedValueOnce("single")
+      .mockResolvedValueOnce("cancel");
+    jest.unstable_mockModule("@clack/prompts", () => ({ ...CLACK_MOCK, select }));
+    const commitMock = jest.fn(async (opts: { generateAlternatives?: boolean }) =>
+      opts.generateAlternatives
+        ? { kind: "alternatives", options: ["feat: a", "feat: b"], tokens: alternativesTokens, tokensAvailable }
+        : { kind: "single", commits: [{ message: "chore: stub", files: [] }], tokens: { input: 11, output: 22 }, tokensAvailable: true },
+    );
+    jest.unstable_mockModule("@denisvieiradev/gitwise-core", () => ({
+      ...BASE_CORE_MOCK,
+      commit: commitMock,
+      applyCommitPlan: jest.fn(async () => undefined),
+    }));
+    const { makeCommitCommand: makeCommitCommandMocked } = await import("../src/commands/commit.js");
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const exitSpy = jest.spyOn(process, "exit").mockImplementation((() => {
+      throw new Error("process.exit");
+    }) as never);
+
+    try {
+      await expect(makeCommitCommandMocked().parseAsync(["node", "commit"])).rejects.toThrow("process.exit");
+      expect(commitMock).toHaveBeenCalledWith(expect.objectContaining({ generateAlternatives: true }));
+      const lines = logSpy.mock.calls.map((call) => String(call[0]));
+      const altIdx = lines.findIndex((l) => l.includes("Alternatives:"));
+      expect(altIdx).toBeGreaterThanOrEqual(0);
+      return lines.slice(altIdx);
+    } finally {
+      logSpy.mockRestore();
+      exitSpy.mockRestore();
+      jest.dontMock("@denisvieiradev/gitwise-core");
+      jest.dontMock("@clack/prompts");
+      jest.resetModules();
+    }
+  }
+
+  it("gw commit alternatives (Think again) prints 'Tokens: n/a' when usage is unavailable", async () => {
+    const afterAlternatives = await runCommitAlternatives({ input: 0, output: 0 }, false);
+
+    expect(afterAlternatives.some((l) => l.includes("Tokens: n/a"))).toBe(true);
+    expect(afterAlternatives.some((l) => l.includes("0 in / 0 out"))).toBe(false);
+  });
+
+  it("gw commit alternatives (Think again) prints real token counts when usage is available", async () => {
+    const afterAlternatives = await runCommitAlternatives({ input: 123, output: 45 }, true);
+
+    expect(afterAlternatives.some((l) => l.includes("Tokens: 123 in / 45 out"))).toBe(true);
+    expect(afterAlternatives.some((l) => l.includes("Tokens: n/a"))).toBe(false);
+  });
+
   it("gw review prints 'Tokens: n/a'", async () => {
     jest.resetModules();
     jest.unstable_mockModule("@clack/prompts", () => CLACK_MOCK);
