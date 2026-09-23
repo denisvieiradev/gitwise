@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import chalk from "chalk";
 import { makeConfigCommand } from "./commands/config.js";
 import { makeProviderCommand } from "./commands/provider.js";
+import { makeSkillsCommand } from "./commands/skills.js";
 import { makeCommitCommand } from "./commands/commit.js";
 import { makeReviewCommand } from "./commands/review.js";
 import { makePrCommand } from "./commands/pr.js";
@@ -46,6 +47,7 @@ export function createProgram(): Command {
   program.addCommand(makeReleaseCommand());
   program.addCommand(makeConfigCommand());
   program.addCommand(makeProviderCommand());
+  program.addCommand(makeSkillsCommand());
 
   return program;
 }

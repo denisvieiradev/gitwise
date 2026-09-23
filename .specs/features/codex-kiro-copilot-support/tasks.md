@@ -703,13 +703,13 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `gw skills install codex` in a scratch temp directory produces correct `.agents/skills/gitwise-*/SKILL.md` files
-- [ ] `gw skills install kiro` / `gw skills install copilot` produce their respective correct output
-- [ ] Re-running install overwrites gitwise-owned files but leaves an unrelated pre-seeded file in the same target directory untouched
-- [ ] `gw skills install bogus-tool` fails with a clear error listing valid tool names, without creating any file
-- [ ] Running in an unwritable directory fails fast with a clear error, no partial install
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise`
-- [ ] Test count: new `skills-install.test.ts`, 8+ cases covering every bullet above
+- [x] `gw skills install codex` in a scratch temp directory produces correct `.agents/skills/gitwise-*/SKILL.md` files
+- [x] `gw skills install kiro` / `gw skills install copilot` produce their respective correct output
+- [x] Re-running install overwrites gitwise-owned files but leaves an unrelated pre-seeded file in the same target directory untouched
+- [x] `gw skills install bogus-tool` fails with a clear error listing valid tool names, without creating any file
+- [x] Running in an unwritable directory fails fast with a clear error, no partial install
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise` — modulo the same pre-existing chalk/version-lockstep failures (verified with the chalk-stub config: 357 passed)
+- [x] Test count: new `skills-install.test.ts`, 8+ cases covering every bullet above
 
 **Tests**: integration
 **Gate**: full
