@@ -120,6 +120,14 @@ F1 → F2 → F3 → F4 → F5 → F6
 
 Added after the Verifier's FAIL verdict in `validation.md` (4 surviving mutants, 1 spec-precision gap on MDL-02, 1 privacy-claim contradiction in `SECURITY.md`). Each F-task closes one ranked gap.
 
+### Phase 9: Post-validation follow-ups
+
+```
+G1 → G2 → G3 → G4 → G5 → G6
+```
+
+User-approved follow-ups after the Verifier's PASS: a release-blocking dependency-pin mismatch, the Kiro default models, a stale `SECURITY.md` line, per-tool subprocess timeouts, real Copilot token usage, and a safe invoked-directly check in the skills scripts.
+
 ---
 
 ## Task Breakdown
@@ -933,10 +941,34 @@ Added after the Verifier's FAIL verdict in `validation.md` (4 surviving mutants,
 
 ---
 
+### Phase 9: Post-validation follow-ups
+
+### G1: Align the gitwise-core dependency pins with the workspace version
+
+**What**: `packages/cli` and `packages/skills` pinned `@denisvieiradev/gitwise-core` at `1.1.1` while the workspace is `1.2.0`, so npm installed a stale registry copy under `packages/cli/node_modules/` and `packages/skills/node_modules/`, breaking cli typecheck and 3 lockstep tests. Set both pins to `1.2.0`, bump `packages/skills/.claude-plugin/plugin.json` to `1.2.0` (asserted by `skills.test.ts`), and refresh `package-lock.json` with `npm install`. cli's `gitwise-skills` pin already equals `1.2.0`; `scripts/release.mjs` is untouched.
+**Where**: `packages/cli/package.json`, `packages/skills/package.json`, `packages/skills/.claude-plugin/plugin.json`, `package-lock.json`
+**Depends on**: Phase 8 complete
+**Reuses**: The existing ADR-005 lockstep tests in `manifest.test.ts` and `skills.test.ts`
+**Requirement**: DIST-02 (cli depends on the published skills package in lockstep)
+
+**Done when**:
+- [x] Both core pins read `1.2.0`; `plugin.json` version reads `1.2.0`
+- [x] The lockfile diff only swaps the two pins and drops the two nested `gitwise-core@1.1.1` registry entries plus the root `@anthropic-ai/sdk@0.109.0` that only they required; no other dependency changes
+- [x] `packages/cli/node_modules/@denisvieiradev/gitwise-core` no longer exists; the root `node_modules/@denisvieiradev/*` entries are workspace symlinks
+- [x] `npm run build`, `npm run lint`, `npm run typecheck` each exit 0
+- [x] Gate check passes: `npm test` (root): 1067 passed / 28 failed / 7 skipped. The 3 lockstep failures are gone; the 28 remaining are the chalk 5.6.2 `supportsColor` TDZ load-order failures in 5 cli suites (readme-doc-snippets, release-wiring, program, commands, run-cli)
+
+**Tests**: none (config-only; the existing lockstep tests now pass)
+**Gate**: build
+
+**Commit**: `build(deps): pin gitwise-core to the 1.2.0 workspace version`
+
+---
+
 ## Phase Execution Map
 
 ```
-Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 4b → Phase 5 → Phase 6 → Phase 7 → Phase 8
+Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 4b → Phase 5 → Phase 6 → Phase 7 → Phase 8 → Phase 9
 
 Phase 1:   T1 ------→ T2 ------→ T3 ------→ T4
 Phase 2:                                     T4 -→ T5 ------→ T6 ------→ T7 ------→ T8
@@ -947,6 +979,7 @@ Phase 5:                                                                        
 Phase 6:   T21 -----→ T22 -----→ T23 -----→ T24
 Phase 7:                                     T24 -→ T25 -----→ T26
 Phase 8:                                                         T26 ⇒ F1 -→ F2 -→ F3 -→ F4 -→ F5 -→ F6
+Phase 9:                                                                                                F6 ⇒ G1 -→ G2 -→ G3 -→ G4 -→ G5 -→ G6
 ```
 
 Execution is strictly sequential — there is no intra-phase parallelism. A single agent (or batch worker) works one task at a time, in order. Total: 26 tasks across 7 phases — above the ~8-task single-batch threshold, so batch sub-agents will be offered at Execute (see Sub-Agent Delegation in `SKILL.md`).
