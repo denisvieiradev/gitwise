@@ -731,9 +731,9 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `git ls-files .gemini` returns no results
-- [ ] No remaining reference to `.gemini/skills` or `.gemini/settings.json` anywhere in `README.md`, `docs/`, or `packages/*/src` (there never was one, per the design.md research, but confirmed here as a final check)
-- [ ] Gate check passes: `npm test` (full suite, confirming nothing depended on the removed files)
+- [x] `git ls-files .gemini` returns no results
+- [x] No remaining reference to `.gemini/skills` or `.gemini/settings.json` anywhere in `README.md`, `docs/`, or `packages/*/src` (there never was one, per the design.md research, but confirmed here as a final check)
+- [x] Gate check passes: `npm test` (full suite, confirming nothing depended on the removed files) — build passes; test failures are the same pre-existing chalk/version-lockstep set as T12-T23 (identical with or without the removal); cli typecheck fails only because `packages/cli/node_modules/@denisvieiradev/gitwise-core` is a stale registry 1.1.1 copy (see T22), verified clean via a source-mapped scratch tsconfig
 
 **Tests**: none
 **Gate**: build
