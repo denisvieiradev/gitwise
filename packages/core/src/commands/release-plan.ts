@@ -84,7 +84,7 @@ export async function loadReleasePlan(cwd: string): Promise<PersistedReleasePlan
   // existed has no such key on disk at all — default it to true (real
   // providers reported real usage at the time) rather than leaving it
   // undefined on the returned, statically-typed-as-required value.
-  return { tokensAvailable: true, ...parsed };
+  return { ...parsed, tokensAvailable: (parsed as { tokensAvailable?: boolean }).tokensAvailable ?? true };
 }
 
 function isPersistedReleasePlan(value: unknown): value is PersistedReleasePlan {
