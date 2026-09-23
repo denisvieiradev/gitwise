@@ -654,10 +654,10 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] Running `npm run build -w @denisvieiradev/gitwise-skills` produces valid Codex/Kiro `SKILL.md` files and one Copilot `gitwise.instructions.md` under `dist/adapters/`
-- [ ] Every generated file has correct frontmatter for its target tool's convention and references the correct installed-package script path
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-skills`
-- [ ] Test count: new `generate-adapters.test.ts`, 6+ cases (frontmatter shape per tool, script-path correctness per tool, all 4 commands present per tool)
+- [x] Running `npm run build -w @denisvieiradev/gitwise-skills` produces valid Codex/Kiro `SKILL.md` files and one Copilot `gitwise.instructions.md` under `dist/adapters/`
+- [x] Every generated file has correct frontmatter for its target tool's convention and references the correct installed-package script path
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-skills`
+- [x] Test count: new `generate-adapters.test.ts`, 6+ cases (frontmatter shape per tool, script-path correctness per tool, all 4 commands present per tool)
 
 **Tests**: unit
 **Gate**: quick
