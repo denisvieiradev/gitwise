@@ -498,10 +498,10 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] All-calls-report-usage case aggregates to `tokensAvailable: true`
-- [ ] Any-call-doesn't-report-usage case aggregates to `tokensAvailable: false`
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
-- [ ] Test count: `release.test.ts` gains 2+ new cases for the aggregation branches
+- [x] All-calls-report-usage case aggregates to `tokensAvailable: true`
+- [x] Any-call-doesn't-report-usage case aggregates to `tokensAvailable: false`
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: `release.test.ts` gains 2+ new cases for the aggregation branches
 
 **Tests**: unit
 **Gate**: quick
