@@ -31,6 +31,22 @@ describe("config (core)", () => {
       expect(DEFAULT_USER_CONFIG.models["claude-code"]).toEqual(preFeatureClaude);
     });
 
+    it("defaults codex to the model IDs in the codex CLI model catalog", () => {
+      expect(DEFAULT_USER_CONFIG.models.codex).toEqual({
+        fast: "gpt-6-luna",
+        balanced: "gpt-6-sol",
+        powerful: "gpt-6-astra",
+      });
+    });
+
+    it("defaults copilot to the Claude tiers listed by copilot help config", () => {
+      expect(DEFAULT_USER_CONFIG.models.copilot).toEqual({
+        fast: "claude-haiku-4.5",
+        balanced: "claude-sonnet-4.6",
+        powerful: "claude-opus-4.7",
+      });
+    });
+
     it("defaults kiro to the model IDs listed by kiro-cli chat --list-models", () => {
       expect(DEFAULT_USER_CONFIG.models.kiro).toEqual({
         fast: "claude-haiku-4.5",
