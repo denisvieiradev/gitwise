@@ -134,6 +134,30 @@ describe("SECURITY.md data-egress claim is provider-conditional", () => {
   });
 });
 
+// The subprocess claim in "Security by Design" must name every CLI binary
+// gitwise spawns, including the Codex, Copilot and Kiro provider CLIs.
+describe("SECURITY.md subprocess claim covers every provider CLI", () => {
+  let subprocessBullet: string;
+
+  beforeAll(async () => {
+    const content = await readFile(SECURITY_MD_PATH, "utf-8");
+    const start = content.indexOf("## Security by Design");
+    expect(start).toBeGreaterThanOrEqual(0);
+    const next = content.indexOf("\n## ", start + 1);
+    const designSection = content.slice(start, next === -1 ? undefined : next);
+    subprocessBullet =
+      designSection.split("\n").find((l) => l.includes("invoked as subprocesses")) ?? "";
+  });
+
+  it("keeps the no-shell subprocess claim", () => {
+    expect(subprocessBullet).toMatch(/invoked as subprocesses with no `shell: true`/);
+  });
+
+  it.each(["gh", "claude", "codex", "copilot", "kiro-cli"])("names the `%s` binary", (binary) => {
+    expect(subprocessBullet).toContain(`\`${binary}\``);
+  });
+});
+
 describe("Fingerprint parity: KEYS.asc matches SECURITY.md", () => {
   it("fingerprint from KEYS.asc matches the fingerprint quoted in SECURITY.md", async () => {
     const gpg = await findGpg();

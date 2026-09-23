@@ -987,6 +987,27 @@ User-approved follow-ups after the Verifier's PASS: a release-blocking dependenc
 
 ---
 
+### G3: Name every provider CLI in the SECURITY.md subprocess claim
+
+**What**: `SECURITY.md` "Security by Design" said only "`gh` and `claude` binaries are invoked as subprocesses", omitting the Codex, Copilot and Kiro CLIs this feature spawns. Name `claude`, `codex`, `copilot` and `kiro-cli` (the `defaultCommand` of each `CliProviderSpec`, all spawned by `CliSubprocessProvider` without `shell: true`). A grep of `CONTRIBUTING.md`, `README.md` and `docs/` found no other copy of the stale claim.
+**Where**: `SECURITY.md`, `packages/cli/__tests__/security-docs.test.ts`
+**Depends on**: G2
+**Reuses**: The section-slicing pattern of the F6 "data-egress claim" describe block
+**Requirement**: DOC-01 (security posture matches the configured provider set)
+
+**Done when**:
+- [x] The subprocess bullet names `gh`, `claude`, `codex`, `copilot`, `kiro-cli` and keeps the no-`shell: true` claim
+- [x] 6 new assertions; 3 of them (`codex`, `copilot`, `kiro-cli`) fail against the previous `SECURITY.md`; no existing assertion changed
+- [x] The security-docs suite loaded normally (25/25), no chalk stub needed
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise`: 314 passed / 28 failed / 7 skipped; the 28 are the G1 chalk baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `docs(security): name the codex, copilot and kiro-cli subprocesses`
+
+---
+
 ## Phase Execution Map
 
 ```
