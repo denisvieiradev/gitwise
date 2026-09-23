@@ -15,8 +15,12 @@ import type { CliProviderSpec } from "./types.js";
 // - Failures exit 1 with the error on stderr, e.g.
 //   `Error: Model "x" from --model flag is not available.`
 // - Silent stdout carries no token usage, so tokens are always null.
-//   (1.0.82 can write usage to a file via `--usage-output-file`, which the
-//   stdout-only CliProviderSpec contract does not read.)
+//   `--usage-output-file <file>` ("Write final usage statistics as JSON",
+//   `copilot --help` 1.0.88) is not read: its format is undocumented on
+//   docs.github.com, and the one observed file (a run that failed before any
+//   model call) only showed the shape, with zeroed `lastCallInputTokens` /
+//   `lastCallOutputTokens` and an empty `modelMetrics`. How those fields
+//   behave for a multi-call agent turn is unverified (checked 2026-09-23).
 // - Copilot has no system-prompt flag, so the system prompt is folded in.
 
 const COMMON_COPILOT_PATHS = [

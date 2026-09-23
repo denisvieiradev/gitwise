@@ -1030,6 +1030,28 @@ User-approved follow-ups after the Verifier's PASS: a release-blocking dependenc
 
 ---
 
+### G5: Research Copilot usage via `--usage-output-file` (researched, left unavailable)
+
+**What**: Copilot always reports `tokensAvailable: false`. Research `--usage-output-file` before building on it: `copilot --help` / `copilot help billing` (1.0.88), docs.github.com, then at most one minimal live run. Outcome: the format is undocumented and the one live run failed before any model call (`Model "gpt-5-mini" from --model flag is not available.`), so the contract stays unchanged and Copilot stays at `tokensAvailable: false`. Record the finding in the `copilot.ts` comment and `context.md`; drop the now-done timeout item (G4) from Deferred Ideas.
+**Where**: `packages/core/src/providers/copilot.ts` (comment only), `.specs/features/codex-kiro-copilot-support/context.md`
+**Depends on**: G4
+**Reuses**: The existing CLI-contract comment block in `copilot.ts`
+**Requirement**: PROV-03 (Copilot AC 2: usage n/a when output has no usage data; unchanged)
+
+**Done when**:
+- [x] `copilot --help` documents only "Write final usage statistics as JSON to the specified file"; docs.github.com (CLI command reference and docs search) has no format description
+- [x] One live run made (scratch dir, `--silent --no-custom-instructions`, cheapest-looking model); it exited 1 on model availability, and the file it wrote shows the top-level shape only (`lastCallInputTokens`/`lastCallOutputTokens` 0, `modelMetrics` empty); not retried
+- [x] `copilot.ts` comment and `context.md` Deferred Ideas record the finding and the next step; the timeout item is removed
+- [x] `spec.md` left unchanged (Copilot AC 2 still describes the behavior); `validate_spec.py` reports 0 errors
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`: 655 passed, 0 failed
+
+**Tests**: none (comment and planning notes only; no behavior change)
+**Gate**: quick
+
+**Commit**: `docs(core): record why copilot usage output is not read yet`
+
+---
+
 ## Phase Execution Map
 
 ```
