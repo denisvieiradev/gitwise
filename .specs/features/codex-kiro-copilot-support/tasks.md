@@ -1052,6 +1052,28 @@ User-approved follow-ups after the Verifier's PASS: a release-blocking dependenc
 
 ---
 
+### G6: Make the skills scripts' invoked-directly check safe without a resolvable argv[1]
+
+**What**: `packages/skills/scripts/{commit,review,pr,release}.ts` guarded only against an `undefined` `argv[1]`; an `argv[1]` that does not resolve made `realpathSync` throw at import time. Guard inline in each script (absent or unresolvable → `false`), leaving direct invocation unchanged. Inline rather than a shared helper, because tsup builds each script as its own entry and a shared module would become an extra chunk. `scripts/generate-adapters.ts` has the same pattern but is outside this task's four scripts; left as is.
+**Where**: `packages/skills/scripts/{commit,review,pr,release}.ts`, `packages/skills/__tests__/invoked-directly.test.ts`
+**Depends on**: G5
+**Reuses**: The `jest.unstable_mockModule("@denisvieiradev/gitwise-core")` + dynamic-import pattern of `token-output.test.ts`
+**Requirement**: SKILL-02, SKILL-05 (the installed scripts are importable and invocable)
+
+**Done when**:
+- [x] Per script: importing with `argv[1]` absent resolves and does not run the script (`getMergedConfig` not called)
+- [x] Per script: importing with a non-existent `argv[1]` resolves and does not run the script; these 4 tests failed before the fix
+- [x] Per script: with `argv[1]` set to the script itself, the script still runs (reaches `getMergedConfig`, exits 1 on the stubbed error)
+- [x] `npm run build`, `npm run lint`, `npm run typecheck` each exit 0 (tracked `packages/skills/dist` restored after the build)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-skills`: 123 passed; root `npm test`: 1092 passed / 28 failed / 7 skipped, the 28 being the G1 chalk baseline
+
+**Tests**: unit
+**Gate**: build
+
+**Commit**: `fix(skills): treat an unresolvable argv[1] as not invoked directly`
+
+---
+
 ## Phase Execution Map
 
 ```

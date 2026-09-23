@@ -88,9 +88,16 @@ export async function runReviewSkill(
 // Only execute the runner when this module is invoked directly (i.e. `node
 // dist/scripts/review.js`). Skipping the auto-run when the file is imported
 // keeps `runReviewSkill` testable without triggering side effects.
-const invokedDirectly =
-  process.argv[1] !== undefined &&
-  realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+// An absent or unresolvable argv[1] (REPL, `node -e`) means "imported", not a throw.
+const invokedDirectly = ((): boolean => {
+  const entry = process.argv[1];
+  if (entry === undefined) return false;
+  try {
+    return realpathSync(entry) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+})();
 
 if (invokedDirectly) {
   runReviewSkill(process.argv.slice(2)).catch((err: unknown) => {
