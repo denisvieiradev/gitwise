@@ -965,6 +965,28 @@ User-approved follow-ups after the Verifier's PASS: a release-blocking dependenc
 
 ---
 
+### G2: Move the Kiro defaults to Sonnet 4.6 and Opus 4.7
+
+**What**: Kiro defaulted to `claude-haiku-4.5 / claude-sonnet-4.5 / claude-sonnet-4.5` because the installed kiro-cli 2.23.1 catalog has no Opus. The current Kiro docs (https://kiro.dev/docs/cli/chat/model-selection/) list Claude Haiku 4.5, Sonnet 4.6 and Opus 4.7 on every plan and show the dotted ID format by example (`claude-opus-4.8`). Mirror the Claude tiers and rewrite the source comment to say what was verified where, with the override for older CLIs.
+**Where**: `packages/core/src/config/types.ts`, `packages/core/__tests__/unit/config/config.test.ts`, `docs/src/content/docs/configuration.md`
+**Depends on**: G1
+**Reuses**: The existing MDL-02 `DEFAULT_USER_CONFIG.models` describe block
+**Requirement**: MDL-02
+
+**Done when**:
+- [x] Kiro defaults are `claude-haiku-4.5` / `claude-sonnet-4.6` / `claude-opus-4.7`
+- [x] The comment states: docs page lists these models on all plans and shows the ID format by example; the installed 2.23.1 catalog is narrower (haiku-4.5, sonnet-4.5, no Sonnet 4.6, no Opus); older CLIs override with `gw config models.kiro.powerful <id>`
+- [x] A new test pins the exact Kiro block (no test pinned Kiro IDs before); it fails against the old values
+- [x] `configuration.md` example shows the new Kiro block
+- [x] Gate check passes: `npm test` (root): 1068 passed / 28 failed / 7 skipped; the 28 are the G1 chalk baseline
+
+**Tests**: unit
+**Gate**: full
+
+**Commit**: `fix(core): default kiro to claude sonnet 4.6 and opus 4.7`
+
+---
+
 ## Phase Execution Map
 
 ```

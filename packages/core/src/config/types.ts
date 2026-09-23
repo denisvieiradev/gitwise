@@ -63,11 +63,15 @@ export interface MergedConfig extends UserConfig {
 //   Copilot CLI 1.0.88. The tiers mirror gitwise's Claude defaults
 //   (haiku-4.5 / sonnet-4.6 / opus-4.7); claude-sonnet-4.5 and
 //   claude-opus-4.1 are not in that list.
-// - kiro: model_id values from `kiro-cli chat --list-models` in kiro-cli
-//   2.23.1. That listing has no Opus model, and https://kiro.dev/docs/models/
-//   no longer lists Claude Opus 4.1, so `powerful` uses claude-sonnet-4.5,
-//   the most capable Claude model_id the CLI lists. The docs page names Opus
-//   4.5+ by display name only; its exact model_id string is unverified.
+// - kiro: checked 2026-09-23. https://kiro.dev/docs/cli/chat/model-selection/
+//   lists Claude Haiku 4.5, Sonnet 4.6 and Opus 4.7 on every plan (Free
+//   included) and shows the model ID format by example
+//   (`kiro-cli settings chat.defaultModel claude-opus-4.8`), so the tiers
+//   mirror gitwise's Claude defaults: claude-haiku-4.5 / claude-sonnet-4.6 /
+//   claude-opus-4.7. The installed kiro-cli 2.23.1 is older: its
+//   `kiro-cli chat --list-models` catalog is narrower (claude-haiku-4.5 and
+//   claude-sonnet-4.5, no Sonnet 4.6, no Opus). Users on an older CLI can
+//   override a tier, e.g. `gw config models.kiro.powerful claude-sonnet-4.5`.
 const CLAUDE_MODELS: ModelConfig = {
   fast: "claude-haiku-4-5-20251001",
   balanced: "claude-sonnet-4-6",
@@ -91,8 +95,8 @@ export const DEFAULT_USER_CONFIG: UserConfig = {
     },
     kiro: {
       fast: "claude-haiku-4.5",
-      balanced: "claude-sonnet-4.5",
-      powerful: "claude-sonnet-4.5",
+      balanced: "claude-sonnet-4.6",
+      powerful: "claude-opus-4.7",
     },
   },
   language: "en",
