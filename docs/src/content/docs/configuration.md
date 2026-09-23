@@ -14,11 +14,14 @@ gitwise reads configuration from two layered locations:
 
 ```json
 {
-  "provider": "api",
+  "provider": "codex",
+  "codexCliPath": "/opt/homebrew/bin/codex",
   "models": {
-    "fast": "claude-haiku-4-5-20251001",
-    "balanced": "claude-sonnet-4-6",
-    "powerful": "claude-opus-4-7"
+    "api": { "fast": "claude-haiku-4-5-20251001", "balanced": "claude-sonnet-4-6", "powerful": "claude-opus-4-7" },
+    "claude-code": { "fast": "claude-haiku-4-5-20251001", "balanced": "claude-sonnet-4-6", "powerful": "claude-opus-4-7" },
+    "codex": { "fast": "gpt-5.1-codex-mini", "balanced": "gpt-5.1-codex", "powerful": "gpt-5.1-codex-max" },
+    "copilot": { "fast": "claude-haiku-4.5", "balanced": "claude-sonnet-4.5", "powerful": "claude-opus-4.1" },
+    "kiro": { "fast": "claude-haiku-4.5", "balanced": "claude-sonnet-4.5", "powerful": "claude-opus-4.1" }
   },
   "language": "en",
   "commitConvention": "conventional"
@@ -49,14 +52,40 @@ LLM provider to use:
 
 - **`"api"`** — Uses the Anthropic API directly. Reads `ANTHROPIC_API_KEY` from the environment or from `~/.gitwise/.env`.
 - **`"claude-code"`** — Shells out to the Claude Code CLI. Requires the `claude` CLI installed and authenticated with an active Claude subscription. No API key needed.
+- **`"codex"`** — Shells out to the OpenAI Codex CLI (`codex exec`). Requires `codex` installed and authenticated.
+- **`"copilot"`** — Shells out to the GitHub Copilot CLI (`copilot -p`). Requires `copilot` installed and authenticated. Copilot does not report token usage, so `gw` prints `Tokens: n/a`.
+- **`"kiro"`** — Shells out to the Kiro CLI (`kiro-cli chat --no-interactive`). Requires `kiro-cli` installed and a qualifying Kiro subscription. Kiro does not report token usage either.
+
+Pick one interactively with `gw provider`, or set it directly with `gw config provider <value>`; an unrecognized value is rejected. Diffs go to the vendor behind the provider you choose.
+
+### claudeCliPath, codexCliPath, copilotCliPath, kiroCliPath
+
+Optional absolute path to the provider's binary. When unset, gitwise looks in the common install locations, then `PATH`. `gw provider` writes the detected path for you.
 
 ### models
 
-Model IDs for each complexity tier:
+Model IDs live in a per-provider map, `models.<provider>.<tier>`, so switching providers never leaves one vendor's model names in another's calls. Only the active provider's block is used.
+
+Tiers:
 
 - **fast** — Lightweight tasks
 - **balanced** — Default tasks (commit, review, pr)
 - **powerful** — Heavier reasoning tasks
+
+Read or write them with `gw config`:
+
+```bash
+gw config models.balanced my-model            # writes to the active provider's block
+gw config models.codex.fast gpt-5.1-codex-mini # writes to Codex's block, whichever provider is active
+```
+
+`gw provider` never touches `models`, so each provider keeps its saved values across switches. A config from an older release with a single flat `models` block is migrated into the configured provider's block on first read.
+
+A repo's `<repo>/.gitwise.json` `models` override applies to the active provider only:
+
+```json
+{ "models": { "balanced": "my-team-model" } }
+```
 
 ### language
 
