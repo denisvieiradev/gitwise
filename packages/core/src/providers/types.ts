@@ -3,6 +3,12 @@ export type ModelTier = "fast" | "balanced" | "powerful";
 // Single source of truth for provider kinds — import it, never redefine it.
 export type ProviderKind = "api" | "claude-code" | "codex" | "copilot" | "kiro";
 
+// Runtime companion to ProviderKind, for code that needs to iterate/validate
+// against the actual value set (e.g. `gw config provider <value>` validation,
+// legacy-config migration). Import this instead of hand-rolling another
+// literal array of the same five values.
+export const PROVIDER_KINDS: readonly ProviderKind[] = ["api", "claude-code", "codex", "copilot", "kiro"];
+
 // TechSpec "Core Interfaces" LLMProvider shape
 export interface LLMChatRequest {
   systemPrompt: string;

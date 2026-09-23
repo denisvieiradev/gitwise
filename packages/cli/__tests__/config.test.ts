@@ -2,14 +2,19 @@ import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 
 // The config command reads/writes via os.homedir(), which we never want a
 // test to touch for real — mock the core module entirely (same pattern as
-// release-wiring.test.ts) so every getMergedConfig/writeUserConfig call is
-// observed instead of hitting the real filesystem.
+// release-wiring.test.ts) so every getMergedConfig/readUserConfig/
+// writeUserConfig call is observed instead of hitting the real filesystem.
 const getMergedConfigMock = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+const readUserConfigMock = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 const writeUserConfigMock = jest.fn<(...args: unknown[]) => Promise<void>>();
+
+const PROVIDER_KINDS = ["api", "claude-code", "codex", "copilot", "kiro"] as const;
 
 jest.unstable_mockModule("@denisvieiradev/gitwise-core", () => ({
   getMergedConfig: getMergedConfigMock,
+  readUserConfig: readUserConfigMock,
   writeUserConfig: writeUserConfigMock,
+  PROVIDER_KINDS,
 }));
 
 let makeConfigCommand: typeof import("../src/commands/config.js").makeConfigCommand;
@@ -39,8 +44,13 @@ async function run(cmd: import("commander").Command, args: string[]): Promise<vo
 describe("config command", () => {
   beforeEach(async () => {
     getMergedConfigMock.mockReset();
+    readUserConfigMock.mockReset();
     writeUserConfigMock.mockReset();
     getMergedConfigMock.mockResolvedValue(mockConfig());
+    // Write-mode's models.* path bases its "preserve every other provider"
+    // spread on readUserConfig, not getMergedConfig — keep both mocks in
+    // sync by default; tests that need them to diverge override explicitly.
+    readUserConfigMock.mockResolvedValue(mockConfig());
     writeUserConfigMock.mockResolvedValue(undefined);
     const mod = await import("../src/commands/config.js");
     makeConfigCommand = mod.makeConfigCommand;
@@ -107,7 +117,7 @@ describe("config command", () => {
 
   describe("per-provider models keys (MDL-07)", () => {
     it("gw config models.fast <id> writes to the active provider's block", async () => {
-      getMergedConfigMock.mockResolvedValue(mockConfig({ provider: "codex" }));
+      readUserConfigMock.mockResolvedValue(mockConfig({ provider: "codex" }));
       const cmd = makeConfigCommand();
       const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
@@ -129,7 +139,7 @@ describe("config command", () => {
     it("gw config models.codex.fast <id> writes to Codex's block regardless of the active provider", async () => {
       // Active provider is "api", not codex — the explicit-provider form must
       // still target codex.
-      getMergedConfigMock.mockResolvedValue(mockConfig({ provider: "api" }));
+      readUserConfigMock.mockResolvedValue(mockConfig({ provider: "api" }));
       const cmd = makeConfigCommand();
       const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
@@ -147,7 +157,7 @@ describe("config command", () => {
     });
 
     it("preserves every other provider's block when writing models.<tier>", async () => {
-      getMergedConfigMock.mockResolvedValue(mockConfig({ provider: "copilot" }));
+      readUserConfigMock.mockResolvedValue(mockConfig({ provider: "copilot" }));
       const cmd = makeConfigCommand();
       jest.spyOn(console, "log").mockImplementation(() => {});
 
@@ -195,6 +205,46 @@ describe("config command", () => {
 
       expect(logSpy).toHaveBeenCalledWith("copilot-powerful");
       logSpy.mockRestore();
+    });
+
+    it("bases the models.<tier> write on the raw user config, not a repo-merged override", async () => {
+      // A repo-local .gitwise.json override on the active provider's tier
+      // shows up in getMergedConfig's merged view but must NEVER be baked
+      // into the persisted ~/.gitwise/config.json.
+      getMergedConfigMock.mockResolvedValue(
+        mockConfig({
+          provider: "codex",
+          models: { ...DEFAULT_MODELS, codex: { ...DEFAULT_MODELS.codex, balanced: "repo-only-balanced" } },
+        }),
+      );
+      readUserConfigMock.mockResolvedValue(mockConfig({ provider: "codex" }));
+      const cmd = makeConfigCommand();
+      jest.spyOn(console, "log").mockImplementation(() => {});
+
+      await run(cmd, ["models.fast", "new-codex-fast"]);
+
+      const call = writeUserConfigMock.mock.calls[0]?.[0] as { models: Record<string, Record<string, string>> };
+      // The persisted codex block keeps the RAW user config's balanced value,
+      // not the repo-merged "repo-only-balanced" one.
+      expect(call.models["codex"]?.["balanced"]).toBe("codex-balanced");
+      expect(call.models["codex"]?.["fast"]).toBe("new-codex-fast");
+    });
+
+    it("errors instead of writing when the persisted provider itself is unrecognized", async () => {
+      readUserConfigMock.mockResolvedValue(mockConfig({ provider: "bogus-provider" }));
+      const cmd = makeConfigCommand();
+      const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const exitSpy = jest.spyOn(process, "exit").mockImplementation(((code: number) => {
+        throw new Error(`process.exit(${code})`);
+      }) as never);
+
+      await expect(run(cmd, ["models.fast", "x"])).rejects.toThrow("process.exit(1)");
+
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("not a recognized provider"));
+      expect(writeUserConfigMock).not.toHaveBeenCalled();
+
+      errorSpy.mockRestore();
+      exitSpy.mockRestore();
     });
   });
 

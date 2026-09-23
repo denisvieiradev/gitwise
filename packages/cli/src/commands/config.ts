@@ -1,12 +1,13 @@
 import { Command } from "commander";
-import { getMergedConfig, writeUserConfig } from "@denisvieiradev/gitwise-core";
+import { getMergedConfig, readUserConfig, writeUserConfig, PROVIDER_KINDS } from "@denisvieiradev/gitwise-core";
+import type { ProviderKind } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
 
-// CFG-03 / MDL-07: the five supported provider values and the three model
-// tiers, used both to validate `provider` and to parse `models.<tier>` /
-// `models.<provider>.<tier>` dot-paths below.
-const PROVIDER_KINDS = ["api", "claude-code", "codex", "copilot", "kiro"] as const;
-type ProviderKindValue = (typeof PROVIDER_KINDS)[number];
+// CFG-03 / MDL-07: parses `provider` and `models.<tier>` /
+// `models.<provider>.<tier>` dot-paths below. PROVIDER_KINDS is imported from
+// core (the single source of truth for the five supported provider values —
+// never redefine it here or it can drift from the real ProviderKind union).
+type ProviderKindValue = ProviderKind;
 
 function isProviderKind(value: string): value is ProviderKindValue {
   return (PROVIDER_KINDS as readonly string[]).includes(value);
@@ -110,10 +111,25 @@ export function makeConfigCommand(): Command {
         // MDL-07: `models.<tier>` writes to the currently active provider's
         // block; `models.<provider>.<tier>` writes to that specific
         // provider's block regardless of which provider is currently active.
-        const targetProvider =
-          parsedModelsKey.kind === "tier" ? (config["provider"] as ProviderKindValue) : parsedModelsKey.provider;
-        const modelsMap = (config["models"] as Record<string, Record<string, string>>) ?? {};
-        const currentBlock = modelsMap[targetProvider] ?? {};
+        //
+        // Deliberately re-reads the RAW user config here (not the `config`
+        // merged-with-repo-overrides view read above) — using the merged view
+        // as the base would bake any active `<repo>/.gitwise.json` models
+        // override permanently into ~/.gitwise/config.json, silently leaking
+        // a repo-scoped override into every other project.
+        const userConfig = await readUserConfig(homeDir);
+        const targetProvider = parsedModelsKey.kind === "tier" ? userConfig.provider : parsedModelsKey.provider;
+        if (!isProviderKind(targetProvider)) {
+          // A hand-edited/corrupted config.json can hold a `provider` value
+          // outside the known set; refuse to silently add a stray key to the
+          // persisted models map instead of erroring like `gw config provider
+          // <bogus>` does.
+          console.error(`Error: Current provider '${String(targetProvider)}' is not a recognized provider.`);
+          console.error(`Valid providers: ${PROVIDER_KINDS.join(", ")}. Run \`gw config provider <value>\` to fix it.`);
+          process.exit(1);
+        }
+        const modelsMap = userConfig.models;
+        const currentBlock = modelsMap[targetProvider] ?? { fast: "", balanced: "", powerful: "" };
         // Spread every provider's current block through, not just the target
         // one — writeUserConfig/mergeWithDefaults backfills any key missing
         // from this object from DEFAULTS, which would otherwise silently
@@ -123,9 +139,9 @@ export function makeConfigCommand(): Command {
             models: {
               ...modelsMap,
               [targetProvider]: {
-                fast: currentBlock["fast"] ?? "",
-                balanced: currentBlock["balanced"] ?? "",
-                powerful: currentBlock["powerful"] ?? "",
+                fast: currentBlock.fast,
+                balanced: currentBlock.balanced,
+                powerful: currentBlock.powerful,
                 [parsedModelsKey.tier]: value,
               },
             },

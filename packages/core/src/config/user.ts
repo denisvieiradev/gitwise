@@ -4,12 +4,10 @@ import { fileExists, readJSON, writeJSON } from "../infra/filesystem.js";
 import { debug } from "../infra/logger.js";
 import { writeEnvVar } from "../infra/env.js";
 import { DEFAULT_USER_CONFIG, type ModelConfig, type ModelsByProvider, type UserConfig } from "./types.js";
-import type { ProviderKind } from "../providers/types.js";
+import { PROVIDER_KINDS, type ProviderKind } from "../providers/types.js";
 
 const GITWISE_DIR = ".gitwise";
 const USER_CONFIG_FILE = "config.json";
-
-const PROVIDER_KINDS: readonly ProviderKind[] = ["api", "claude-code", "codex", "copilot", "kiro"];
 
 function getUserConfigPath(homeDir?: string): string {
   return join(homeDir ?? os.homedir(), GITWISE_DIR, USER_CONFIG_FILE);

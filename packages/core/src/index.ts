@@ -91,5 +91,6 @@ export type { CommitOptions, CommitPlan, CommitEntry, SplitMode, ApplyCommitPlan
 
 // Provider exports — ModelConfig here is the provider-layer version
 export type { LLMProvider, LLMChatRequest, LLMChatResponse, ModelTier, ModelConfig, ProviderConfig, ProviderKind } from "./providers/types.js";
+export { PROVIDER_KINDS } from "./providers/types.js";
 export { createProvider, buildProviderConfig } from "./providers/factory.js";
 export { resolveModelTier, SUPPORTED_COMMANDS } from "./providers/model-router.js";
