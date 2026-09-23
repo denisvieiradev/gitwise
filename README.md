@@ -33,7 +33,7 @@ npm install -g @denisvieiradev/gitwise
 gw --help
 ```
 
-The first time you run a command, `gw` checks for an installed Claude Code binary and uses it as the LLM provider. If Claude Code is not available, `gw` prompts for `ANTHROPIC_API_KEY` (read from the environment or stored in `~/.gitwise/.env`).
+The first time you run a command, `gw` detects which supported AI CLIs are installed (Claude Code, Codex, Copilot, Kiro) and asks which one to use as the LLM provider. If none is available, `gw` prompts for `ANTHROPIC_API_KEY` (read from the environment or stored in `~/.gitwise/.env`). Switch providers any time with `gw provider`.
 
 ### Claude Code plugin
 
@@ -53,9 +53,21 @@ Once installed, four skills become available in the conversation:
 
 Skills inherit Claude Code's auth; no API key prompt.
 
+### Codex, Kiro, and Copilot
+
+Install gitwise's commands into your own project with `gw skills install <tool>`, run from the project's git root:
+
+```bash
+gw skills install codex     # .agents/skills/gitwise-*/SKILL.md
+gw skills install kiro      # .kiro/skills/gitwise-*/SKILL.md
+gw skills install copilot   # .github/instructions/gitwise.instructions.md
+```
+
+Only `gitwise-*` paths are written; your other skills and instructions (including `.github/copilot-instructions.md`) are never touched. Re-run the command after upgrading `gw` to refresh the installed files.
+
 ## Commands
 
-Four orthogonal commands. Each works standalone — no `init`, no persistent state.
+Four orthogonal commands. Each works standalone — no `init`, no persistent state. Two setup commands manage the AI provider and the native agent surfaces.
 
 | Command | Description |
 |---|---|
@@ -63,8 +75,10 @@ Four orthogonal commands. Each works standalone — no `init`, no persistent sta
 | `gw review [intent]` | AI review of the current branch vs. base. Findings categorized as **Critical / Suggestions / Nitpicks**. `--json` for scripting. |
 | `gw pr [intent]` | Drafts a PR title + body from the branch commits. Opens the PR via `gh` if installed; otherwise prints title + body for manual creation. `--update` refreshes an existing PR. |
 | `gw release` | Inspects commits since the last tag, recommends a semver bump, updates `CHANGELOG.md`, writes release notes (English default; PT / ES / FR available), bumps `package.json`, tags, pushes, and creates a GitHub release via `gh` when available. |
+| `gw provider` | Lists the AI CLIs detected on your machine (Claude Code, Codex, Copilot, Kiro) plus the Anthropic API key option and saves your choice. Each provider keeps its own model tiers, so switching needs no other edits. |
+| `gw skills install <tool>` | Installs gitwise's commands for `codex`, `kiro`, or `copilot` into the current project. Re-run it to update. |
 
-Every LLM call prints input/output token counts after the operation. The model tier (`fast` / `balanced` / `powerful`) is routed per-command and configurable per repo.
+Every LLM call prints input/output token counts after the operation (`n/a` when the provider does not report usage). The model tier (`fast` / `balanced` / `powerful`) is routed per-command and configurable per repo.
 
 ## Release lifecycle
 
@@ -100,13 +114,21 @@ See [ADR-002](.compozy/tasks/release-prepare/adrs/adr-002.md) for why the strate
 
 ## Privacy
 
-**Diffs are sent to Claude** (via the Anthropic API or your local Claude Code subprocess) for processing. There is no other telemetry; no usage data leaves your machine except the LLM calls themselves.
+**Diffs are sent to the vendor behind the `provider` you configure** — and only to that vendor. There is no other telemetry; no usage data leaves your machine except the LLM calls themselves.
+
+| `provider` | Where diffs go |
+|---|---|
+| `api` | Anthropic, directly from `gw` using your `ANTHROPIC_API_KEY`. |
+| `claude-code` | Anthropic, through the `claude` binary. The process runs on your machine and uses your Claude Code account. |
+| `codex` | OpenAI, through the `codex` binary and your Codex account. |
+| `copilot` | GitHub (Copilot), through the `copilot` binary and your Copilot account. |
+| `kiro` | AWS (Kiro), through the `kiro-cli` binary and your Kiro account. |
+
+Run `gw config provider` to see which one is active and `gw provider` to change it. The native skills installed with `gw skills install` run inside Codex, Kiro, or Copilot and follow that tool's own data handling.
 
 - **Sensitive-file filter is on by default.** Files matching `.env`, `*.pem`, credential JSONs, and similar patterns are refused for staging and never included in an LLM call.
 - **API keys** are persisted in `~/.gitwise/.env` with `0600` permissions and are never written into `config.json`.
-- The Claude Code provider runs entirely on your machine through the `claude` binary; the Anthropic API provider sends requests directly to Anthropic.
-
-When you need stricter isolation, set `provider = "claude-code"` in `~/.gitwise/config.json` to keep all calls inside your local Claude Code session.
+- The CLI-based providers (`claude-code`, `codex`, `copilot`, `kiro`) delegate to the vendor's own binary and authentication; `gw` never sees or stores those credentials.
 
 ## Configuration
 
@@ -116,12 +138,15 @@ When you need stricter isolation, set `provider = "claude-code"` in `~/.gitwise/
 
 ```jsonc
 {
-  "provider": "claude-code",                 // "claude-code" | "api"
-  "claudeCliPath": "/usr/local/bin/claude",  // optional, when provider = "claude-code"
-  "models": {
-    "fast": "claude-haiku-4-5-20251001",
-    "balanced": "claude-sonnet-4-6",
-    "powerful": "claude-opus-4-7"
+  "provider": "claude-code",                 // "api" | "claude-code" | "codex" | "copilot" | "kiro"
+  "claudeCliPath": "/usr/local/bin/claude",  // optional; also codexCliPath, copilotCliPath, kiroCliPath
+  "models": {                                // one block per provider; only the active one is used
+    "claude-code": {
+      "fast": "claude-haiku-4-5-20251001",
+      "balanced": "claude-sonnet-4-6",
+      "powerful": "claude-opus-4-7"
+    }
+    // "api", "codex", "copilot", "kiro" blocks are backfilled with defaults
   },
   "language": "en",                          // "en" | "pt" | "es" | "fr"
   "defaultBaseBranch": "main",
@@ -141,7 +166,7 @@ All fields optional; only override what you need. Useful for repo-specific commi
 
 ```jsonc
 {
-  "models": { "balanced": "claude-sonnet-4-6" },
+  "models": { "balanced": "claude-sonnet-4-6" },   // applies to the active provider only
   "language": "pt",
   "defaultBaseBranch": "develop",
   "commitConvention": "conventional",
@@ -161,7 +186,7 @@ Prompt templates are loaded with three-level precedence: per-repo (`<repo>/.gitw
 |---|---|
 | [Node.js](https://nodejs.org) >= 22.12 | Runtime |
 | [Git](https://git-scm.com) | Always required |
-| [Claude Code](https://docs.claude.com/en/claude-code) **or** `ANTHROPIC_API_KEY` | LLM access |
+| [Claude Code](https://docs.claude.com/en/claude-code) **or** [Codex CLI](https://github.com/openai/codex) **or** [Copilot CLI](https://github.com/github/copilot-cli) **or** [Kiro CLI](https://kiro.dev/docs/cli/) **or** `ANTHROPIC_API_KEY` | LLM access — pick one with `gw provider` |
 | [GitHub CLI (`gh`)](https://cli.github.com) | Optional — needed only for `gw pr` create and `gw release` GitHub releases |
 
 Cross-platform: macOS, Linux, Windows.

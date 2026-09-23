@@ -755,11 +755,11 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] Privacy section text is conditional on provider, naming all 5 possible destinations (Anthropic, Claude Code's own machine-local execution, OpenAI, GitHub, AWS)
-- [ ] Requirements table lists Codex/Copilot/Kiro CLI as alternatives
-- [ ] Commands table documents `gw provider` and `gw skills install <tool>`
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise`
-- [ ] Test count: `readme-content.test.ts` gains 4+ new assertions (one per bullet above)
+- [x] Privacy section text is conditional on provider, naming all 5 possible destinations (Anthropic, Claude Code's own machine-local execution, OpenAI, GitHub, AWS)
+- [x] Requirements table lists Codex/Copilot/Kiro CLI as alternatives
+- [x] Commands table documents `gw provider` and `gw skills install <tool>`
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise`
+- [x] Test count: `readme-content.test.ts` gains 4+ new assertions (one per bullet above)
 
 **Tests**: unit
 **Gate**: quick
