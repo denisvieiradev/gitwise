@@ -912,6 +912,27 @@ Added after the Verifier's FAIL verdict in `validation.md` (4 surviving mutants,
 
 ---
 
+### F6: Make the SECURITY.md data-egress claim provider-conditional
+
+**What**: `SECURITY.md` "Security by Design" still said diffs go to Claude and that this is "the only data that leaves your machine", contradicting DOC-01. Rewrite the bullet to match the README Privacy section: diffs go to the vendor behind the configured `provider`, and the bullet maps each provider to its vendor. Add assertions to the existing `security-docs.test.ts`.
+**Where**: `SECURITY.md`, `packages/cli/__tests__/security-docs.test.ts`
+**Depends on**: F5
+**Reuses**: README Privacy wording ("Diffs are sent to the vendor behind the `provider` you configure"); the existing `SECURITY.md` content-test suite
+**Requirement**: DOC-01
+
+**Done when**:
+- [x] "Security by Design" no longer contains "Diffs are sent to Claude"
+- [x] The bullet says diffs go to the vendor behind the configured `provider` and maps `api`/`claude-code` → Anthropic, `codex` → OpenAI, `copilot` → GitHub, `kiro` → AWS
+- [x] New tests fail against the previous `SECURITY.md` (7 of them) and pass against the new one; no existing assertion changed
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise` shows 307 passed and the same 29 pre-existing chalk/lockstep failures
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `docs(security): make the data-egress claim depend on the configured provider`
+
+---
+
 ## Phase Execution Map
 
 ```
