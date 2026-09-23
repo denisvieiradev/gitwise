@@ -14,26 +14,35 @@ const DETECTED = [
   { kind: "api", label: "Anthropic API key", binaryPath: null, detected: true },
 ];
 
-async function runProvider(selection: unknown): Promise<{
+async function runProvider(
+  selection: unknown,
+  opts: { storedKey?: string; password?: unknown } = {},
+): Promise<{
   select: jest.Mock;
   writeUserConfig: jest.Mock;
   cancel: jest.Mock;
+  password: jest.Mock;
+  writeApiKey: jest.Mock;
 }> {
   jest.resetModules();
   const select = jest.fn(async () => selection);
   const cancel = jest.fn();
+  const password = jest.fn(async () => opts.password);
+  const writeApiKey = jest.fn(async () => undefined);
   const writeUserConfig = jest.fn(async () => undefined);
   jest.unstable_mockModule("@clack/prompts", () => ({
     intro: jest.fn(),
     outro: jest.fn(),
     cancel,
     select,
+    password,
     isCancel: (v: unknown) => v === CANCEL,
   }));
   jest.unstable_mockModule("@denisvieiradev/gitwise-core", () => ({
     writeUserConfig,
     readUserConfig: jest.fn(),
-    writeApiKey: jest.fn(),
+    writeApiKey,
+    getApiKey: jest.fn(async () => ("storedKey" in opts ? opts.storedKey : "sk-ant-stored")),
     fileExists: jest.fn(),
   }));
   jest.unstable_mockModule("../src/detect-providers.js", () => ({
@@ -41,7 +50,7 @@ async function runProvider(selection: unknown): Promise<{
   }));
   const { makeProviderCommand } = await import("../src/commands/provider.js");
   await makeProviderCommand().parseAsync(["node", "provider"]);
-  return { select, writeUserConfig, cancel };
+  return { select, writeUserConfig, cancel, password, writeApiKey };
 }
 
 afterEach(() => {
@@ -83,5 +92,32 @@ describe("gw provider", () => {
     const { writeUserConfig } = await runProvider("claude-code");
 
     expect(writeUserConfig.mock.calls[0]?.[0]).not.toHaveProperty("models");
+  });
+
+  it("prompts for and stores an API key when switching to api with none stored", async () => {
+    const { password, writeApiKey, writeUserConfig } = await runProvider("api", {
+      storedKey: undefined,
+      password: "sk-ant-1234567890",
+    });
+
+    expect(password).toHaveBeenCalledTimes(1);
+    expect(writeApiKey.mock.calls[0]?.[0]).toBe("sk-ant-1234567890");
+    expect(writeUserConfig.mock.calls[0]?.[0]).toEqual({ provider: "api" });
+  });
+
+  it("does not prompt for a key when one is already stored", async () => {
+    const { password } = await runProvider("api");
+
+    expect(password).not.toHaveBeenCalled();
+  });
+
+  it("leaves config untouched when the API key prompt is cancelled", async () => {
+    const { writeUserConfig, writeApiKey } = await runProvider("api", {
+      storedKey: undefined,
+      password: CANCEL,
+    });
+
+    expect(writeApiKey).not.toHaveBeenCalled();
+    expect(writeUserConfig).not.toHaveBeenCalled();
   });
 });

@@ -21,10 +21,6 @@ export async function needsFirstRun(homeDir?: string): Promise<boolean> {
   return !(await fileExists(configPath));
 }
 
-/**
- * Run the first-run provider setup wizard.
- * Writes ~/.gitwise/config.json and (if api mode) ~/.gitwise/.env.
- */
 const CLI_PATH_KEYS = {
   "claude-code": "claudeCliPath",
   codex: "codexCliPath",

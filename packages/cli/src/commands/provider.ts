@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import * as p from "@clack/prompts";
 import os from "node:os";
-import { writeUserConfig } from "@denisvieiradev/gitwise-core";
+import { writeUserConfig, getApiKey, writeApiKey } from "@denisvieiradev/gitwise-core";
 import { detectAvailableProviders } from "../detect-providers.js";
 import { cliProviderConfigUpdate } from "../first-run.js";
 
@@ -37,12 +37,24 @@ export function makeProviderCommand(): Command {
         return;
       }
 
-      await writeUserConfig(cliProviderConfigUpdate(chosen), os.homedir());
+      const home = os.homedir();
 
-      p.outro(
-        chosen.kind === "api"
-          ? "Provider set to Anthropic API key. Set ANTHROPIC_API_KEY (or ~/.gitwise/.env) if you haven't."
-          : `Provider set to ${chosen.label}.`,
-      );
+      // Like the first-run wizard: switching to the API provider with no key
+      // stored anywhere would save a config that fails on every later command.
+      if (chosen.kind === "api" && !(await getApiKey(home))) {
+        const key = await p.password({
+          message: "Enter your Anthropic API key (starts with sk-ant-...):",
+          validate: (v) => (!v || v.trim().length < 10 ? "Please enter a valid API key" : undefined),
+        });
+        if (p.isCancel(key)) {
+          p.cancel("Provider unchanged.");
+          return;
+        }
+        await writeApiKey(key as string, home);
+      }
+
+      await writeUserConfig(cliProviderConfigUpdate(chosen), home);
+
+      p.outro(`Provider set to ${chosen.label}.`);
     });
 }
