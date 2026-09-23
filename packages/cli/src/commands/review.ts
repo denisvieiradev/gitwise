@@ -10,6 +10,12 @@ import {
 } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
 
+// PROV-07: shows the real counts when the active provider reports usage,
+// "n/a" when it doesn't (AD-002) — never a misleading "0 in / 0 out".
+function formatTokens(tokens: { input: number; output: number }, tokensAvailable: boolean): string {
+  return tokensAvailable ? `${tokens.input} in / ${tokens.output} out` : "n/a";
+}
+
 export function makeReviewCommand(): Command {
   return new Command("review")
     .description("AI-powered code review of staged/branch changes")
@@ -90,7 +96,7 @@ export function makeReviewCommand(): Command {
         }
       }
 
-      console.log(chalk.dim(`\n  Tokens: ${result.tokens.input} in / ${result.tokens.output} out`));
+      console.log(chalk.dim(`\n  Tokens: ${formatTokens(result.tokens, result.tokensAvailable)}`));
       p.outro(chalk.bold(`Review complete — ${result.critical.length} critical, ${result.suggestions.length} suggestions, ${result.nitpicks.length} nitpicks`));
     });
 }

@@ -135,6 +135,12 @@ async function promptStageAdditional(cwd: string): Promise<"staged" | "kept" | n
   return "staged";
 }
 
+// PROV-07: shows the real counts when the active provider reports usage,
+// "n/a" when it doesn't (AD-002) — never a misleading "0 in / 0 out".
+function formatTokens(tokens: { input: number; output: number }, tokensAvailable: boolean): string {
+  return tokensAvailable ? `${tokens.input} in / ${tokens.output} out` : "n/a";
+}
+
 function displayPlan(plan: CommitPlan): void {
   if (plan.kind === "single") {
     const [c] = plan.commits;
@@ -147,7 +153,7 @@ function displayPlan(plan: CommitPlan): void {
       console.log(chalk.cyan(`  ${i + 1}. ${c.message}`));
     });
   }
-  console.log(chalk.dim(`\n  Tokens: ${plan.tokens.input} in / ${plan.tokens.output} out`));
+  console.log(chalk.dim(`\n  Tokens: ${formatTokens(plan.tokens, plan.tokensAvailable)}`));
 }
 
 function alternativeToPlan(alts: CommitAlternatives, index: number): CommitPlan {
@@ -156,6 +162,7 @@ function alternativeToPlan(alts: CommitAlternatives, index: number): CommitPlan 
     kind: "single",
     commits: [{ message, files: [] }],
     tokens: alts.tokens,
+    tokensAvailable: alts.tokensAvailable,
   };
 }
 
@@ -231,7 +238,7 @@ async function runRefinementLoop(
         alts.options.forEach((opt, i) => {
           console.log(chalk.cyan(`  ${i + 1}. ${opt}`));
         });
-        console.log(chalk.dim(`\n  Tokens: ${alts.tokens.input} in / ${alts.tokens.output} out`));
+        console.log(chalk.dim(`\n  Tokens: ${formatTokens(alts.tokens, alts.tokensAvailable)}`));
 
         const pickOptions = [
           ...alts.options.map((opt, i) => ({ value: `pick:${i}`, label: `Use: ${opt}` })),
@@ -330,6 +337,9 @@ export function makeCommitCommand(): Command {
             return {
               content: JSON.stringify({ type: "single", message: presetMessage }),
               tokens: { input: 0, output: 0 },
+              // No LLM call happens for a preset --message — this is a real,
+              // known-zero usage, not a provider that fails to report it.
+              tokensAvailable: true,
             };
           },
         };

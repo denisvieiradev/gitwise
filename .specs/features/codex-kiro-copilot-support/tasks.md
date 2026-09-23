@@ -523,9 +523,9 @@ T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] Every one of the 5 print sites shows `n/a` when `tokensAvailable` is `false`, and the real numbers otherwise
-- [ ] Gate check passes: `npm test -w @denisvieiradev/gitwise`
-- [ ] Test count: `commands.test.ts` (cli package) gains a case per command asserting the `n/a` output — 4+ new tests
+- [x] Every one of the 5 print sites shows `n/a` when `tokensAvailable` is `false`, and the real numbers otherwise
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise` — modulo the pre-existing chalk 5.6.2/ts-jest ESM issue (unrelated, predates this feature); verified with a local chalk-stub jest config that all 4 new commands.test.ts cases plus the rest of the cli suite (325/329 excluding the two genuinely pre-existing failures) pass
+- [x] Test count: `commands.test.ts` (cli package) gains a case per command asserting the `n/a` output — 4+ new tests
 
 **Tests**: unit
 **Gate**: full

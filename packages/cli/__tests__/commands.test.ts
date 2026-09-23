@@ -7,7 +7,7 @@
  * 3. Has the expected command name and description
  */
 
-import { describe, it, expect } from "@jest/globals";
+import { describe, it, expect, jest } from "@jest/globals";
 import { makeCommitCommand, formatCommitErrorCancel } from "../src/commands/commit.js";
 import { makeReviewCommand } from "../src/commands/review.js";
 import { makePrCommand } from "../src/commands/pr.js";
@@ -254,5 +254,171 @@ describe("makeReleaseCommand", () => {
       const strategyOpt = allOptions.find((o) => o.long === "--strategy");
       expect(strategyOpt).toBeUndefined();
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PROV-07: "Tokens: n/a" print sites (T17)
+//
+// Each case re-mocks @denisvieiradev/gitwise-core and @clack/prompts fresh
+// (jest.resetModules() + jest.unstable_mockModule(), then a dynamic import of
+// the command module under test) so it doesn't disturb the static top-level
+// imports the rest of this file's tests rely on — mirrors the pattern already
+// used by pr.test.ts's applyPr() mocked-module cases.
+// ---------------------------------------------------------------------------
+
+const CLACK_MOCK = {
+  intro: jest.fn(),
+  outro: jest.fn(),
+  cancel: jest.fn(),
+  spinner: () => ({ start: jest.fn(), stop: jest.fn(), message: jest.fn() }),
+  confirm: jest.fn(async () => true),
+  select: jest.fn(async () => "apply"),
+  multiselect: jest.fn(async () => []),
+  text: jest.fn(async () => ""),
+  isCancel: (v: unknown) => v === Symbol.for("clack:cancel"),
+};
+
+const BASE_CORE_MOCK = {
+  getMergedConfig: jest.fn(async () => ({ provider: "api", models: {}, claudeCliPath: "" })),
+  getApiKey: jest.fn(async () => "fake-key"),
+  createProvider: jest.fn(() => ({ chat: async () => ({ content: "", tokens: { input: 0, output: 0 }, tokensAvailable: true }) })),
+  buildProviderConfig: jest.fn(() => ({ kind: "api", models: { fast: "f", balanced: "b", powerful: "p" } })),
+  GitwiseError: class MockGitwiseError extends Error {
+    code: string;
+    constructor(args: { code: string; message: string }) {
+      super(args.message);
+      this.code = args.code;
+    }
+  },
+  git: {
+    parseStatus: jest.fn(async () => []),
+    add: jest.fn(async () => undefined),
+    push: jest.fn(async () => undefined),
+  },
+};
+
+describe("token output shows n/a when the provider doesn't report usage (PROV-07)", () => {
+  it("gw commit prints 'Tokens: n/a'", async () => {
+    jest.resetModules();
+    jest.unstable_mockModule("@clack/prompts", () => CLACK_MOCK);
+    jest.unstable_mockModule("@denisvieiradev/gitwise-core", () => ({
+      ...BASE_CORE_MOCK,
+      commit: jest.fn(async () => ({
+        kind: "single",
+        commits: [{ message: "chore: stub", files: [] }],
+        tokens: { input: 0, output: 0 },
+        tokensAvailable: false,
+      })),
+      applyCommitPlan: jest.fn(async () => undefined),
+    }));
+    const { makeCommitCommand: makeCommitCommandMocked } = await import("../src/commands/commit.js");
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+    const cmd = makeCommitCommandMocked();
+    await cmd.parseAsync(["node", "commit", "--no-confirm"]);
+
+    expect(logSpy.mock.calls.some((call) => String(call[0]).includes("Tokens: n/a"))).toBe(true);
+
+    logSpy.mockRestore();
+    jest.dontMock("@denisvieiradev/gitwise-core");
+    jest.dontMock("@clack/prompts");
+    jest.resetModules();
+  });
+
+  it("gw review prints 'Tokens: n/a'", async () => {
+    jest.resetModules();
+    jest.unstable_mockModule("@clack/prompts", () => CLACK_MOCK);
+    jest.unstable_mockModule("@denisvieiradev/gitwise-core", () => ({
+      ...BASE_CORE_MOCK,
+      review: jest.fn(async () => ({
+        critical: [{ description: "an issue" }],
+        suggestions: [],
+        nitpicks: [],
+        markdown: "",
+        tokens: { input: 0, output: 0 },
+        tokensAvailable: false,
+      })),
+    }));
+    const { makeReviewCommand: makeReviewCommandMocked } = await import("../src/commands/review.js");
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+    const cmd = makeReviewCommandMocked();
+    await cmd.parseAsync(["node", "review"]);
+
+    expect(logSpy.mock.calls.some((call) => String(call[0]).includes("Tokens: n/a"))).toBe(true);
+
+    logSpy.mockRestore();
+    jest.dontMock("@denisvieiradev/gitwise-core");
+    jest.dontMock("@clack/prompts");
+    jest.resetModules();
+  });
+
+  it("gw pr prints 'Tokens: n/a'", async () => {
+    jest.resetModules();
+    jest.unstable_mockModule("@clack/prompts", () => CLACK_MOCK);
+    jest.unstable_mockModule("@denisvieiradev/gitwise-core", () => ({
+      ...BASE_CORE_MOCK,
+      pr: jest.fn(async () => ({
+        title: "feat: stub",
+        body: "body",
+        tokens: { input: 0, output: 0 },
+        tokensAvailable: false,
+      })),
+      applyPr: jest.fn(async () => ({ url: "https://example.com/pr/1" })),
+    }));
+    const { makePrCommand: makePrCommandMocked } = await import("../src/commands/pr.js");
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+    const cmd = makePrCommandMocked();
+    await cmd.parseAsync(["node", "pr", "--apply"]);
+
+    expect(logSpy.mock.calls.some((call) => String(call[0]).includes("Tokens: n/a"))).toBe(true);
+
+    logSpy.mockRestore();
+    jest.dontMock("@denisvieiradev/gitwise-core");
+    jest.dontMock("@clack/prompts");
+    jest.resetModules();
+  });
+
+  it("gw release prepare prints 'Tokens: n/a'", async () => {
+    jest.resetModules();
+    jest.unstable_mockModule("@clack/prompts", () => CLACK_MOCK);
+    jest.unstable_mockModule("@denisvieiradev/gitwise-core", () => ({
+      ...BASE_CORE_MOCK,
+      prepareRelease: jest.fn(async () => ({
+        schema: 1,
+        strategy: "github-flow",
+        currentVersion: "1.0.0",
+        newVersion: "1.1.0",
+        suggestedBump: "minor",
+        changelog: "changelog",
+        notes: "notes",
+        commits: "feat: x",
+        preparedAt: "2026-05-19T00:00:00Z",
+        baseCommit: "abc",
+        targetBranch: "main",
+        releaseBranchCreated: false,
+        tokens: { input: 0, output: 0 },
+        tokensAvailable: false,
+      })),
+      finishRelease: jest.fn(async () => undefined),
+      abortRelease: jest.fn(async () => undefined),
+      runReleaseInProcess: jest.fn(async () => undefined),
+      loadReleasePlan: jest.fn(async () => null),
+      detectWorkspaceRoot: jest.fn(async () => false),
+    }));
+    const { makeReleaseCommand: makeReleaseCommandMocked } = await import("../src/commands/release.js");
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+    const cmd = makeReleaseCommandMocked();
+    await cmd.parseAsync(["node", "release", "prepare"]);
+
+    expect(logSpy.mock.calls.some((call) => String(call[0]).includes("Tokens: n/a"))).toBe(true);
+
+    logSpy.mockRestore();
+    jest.dontMock("@denisvieiradev/gitwise-core");
+    jest.dontMock("@clack/prompts");
+    jest.resetModules();
   });
 });

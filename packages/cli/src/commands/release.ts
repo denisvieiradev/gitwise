@@ -27,6 +27,12 @@ function exitWithReleaseError(err: unknown, fallbackPrefix = "Error"): never {
   process.exit(1);
 }
 
+// PROV-07: shows the real counts when the active provider reports usage,
+// "n/a" when it doesn't (AD-002) — never a misleading "0 in / 0 out".
+function formatTokens(tokens: { input: number; output: number }, tokensAvailable: boolean): string {
+  return tokensAvailable ? `${tokens.input} in / ${tokens.output} out` : "n/a";
+}
+
 function renderPlan(plan: PersistedReleasePlan): void {
   console.log(
     chalk.bold("\nVersion:"),
@@ -45,7 +51,7 @@ function renderPlan(plan: PersistedReleasePlan): void {
   console.log(plan.notes);
   console.log(chalk.dim("─".repeat(60)));
   console.log(
-    chalk.dim(`\n  Tokens: ${plan.tokens.input} in / ${plan.tokens.output} out`),
+    chalk.dim(`\n  Tokens: ${formatTokens(plan.tokens, plan.tokensAvailable)}`),
   );
 }
 
