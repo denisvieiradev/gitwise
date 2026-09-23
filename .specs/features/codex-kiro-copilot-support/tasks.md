@@ -82,13 +82,21 @@ T8 → T14 → T15 → T16 → T17
 
 (T8 → T14 is the cross-phase edge from Phase 2.)
 
+### Phase 4b: Close the token-display gap in skills scripts
+
+```
+T17 → T27
+```
+
+Added after Batch 2's code-review surfaced that no task in the original plan covered `packages/skills/scripts/*` for this fix (see tasks.md history / context.md). Sequenced as its own micro-phase so Phase 4's own checkboxes and diagram stay untouched.
+
 ### Phase 5: Provider switching UX
 
 ```
 T8 → T18 → T19 → T20
 ```
 
-(T8 → T18 is the cross-phase edge from Phase 2.)
+(T8 → T18 is the cross-phase edge from Phase 2; independent of Phase 4b, which only touches token-format/skills-script files.)
 
 ### Phase 6: Real native-surface distribution + Gemini removal
 
@@ -534,6 +542,32 @@ T24 → T25 → T26
 
 ---
 
+### T27: Fix the same `tokens: n/a` gap in the skills scripts (every native-surface command)
+
+**What**: Gap found during Batch 2's code-review (not caught when tasks.md was authored): `packages/skills/scripts/{commit,review,pr,release}.ts` (the same 4 thin scripts every native surface — Claude plugin today, Codex/Kiro/Copilot skills once installed via `gw skills install` — shells out to, per design.md) still print raw `**Tokens used:** ${tokens.input} in / ${tokens.output} out` markdown, ignoring `tokensAvailable`. Relocate `formatTokens` (currently CLI-only, at `packages/cli/src/commands/token-format.ts`) into `packages/core` so both `packages/cli` and `packages/skills` can import one shared implementation, update the 4 CLI command files to import it from `@denisvieiradev/gitwise-core` instead of the local copy, and update the 5 markdown token lines in the skills scripts (`release.ts` has 2) to use it, printing `n/a` when `tokensAvailable` is `false`.
+**Where**: `packages/core/src/commands/token-format.ts` (new, moved from cli), `packages/core/src/index.ts` (export it), `packages/cli/src/commands/{commit,review,pr,release}.ts` (import path updated), `packages/cli/src/commands/token-format.ts` (removed), `packages/skills/scripts/{commit,review,pr,release}.ts` (use it)
+**Depends on**: T17
+**Reuses**: The exact `formatTokens` implementation T17 already wrote, relocated rather than duplicated
+**Requirement**: PROV-07, AD-002 (the same n/a-token-usage contract, closed for every native-agent surface, not just the `gw` CLI)
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `formatTokens` lives in `packages/core` and is exported from its public API; no duplicate implementation remains in `packages/cli`
+- [x] All 4 CLI command files still print `n/a`/real numbers exactly as T17 left them (regression-free relocation)
+- [x] All 5 markdown token lines in the skills scripts print `n/a` when `tokensAvailable` is `false`, and the real numbers otherwise
+- [x] Gate check passes: `npm test` (root — spans core, cli, and skills) — modulo pre-existing, unrelated failures verified identical at baseline (chalk 5.6.2 ESM init race in `program.test.ts`/`run-cli.test.ts`/`commands.test.ts`/`release-wiring.test.ts`/`readme-doc-snippets.test.ts`, confirmed by reverting this task's own diff and reproducing the same failure; `gitwise-core` dependency-version lockstep drift in `manifest.test.ts`/`skills.test.ts`); zero new failures from this task, verified with a local chalk-stub jest config (325/336 cli tests pass, remaining 4 are the two pre-existing categories)
+- [x] Test count: existing `token-format`-adjacent CLI tests relocated to `packages/core/__tests__/unit/commands/token-format.test.ts` (2 tests, unchanged); `packages/skills/__tests__/token-output.test.ts` gains 5 new cases asserting the `n/a` output (one per script, release covering both its prepare and legacy paths)
+
+**Tests**: unit
+**Gate**: full
+
+**Commit**: `fix(core,cli,skills): relocate formatTokens and close the tokens: n/a gap in skills scripts`
+
+---
+
 ### T18: Implement `detectAvailableProviders()`
 
 **What**: Create `packages/cli/src/detect-providers.ts` exporting `detectAvailableProviders(): DetectedProvider[]`, calling each of the 4 CLI providers' `resolveXBinary()` functions and returning `{ kind, label, binaryPath }` for all 5 `ProviderKind` values (API always "available" since it needs only a key, not a binary).
@@ -764,15 +798,16 @@ T24 → T25 → T26
 ## Phase Execution Map
 
 ```
-Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7
+Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 4b → Phase 5 → Phase 6 → Phase 7
 
-Phase 1:  T1 ------→ T2 ------→ T3 ------→ T4
-Phase 2:                                    T4 -→ T5 ------→ T6 ------→ T7 ------→ T8
-Phase 3:                                    T4 -→ T9 ------→ T10 -----→ T11 -----→ T12 -----→ T13
-Phase 4:                                                                            T8 -→ T14 -----→ T15 -----→ T16 -----→ T17
-Phase 5:                                                                            T8 -→ T18 -----→ T19 -----→ T20
-Phase 6:  T21 -----→ T22 -----→ T23 -----→ T24
-Phase 7:                                    T24 -→ T25 -----→ T26
+Phase 1:   T1 ------→ T2 ------→ T3 ------→ T4
+Phase 2:                                     T4 -→ T5 ------→ T6 ------→ T7 ------→ T8
+Phase 3:                                     T4 -→ T9 ------→ T10 -----→ T11 -----→ T12 -----→ T13
+Phase 4:                                                                             T8 -→ T14 -----→ T15 -----→ T16 -----→ T17
+Phase 4b:                                                                                                                    T17 -→ T27
+Phase 5:                                                                             T8 -→ T18 -----→ T19 -----→ T20
+Phase 6:   T21 -----→ T22 -----→ T23 -----→ T24
+Phase 7:                                     T24 -→ T25 -----→ T26
 ```
 
 Execution is strictly sequential — there is no intra-phase parallelism. A single agent (or batch worker) works one task at a time, in order. Total: 26 tasks across 7 phases — above the ~8-task single-batch threshold, so batch sub-agents will be offered at Execute (see Sub-Agent Delegation in `SKILL.md`).
@@ -800,6 +835,7 @@ Execution is strictly sequential — there is no intra-phase parallelism. A sing
 | T15: release-plan schema/validator | 1 file, 1 concept | ✅ Granular |
 | T16: release.ts aggregation | 1 file, 1 function | ✅ Granular |
 | T17: CLI print statements | 4 files, 1 concept (conditional print) | ⚠️ OK if cohesive — identical one-line change repeated at 5 call sites |
+| T27: Relocate formatTokens + fix skills scripts | 7 files, 1 concept (relocate one function, apply it uniformly at 5 more call sites) | ⚠️ OK if cohesive — same "one mechanical change, many call sites" shape as T12/T14/T17, added mid-plan after a real gap was found by code-review |
 | T18: detectAvailableProviders | 1 file, 1 function | ✅ Granular |
 | T19: first-run.ts refactor | 1 file, 1 function | ✅ Granular |
 | T20: gw provider command | 2 files (1 new, 1 wiring), 1 component | ✅ Granular |
@@ -835,6 +871,7 @@ Execution is strictly sequential — there is no intra-phase parallelism. A sing
 | T15 | T14 | T14 → T15 | ✅ Match |
 | T16 | T15 | T15 → T16 | ✅ Match |
 | T17 | T16 | T16 → T17 | ✅ Match |
+| T27 | T17 | T17 → T27 (Phase 4 → Phase 4b) | ✅ Match |
 | T18 | T8 | Phase 2 → Phase 5 (T8 → T18) | ✅ Match |
 | T19 | T18 | T18 → T19 | ✅ Match |
 | T20 | T19 | T19 → T20 | ✅ Match |
@@ -870,6 +907,7 @@ Execution is strictly sequential — there is no intra-phase parallelism. A sing
 | T15: release-plan schema | Command types + release-plan | integration | integration | ✅ OK |
 | T16: release.ts aggregation | Command types + release-plan | integration | unit | ✅ OK — aggregation logic is pure-function unit-testable; `integration/release-lifecycle.test.ts` (untouched by this task) already exercises it end-to-end |
 | T17: CLI print statements | CLI commands | unit | unit | ✅ OK |
+| T27: formatTokens relocation + skills scripts fix | Provider/shared utility (core) + native-surface scripts | unit | unit | ✅ OK |
 | T18: detectAvailableProviders | CLI commands | unit | unit | ✅ OK |
 | T19: first-run.ts | CLI commands | unit | unit | ✅ OK |
 | T20: gw provider command | CLI commands | unit | unit | ✅ OK — the interactive-picker + config-persistence flow tested at CLI-command depth matches the matrix's floor; full-workspace regression covered by the `full` gate this task also runs |

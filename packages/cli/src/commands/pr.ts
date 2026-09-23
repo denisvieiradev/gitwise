@@ -8,9 +8,9 @@ import {
   buildProviderConfig,
   pr,
   applyPr,
+  formatTokens,
 } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
-import { formatTokens } from "./token-format.js";
 
 export function makePrCommand(): Command {
   return new Command("pr")

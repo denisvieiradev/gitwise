@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { formatTokens } from "../src/commands/token-format.js";
+import { formatTokens } from "../../../src/commands/token-format.js";
 
 describe("formatTokens (PROV-07)", () => {
   it("returns 'n in / m out' when tokensAvailable is true", () => {

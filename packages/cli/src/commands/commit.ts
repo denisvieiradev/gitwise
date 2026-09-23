@@ -10,10 +10,10 @@ import {
   applyCommitPlan,
   git,
   GitwiseError,
+  formatTokens,
 } from "@denisvieiradev/gitwise-core";
 import type { SplitMode, LLMProvider, CommitPlan, CommitAlternatives } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
-import { formatTokens } from "./token-format.js";
 
 interface CommitCommandOptions {
   split: string;

@@ -13,6 +13,7 @@ import {
   loadReleasePlan,
   runReleaseInProcess,
   detectWorkspaceRoot,
+  formatTokens,
 } from "@denisvieiradev/gitwise-core";
 import type {
   BumpType,
@@ -20,7 +21,6 @@ import type {
 } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
 import { formatReleaseError } from "./release-errors.js";
-import { formatTokens } from "./token-format.js";
 
 function exitWithReleaseError(err: unknown, fallbackPrefix = "Error"): never {
   const { message, hint } = formatReleaseError(err);

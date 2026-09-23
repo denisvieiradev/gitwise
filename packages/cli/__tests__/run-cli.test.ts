@@ -37,6 +37,12 @@ jest.unstable_mockModule("@denisvieiradev/gitwise-core", async () => {
       models: { fast: "f", balanced: "b", powerful: "p" },
       apiKey,
     })),
+    // T27: formatTokens relocated from ./token-format.js (cli-local) to
+    // @denisvieiradev/gitwise-core — commit.ts's print step (hit by the
+    // resolved-commitMock success-path tests below) now imports it from
+    // this mocked module.
+    formatTokens: (tokens: { input: number; output: number }, tokensAvailable: boolean): string =>
+      tokensAvailable ? `${tokens.input} in / ${tokens.output} out` : "n/a",
     PROVIDER_KINDS: ["api", "claude-code", "codex", "copilot", "kiro"],
     writeUserConfig: jest.fn(),
     git: {

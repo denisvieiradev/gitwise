@@ -284,6 +284,11 @@ const BASE_CORE_MOCK = {
   getApiKey: jest.fn(async () => "fake-key"),
   createProvider: jest.fn(() => ({ chat: async () => ({ content: "", tokens: { input: 0, output: 0 }, tokensAvailable: true }) })),
   buildProviderConfig: jest.fn(() => ({ kind: "api", models: { fast: "f", balanced: "b", powerful: "p" } })),
+  // T27: formatTokens relocated from ./token-format.js (cli-local) to
+  // @denisvieiradev/gitwise-core — every command file now imports it from
+  // the mocked core module, so the mock must provide it too.
+  formatTokens: (tokens: { input: number; output: number }, tokensAvailable: boolean): string =>
+    tokensAvailable ? `${tokens.input} in / ${tokens.output} out` : "n/a",
   GitwiseError: class MockGitwiseError extends Error {
     code: string;
     constructor(args: { code: string; message: string }) {

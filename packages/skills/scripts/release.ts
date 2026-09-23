@@ -27,6 +27,7 @@ import {
   finishRelease,
   abortRelease,
   detectWorkspaceRoot,
+  formatTokens,
 } from "@denisvieiradev/gitwise-core";
 import type {
   LLMProvider,
@@ -56,7 +57,7 @@ function renderPlan(plan: PersistedReleasePlan): void {
   process.stdout.write(`### Changelog\n\n${plan.changelog}\n\n`);
   process.stdout.write(`### Release Notes\n\n${plan.notes}\n\n`);
   process.stdout.write(
-    `**Tokens used:** ${plan.tokens.input} in / ${plan.tokens.output} out\n\n`,
+    `**Tokens used:** ${formatTokens(plan.tokens, plan.tokensAvailable)}\n\n`,
   );
 }
 
@@ -77,7 +78,7 @@ async function runLegacy(parsed: ParsedReleaseArgs, cwd: string): Promise<void> 
   process.stdout.write(`### Changelog\n\n${plan.changelog}\n\n`);
   process.stdout.write(`### Release Notes\n\n${plan.notes}\n\n`);
   process.stdout.write(
-    `**Tokens used:** ${plan.tokens.input} in / ${plan.tokens.output} out\n\n`,
+    `**Tokens used:** ${formatTokens(plan.tokens, plan.tokensAvailable)}\n\n`,
   );
 
   if (!parsed.apply) {

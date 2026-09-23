@@ -7,9 +7,9 @@ import {
   createProvider,
   buildProviderConfig,
   review,
+  formatTokens,
 } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
-import { formatTokens } from "./token-format.js";
 
 export function makeReviewCommand(): Command {
   return new Command("review")

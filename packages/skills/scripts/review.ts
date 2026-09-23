@@ -4,33 +4,37 @@
  * Usage: node scripts/review.js [--base <branch>] [--prompt "<text>"]
  */
 
+import { fileURLToPath } from "node:url";
 import {
   getMergedConfig,
   getApiKey,
   createProvider,
   buildProviderConfig,
   review,
+  formatTokens,
 } from "@denisvieiradev/gitwise-core";
 
-const args = process.argv.slice(2);
+export async function runReviewSkill(
+  rawArgs: string[],
+  cwd: string = process.cwd(),
+): Promise<void> {
+  const args = [...rawArgs];
 
-// Parse flags
-const baseIdx = args.indexOf("--base");
-let base: string | undefined;
-if (baseIdx !== -1) {
-  base = args[baseIdx + 1];
-  args.splice(baseIdx, 2);
-}
+  // Parse flags
+  const baseIdx = args.indexOf("--base");
+  let base: string | undefined;
+  if (baseIdx !== -1) {
+    base = args[baseIdx + 1];
+    args.splice(baseIdx, 2);
+  }
 
-const promptIdx = args.indexOf("--prompt");
-let extraPrompt: string | undefined;
-if (promptIdx !== -1) {
-  extraPrompt = args[promptIdx + 1];
-  args.splice(promptIdx, 2);
-}
+  const promptIdx = args.indexOf("--prompt");
+  let extraPrompt: string | undefined;
+  if (promptIdx !== -1) {
+    extraPrompt = args[promptIdx + 1];
+    args.splice(promptIdx, 2);
+  }
 
-async function main(): Promise<void> {
-  const cwd = process.cwd();
   const config = await getMergedConfig({ cwd });
   const apiKey = await getApiKey();
   const provider = createProvider(buildProviderConfig(config, apiKey));
@@ -76,12 +80,21 @@ async function main(): Promise<void> {
   }
 
   process.stdout.write(
-    `**Tokens used:** ${result.tokens.input} in / ${result.tokens.output} out\n`
+    `**Tokens used:** ${formatTokens(result.tokens, result.tokensAvailable)}\n`
   );
 }
 
-main().catch((err: unknown) => {
-  const msg = err instanceof Error ? err.message : String(err);
-  process.stderr.write(`Error: ${msg}\n`);
-  process.exit(1);
-});
+// Only execute the runner when this module is invoked directly (i.e. `node
+// dist/scripts/review.js`). Skipping the auto-run when the file is imported
+// keeps `runReviewSkill` testable without triggering side effects.
+const invokedDirectly =
+  process.argv[1] !== undefined &&
+  process.argv[1] === fileURLToPath(import.meta.url);
+
+if (invokedDirectly) {
+  runReviewSkill(process.argv.slice(2)).catch((err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`Error: ${msg}\n`);
+    process.exit(1);
+  });
+}
