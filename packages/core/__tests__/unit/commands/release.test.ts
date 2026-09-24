@@ -166,6 +166,77 @@ describe("release()", () => {
     expect(plan.tokens.output).toBe(10 + 20 + 15);
   });
 
+  it("propagates tokensAvailable: false when the provider doesn't report usage", async () => {
+    const mock = new MockLLMProvider();
+    mock.queueByIndex({ content: JSON.stringify({ suggestion: "minor", reasoning: "has features" }), tokensAvailable: false });
+    mock.queueByIndex({ content: "### Added\n- New feature", tokensAvailable: false });
+    mock.queueByIndex({ content: "Version 1.1.0 brings exciting features.", tokensAvailable: false });
+
+    const plan = await release({ cwd: tempDir, provider: mock });
+    expect(plan.tokensAvailable).toBe(false);
+  });
+
+  describe("tokensAvailable aggregation across the 3-call flow", () => {
+    it("aggregates to true when every one of the version/changelog/notes calls reports usage", async () => {
+      const mock = makeMock("minor");
+      const plan = await release({ cwd: tempDir, provider: mock });
+      expect(plan.tokensAvailable).toBe(true);
+    });
+
+    it("aggregates to false when only the middle (changelog) call doesn't report usage", async () => {
+      // Proves real AND-aggregation, not "last call wins" or "first call
+      // wins": only the changelog call (2nd of 3) is unavailable, while the
+      // version-suggestion and notes calls both report usage normally.
+      const mock = new MockLLMProvider();
+      mock.queueByIndex({
+        content: JSON.stringify({ suggestion: "minor", reasoning: "has features" }),
+        tokens: { input: 50, output: 10 },
+        tokensAvailable: true,
+      });
+      mock.queueByIndex({ content: "### Added\n- New feature", tokensAvailable: false });
+      mock.queueByIndex({
+        content: "Version 1.1.0 brings exciting features.",
+        tokens: { input: 60, output: 15 },
+        tokensAvailable: true,
+      });
+
+      const plan = await release({ cwd: tempDir, provider: mock });
+      expect(plan.tokensAvailable).toBe(false);
+      // The numeric totals are unaffected by the aggregation — tokens still sum.
+      expect(plan.tokens.input).toBeGreaterThan(0);
+    });
+
+    it("aggregates to false when only the first (version-suggestion) call doesn't report usage", async () => {
+      const mock = new MockLLMProvider();
+      mock.queueByIndex({ content: JSON.stringify({ suggestion: "minor", reasoning: "has features" }), tokensAvailable: false });
+      mock.queueByIndex({ content: "### Added\n- New feature", tokens: { input: 80, output: 20 }, tokensAvailable: true });
+      mock.queueByIndex({
+        content: "Version 1.1.0 brings exciting features.",
+        tokens: { input: 60, output: 15 },
+        tokensAvailable: true,
+      });
+
+      const plan = await release({ cwd: tempDir, provider: mock });
+      expect(mock.getCallCount()).toBe(3);
+      expect(plan.tokensAvailable).toBe(false);
+    });
+
+    it("aggregates to false when only the last (notes) call doesn't report usage", async () => {
+      const mock = new MockLLMProvider();
+      mock.queueByIndex({
+        content: JSON.stringify({ suggestion: "minor", reasoning: "has features" }),
+        tokens: { input: 50, output: 10 },
+        tokensAvailable: true,
+      });
+      mock.queueByIndex({ content: "### Added\n- New feature", tokens: { input: 80, output: 20 }, tokensAvailable: true });
+      mock.queueByIndex({ content: "Version 1.1.0 brings exciting features.", tokensAvailable: false });
+
+      const plan = await release({ cwd: tempDir, provider: mock });
+      expect(mock.getCallCount()).toBe(3);
+      expect(plan.tokensAvailable).toBe(false);
+    });
+  });
+
   it("returns changelog and notes strings", async () => {
     const mock = makeMock("minor");
     const plan = await release({ cwd: tempDir, provider: mock });
@@ -259,6 +330,7 @@ describe("applyRelease()", () => {
     notes: "Version 1.1.0 is here",
     commits: "feat: add feature",
     tokens: { input: 10, output: 5 },
+    tokensAvailable: true,
   };
 
   it("updates root package.json version", async () => {

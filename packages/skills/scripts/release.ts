@@ -15,17 +15,19 @@
  * failure so the Claude Code skill can react.
  */
 
-import { fileURLToPath } from "node:url";
+import { isInvokedDirectly } from "./invoked-directly.js";
 import {
   getMergedConfig,
   getApiKey,
   createProvider,
+  buildProviderConfig,
   release,
   applyRelease,
   prepareRelease,
   finishRelease,
   abortRelease,
   detectWorkspaceRoot,
+  formatTokens,
 } from "@denisvieiradev/gitwise-core";
 import type {
   LLMProvider,
@@ -55,19 +57,14 @@ function renderPlan(plan: PersistedReleasePlan): void {
   process.stdout.write(`### Changelog\n\n${plan.changelog}\n\n`);
   process.stdout.write(`### Release Notes\n\n${plan.notes}\n\n`);
   process.stdout.write(
-    `**Tokens used:** ${plan.tokens.input} in / ${plan.tokens.output} out\n\n`,
+    `**Tokens used:** ${formatTokens(plan.tokens, plan.tokensAvailable)}\n\n`,
   );
 }
 
 async function loadProvider(cwd: string): Promise<LLMProvider> {
   const config = await getMergedConfig({ cwd });
   const apiKey = await getApiKey();
-  return createProvider({
-    kind: config.provider,
-    models: config.models,
-    apiKey,
-    claudeCliPath: config.claudeCliPath,
-  });
+  return createProvider(buildProviderConfig(config, apiKey));
 }
 
 async function runLegacy(parsed: ParsedReleaseArgs, cwd: string): Promise<void> {
@@ -81,7 +78,7 @@ async function runLegacy(parsed: ParsedReleaseArgs, cwd: string): Promise<void> 
   process.stdout.write(`### Changelog\n\n${plan.changelog}\n\n`);
   process.stdout.write(`### Release Notes\n\n${plan.notes}\n\n`);
   process.stdout.write(
-    `**Tokens used:** ${plan.tokens.input} in / ${plan.tokens.output} out\n\n`,
+    `**Tokens used:** ${formatTokens(plan.tokens, plan.tokensAvailable)}\n\n`,
   );
 
   if (!parsed.apply) {
@@ -162,9 +159,7 @@ async function main(): Promise<void> {
 // Only execute the runner when this module is invoked directly (i.e. `node
 // dist/scripts/release.js`). Skipping the auto-run when the file is imported
 // keeps `runReleaseSkill` testable without triggering side effects.
-const invokedDirectly =
-  process.argv[1] !== undefined &&
-  process.argv[1] === fileURLToPath(import.meta.url);
+const invokedDirectly = isInvokedDirectly(import.meta.url);
 
 if (invokedDirectly) {
   main().catch((err: unknown) => {

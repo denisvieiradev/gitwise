@@ -128,6 +128,14 @@ describe("review()", () => {
     expect(result.tokens.output).toBe(50);
   });
 
+  it("propagates tokensAvailable: false when the provider doesn't report usage", async () => {
+    const mock = new MockLLMProvider();
+    mock.queueByIndex({ content: MOCK_REVIEW_RESPONSE, tokensAvailable: false });
+
+    const result = await review({ cwd: tempDir, provider: mock });
+    expect(result.tokensAvailable).toBe(false);
+  });
+
   it("does NOT read any techspec.md file from the cwd", async () => {
     const mock = new MockLLMProvider();
     mock.queueByIndex({ content: MOCK_REVIEW_RESPONSE });

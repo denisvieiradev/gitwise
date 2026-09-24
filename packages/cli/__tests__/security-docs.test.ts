@@ -100,6 +100,64 @@ describe("SECURITY.md structure", () => {
   });
 });
 
+// DOC-01 (consistency with README Privacy): the data-egress claim in
+// "Security by Design" must depend on the configured provider, not name Claude alone.
+describe("SECURITY.md data-egress claim is provider-conditional", () => {
+  let designSection: string;
+
+  beforeAll(async () => {
+    const content = await readFile(SECURITY_MD_PATH, "utf-8");
+    const start = content.indexOf("## Security by Design");
+    expect(start).toBeGreaterThanOrEqual(0);
+    const next = content.indexOf("\n## ", start + 1);
+    designSection = content.slice(start, next === -1 ? undefined : next);
+  });
+
+  it("does not claim diffs go unconditionally to Claude", () => {
+    expect(designSection).not.toMatch(/Diffs are sent to Claude/);
+  });
+
+  it("says diffs go to the vendor behind the configured provider", () => {
+    expect(designSection).toMatch(/Diffs are sent to the vendor behind the `provider` you configure/);
+  });
+
+  it.each([
+    ["api", "Anthropic"],
+    ["claude-code", "Anthropic"],
+    ["codex", "OpenAI"],
+    ["copilot", "GitHub"],
+    ["kiro", "AWS"],
+  ])("maps provider %s to vendor %s", (provider, vendor) => {
+    const egressBullet = designSection.split("\n").find((l) => l.startsWith("- **Diffs are sent")) ?? "";
+    // "<Vendor> for ... `<provider>`" within one comma-delimited clause.
+    expect(egressBullet).toMatch(new RegExp(`${vendor} for [^,]*\`${provider}\``));
+  });
+});
+
+// The subprocess claim in "Security by Design" must name every CLI binary
+// gitwise spawns, including the Codex, Copilot and Kiro provider CLIs.
+describe("SECURITY.md subprocess claim covers every provider CLI", () => {
+  let subprocessBullet: string;
+
+  beforeAll(async () => {
+    const content = await readFile(SECURITY_MD_PATH, "utf-8");
+    const start = content.indexOf("## Security by Design");
+    expect(start).toBeGreaterThanOrEqual(0);
+    const next = content.indexOf("\n## ", start + 1);
+    const designSection = content.slice(start, next === -1 ? undefined : next);
+    subprocessBullet =
+      designSection.split("\n").find((l) => l.includes("invoked as subprocesses")) ?? "";
+  });
+
+  it("keeps the no-shell subprocess claim", () => {
+    expect(subprocessBullet).toMatch(/invoked as subprocesses with no `shell: true`/);
+  });
+
+  it.each(["gh", "claude", "codex", "copilot", "kiro-cli"])("names the `%s` binary", (binary) => {
+    expect(subprocessBullet).toContain(`\`${binary}\``);
+  });
+});
+
 describe("Fingerprint parity: KEYS.asc matches SECURITY.md", () => {
   it("fingerprint from KEYS.asc matches the fingerprint quoted in SECURITY.md", async () => {
     const gpg = await findGpg();

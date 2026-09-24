@@ -3,7 +3,7 @@ import chalk from "chalk";
 import { applyNoColor, createProgram } from "../src/program.js";
 
 describe("program (cli)", () => {
-  it("registers commit, review, pr, release, and config commands", () => {
+  it("registers commit, review, pr, release, config, provider, and skills commands", () => {
     const program = createProgram();
     const commandNames = program.commands.map((c) => c.name());
     expect(commandNames).toContain("commit");
@@ -11,6 +11,8 @@ describe("program (cli)", () => {
     expect(commandNames).toContain("pr");
     expect(commandNames).toContain("release");
     expect(commandNames).toContain("config");
+    expect(commandNames).toContain("provider");
+    expect(commandNames).toContain("skills");
   });
 
   it("has a version string", () => {

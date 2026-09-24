@@ -89,6 +89,14 @@ describe("pr()", () => {
     expect(draft.tokens.input).toBe(200);
     expect(draft.tokens.output).toBe(80);
   });
+
+  it("propagates tokensAvailable: false when the provider doesn't report usage", async () => {
+    const mock = new MockLLMProvider();
+    mock.queueByIndex({ content: MOCK_PR_RESPONSE, tokensAvailable: false });
+
+    const draft = await pr({ cwd: tempDir, provider: mock, baseBranch });
+    expect(draft.tokensAvailable).toBe(false);
+  });
 });
 
 describe("applyPr()", () => {
@@ -126,6 +134,7 @@ describe("applyPr()", () => {
       title: "feat: test PR",
       body: "## Summary\n- Test",
       tokens: { input: 10, output: 5 },
+      tokensAvailable: true,
     };
 
     await expect(applyPrMocked(draft, { cwd: tempDir })).rejects.toMatchObject({
@@ -159,6 +168,7 @@ describe("applyPr()", () => {
       body: "Updated body",
       existingPrNumber: 42,
       tokens: { input: 10, output: 5 },
+      tokensAvailable: true,
     };
 
     const result = await applyPrMocked(draft, { cwd: tempDir });
@@ -177,6 +187,7 @@ describe("applyPr()", () => {
       body: "Updated body",
       existingPrNumber: 42,
       tokens: { input: 10, output: 5 },
+      tokensAvailable: true,
     };
 
     // Honest contract: url is always a non-empty string, or the call throws.

@@ -91,6 +91,29 @@ describe("dependabot.yml structure", () => {
   });
 });
 
+describe("dependabot.yml codeql-action grouping", () => {
+  it("groups every github/codeql-action/* action so init and analyze are bumped together", async () => {
+    const content = await readFile(DEPENDABOT_PATH, "utf-8");
+    const actionsBlock = content.slice(content.indexOf('package-ecosystem: "github-actions"'));
+    expect(actionsBlock).toMatch(/^\s+groups:/m);
+    expect(actionsBlock).toMatch(/github\/codeql-action\/\*/);
+  });
+});
+
+describe("Workflow runner pinning", () => {
+  it("no job runs on a floating ubuntu-latest label", async () => {
+    const files = await readdir(WORKFLOWS_DIR);
+    const violations: string[] = [];
+    for (const file of files.filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"))) {
+      const content = await readFile(join(WORKFLOWS_DIR, file), "utf-8");
+      for (const line of content.split("\n")) {
+        if (/^\s+runs-on:\s+ubuntu-latest\s*$/.test(line)) violations.push(`${file}: ${line.trim()}`);
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+});
+
 describe("ci.yml SHA pinning", () => {
   let ciContent: string;
 

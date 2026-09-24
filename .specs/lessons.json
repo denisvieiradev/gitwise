@@ -1,0 +1,99 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 6,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "surviving_mutant::test overwrite safety for every install target by seeding an unrelated file in each target and asserting it survives reinstall",
+      "text": "Test overwrite-safety for every install target by seeding an unrelated file in each target and asserting it survives reinstall",
+      "signal": "surviving_mutant",
+      "scope": "installer",
+      "status": "candidate",
+      "features": [
+        "codex-kiro-copilot-support"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "packages/cli/__tests__/skills-install.test.ts:79-94 (mutant M2b) (installer)"
+      ],
+      "created": "2026-09-23T16:26:02Z",
+      "last_seen": "2026-09-23T16:26:02Z"
+    },
+    {
+      "id": "L-002",
+      "key": "surviving_mutant::give every call site of a shared output helper its own test since one helper test does not prove each site uses it",
+      "text": "Give every call site of a shared output helper its own test, since one helper test does not prove each site uses it",
+      "signal": "surviving_mutant",
+      "scope": "cli-output",
+      "status": "candidate",
+      "features": [
+        "codex-kiro-copilot-support"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "packages/cli/src/commands/commit.ts:236 (mutant M6b) (cli-output)"
+      ],
+      "created": "2026-09-23T16:26:03Z",
+      "last_seen": "2026-09-23T16:26:03Z"
+    },
+    {
+      "id": "L-003",
+      "key": "surviving_mutant::when aggregating a flag across several calls test each contributing call alone as the failing one",
+      "text": "When aggregating a flag across several calls, test each contributing call alone as the failing one",
+      "signal": "surviving_mutant",
+      "scope": "aggregation",
+      "status": "candidate",
+      "features": [
+        "codex-kiro-copilot-support"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "packages/core/src/commands/release.ts:220,259 (mutant M3b) (aggregation)"
+      ],
+      "created": "2026-09-23T16:26:03Z",
+      "last_seen": "2026-09-23T16:26:03Z"
+    },
+    {
+      "id": "L-004",
+      "key": "surviving_mutant::assert the exact key set of a migrated map not only that the expected keys are present",
+      "text": "Assert the exact key set of a migrated map, not only that the expected keys are present",
+      "signal": "surviving_mutant",
+      "scope": "config-migration",
+      "status": "candidate",
+      "features": [
+        "codex-kiro-copilot-support"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "packages/core/__tests__/unit/config/config.test.ts:326 (mutant M4d) (config-migration)"
+      ],
+      "created": "2026-09-23T16:26:03Z",
+      "last_seen": "2026-09-23T16:26:03Z"
+    },
+    {
+      "id": "L-005",
+      "key": "spec_precision_gap::verify default external identifiers against the real tool s own catalog and pin the defaults with tests",
+      "text": "Verify default external identifiers against the real tool's own catalog and pin the defaults with tests",
+      "signal": "spec_precision_gap",
+      "scope": "config-defaults",
+      "status": "candidate",
+      "features": [
+        "codex-kiro-copilot-support"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "MDL-02 packages/core/src/config/types.ts default model IDs (config-defaults)"
+      ],
+      "created": "2026-09-23T16:26:03Z",
+      "last_seen": "2026-09-23T16:26:03Z"
+    }
+  ]
+}

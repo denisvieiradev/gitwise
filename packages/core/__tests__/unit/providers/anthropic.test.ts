@@ -54,6 +54,7 @@ describe("AnthropicProvider (core)", () => {
     expect(result.content).toBe("Hello world");
     expect(result.tokens.input).toBe(10);
     expect(result.tokens.output).toBe(5);
+    expect(result.tokensAvailable).toBe(true);
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         model: DEFAULT_MODELS.fast,

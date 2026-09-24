@@ -4,42 +4,47 @@
  * Usage: node scripts/commit.js [intent] [--split auto|never|always] [--apply] [--push]
  */
 
+import { isInvokedDirectly } from "./invoked-directly.js";
 import {
   getMergedConfig,
   getApiKey,
   createProvider,
+  buildProviderConfig,
   commit,
   applyCommitPlan,
   git,
+  formatTokens,
 } from "@denisvieiradev/gitwise-core";
 
-const args = process.argv.slice(2);
+export async function runCommitSkill(
+  rawArgs: string[],
+  cwd: string = process.cwd(),
+): Promise<void> {
+  const args = [...rawArgs];
 
-// Parse flags
-const applyIdx = args.indexOf("--apply");
-const apply = applyIdx !== -1;
-if (apply) args.splice(applyIdx, 1);
+  // Parse flags
+  const applyIdx = args.indexOf("--apply");
+  const apply = applyIdx !== -1;
+  if (apply) args.splice(applyIdx, 1);
 
-const pushIdx = args.indexOf("--push");
-const push = pushIdx !== -1;
-if (push) args.splice(pushIdx, 1);
+  const pushIdx = args.indexOf("--push");
+  const push = pushIdx !== -1;
+  if (push) args.splice(pushIdx, 1);
 
-const splitIdx = args.indexOf("--split");
-let splitMode: "auto" | "never" | "always" = "auto";
-if (splitIdx !== -1) {
-  const val = args[splitIdx + 1];
-  if (val === "never" || val === "always" || val === "auto") splitMode = val;
-  args.splice(splitIdx, 2);
-}
+  const splitIdx = args.indexOf("--split");
+  let splitMode: "auto" | "never" | "always" = "auto";
+  if (splitIdx !== -1) {
+    const val = args[splitIdx + 1];
+    if (val === "never" || val === "always" || val === "auto") splitMode = val;
+    args.splice(splitIdx, 2);
+  }
 
-// Remaining positional: intent string
-const intent = args.join(" ").trim();
+  // Remaining positional: intent string
+  const intent = args.join(" ").trim();
 
-async function main(): Promise<void> {
-  const cwd = process.cwd();
   const config = await getMergedConfig({ cwd });
   const apiKey = await getApiKey();
-  const provider = createProvider({ kind: config.provider, models: config.models, apiKey, claudeCliPath: config.claudeCliPath });
+  const provider = createProvider(buildProviderConfig(config, apiKey));
 
   const result = await commit({ prompt: intent, split: splitMode, provider, cwd });
   if (result.kind === "alternatives") throw new Error("Unexpected alternatives result from commit()");
@@ -67,7 +72,7 @@ async function main(): Promise<void> {
   }
 
   process.stdout.write(
-    `**Tokens used:** ${plan.tokens.input} in / ${plan.tokens.output} out\n\n`
+    `**Tokens used:** ${formatTokens(plan.tokens, plan.tokensAvailable)}\n\n`
   );
 
   if (!apply && !push) {
@@ -86,8 +91,15 @@ async function main(): Promise<void> {
   process.stdout.write("**Done.** Commits applied.\n");
 }
 
-main().catch((err: unknown) => {
-  const msg = err instanceof Error ? err.message : String(err);
-  process.stderr.write(`Error: ${msg}\n`);
-  process.exit(1);
-});
+// Only execute the runner when this module is invoked directly (i.e. `node
+// dist/scripts/commit.js`). Skipping the auto-run when the file is imported
+// keeps `runCommitSkill` testable without triggering side effects.
+const invokedDirectly = isInvokedDirectly(import.meta.url);
+
+if (invokedDirectly) {
+  runCommitSkill(process.argv.slice(2)).catch((err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`Error: ${msg}\n`);
+    process.exit(1);
+  });
+}

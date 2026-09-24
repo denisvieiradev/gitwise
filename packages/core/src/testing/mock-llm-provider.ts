@@ -3,6 +3,8 @@ import type { LLMProvider, LLMChatRequest, LLMChatResponse } from "../providers/
 export interface MockResponse {
   content: string;
   tokens?: { input: number; output: number };
+  /** AD-002: defaults to true (matches every real provider's common case). */
+  tokensAvailable?: boolean;
 }
 
 export interface PrefixMatcher {
@@ -66,7 +68,7 @@ export class MockLLMProvider implements LLMProvider {
     const tokens = r.tokens ?? { input: 10, output: 5 };
     this.totalInputTokens += tokens.input;
     this.totalOutputTokens += tokens.output;
-    return { content: r.content, tokens };
+    return { content: r.content, tokens, tokensAvailable: r.tokensAvailable ?? true };
   }
 
   /** Returns all recorded calls. */

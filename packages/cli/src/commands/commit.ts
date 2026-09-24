@@ -5,10 +5,12 @@ import {
   getMergedConfig,
   getApiKey,
   createProvider,
+  buildProviderConfig,
   commit,
   applyCommitPlan,
   git,
   GitwiseError,
+  formatTokens,
 } from "@denisvieiradev/gitwise-core";
 import type { SplitMode, LLMProvider, CommitPlan, CommitAlternatives } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
@@ -146,7 +148,7 @@ function displayPlan(plan: CommitPlan): void {
       console.log(chalk.cyan(`  ${i + 1}. ${c.message}`));
     });
   }
-  console.log(chalk.dim(`\n  Tokens: ${plan.tokens.input} in / ${plan.tokens.output} out`));
+  console.log(chalk.dim(`\n  Tokens: ${formatTokens(plan.tokens, plan.tokensAvailable)}`));
 }
 
 function alternativeToPlan(alts: CommitAlternatives, index: number): CommitPlan {
@@ -155,6 +157,7 @@ function alternativeToPlan(alts: CommitAlternatives, index: number): CommitPlan 
     kind: "single",
     commits: [{ message, files: [] }],
     tokens: alts.tokens,
+    tokensAvailable: alts.tokensAvailable,
   };
 }
 
@@ -230,7 +233,7 @@ async function runRefinementLoop(
         alts.options.forEach((opt, i) => {
           console.log(chalk.cyan(`  ${i + 1}. ${opt}`));
         });
-        console.log(chalk.dim(`\n  Tokens: ${alts.tokens.input} in / ${alts.tokens.output} out`));
+        console.log(chalk.dim(`\n  Tokens: ${formatTokens(alts.tokens, alts.tokensAvailable)}`));
 
         const pickOptions = [
           ...alts.options.map((opt, i) => ({ value: `pick:${i}`, label: `Use: ${opt}` })),
@@ -329,6 +332,9 @@ export function makeCommitCommand(): Command {
             return {
               content: JSON.stringify({ type: "single", message: presetMessage }),
               tokens: { input: 0, output: 0 },
+              // No LLM call happens for a preset --message — this is a real,
+              // known-zero usage, not a provider that fails to report it.
+              tokensAvailable: true,
             };
           },
         };
@@ -341,12 +347,7 @@ export function makeCommitCommand(): Command {
               "ANTHROPIC_API_KEY is not configured. Set it in the environment or run `gw config` to add it to ~/.gitwise/.env.",
           });
         }
-        provider = createProvider({
-          kind: config.provider,
-          models: config.models,
-          apiKey,
-          claudeCliPath: config.claudeCliPath,
-        });
+        provider = createProvider(buildProviderConfig(config, apiKey));
       }
 
       let splitMode: SplitMode = (["auto", "never", "always"].includes(opts.split) ? opts.split : "auto") as SplitMode;

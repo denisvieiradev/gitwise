@@ -21,6 +21,8 @@ const DOCS_DIR = join(REPO_ROOT, "docs", "src", "content", "docs");
 const RECOVERY_MD = join(DOCS_DIR, "recovery.md");
 const SUPPLY_CHAIN_MD = join(DOCS_DIR, "supply-chain.md");
 const CONTRIBUTING_MD = join(REPO_ROOT, "CONTRIBUTING.md");
+const GETTING_STARTED_MD = join(DOCS_DIR, "getting-started.md");
+const CONFIGURATION_MD = join(DOCS_DIR, "configuration.md");
 
 describe("docs/recovery.md", () => {
   let content: string;
@@ -61,6 +63,80 @@ describe("docs/recovery.md", () => {
 
   it("has Astro frontmatter with a title field", () => {
     expect(content).toMatch(/^---[\s\S]*?title:/m);
+  });
+});
+
+function docSection(md: string, heading: string): string {
+  return md.split(/^## /m).find((s) => s.startsWith(heading)) ?? "";
+}
+
+describe("docs/getting-started.md multi-provider accuracy (DOC-02, DOC-04, DOC-05)", () => {
+  let content: string;
+
+  beforeAll(async () => {
+    content = await readFile(GETTING_STARTED_MD, "utf-8");
+  });
+
+  it("Prerequisites lists Codex, Copilot, and Kiro CLI alongside Claude Code and the API key", () => {
+    const sec = docSection(content, "Prerequisites");
+    expect(sec).toMatch(/Anthropic API key/);
+    expect(sec).toMatch(/Claude Code CLI/);
+    expect(sec).toMatch(/Codex CLI/);
+    expect(sec).toMatch(/Copilot CLI/);
+    expect(sec).toMatch(/Kiro CLI/);
+  });
+
+  it("Prerequisites mentions gw provider as the way to choose", () => {
+    expect(docSection(content, "Prerequisites")).toMatch(/`gw provider`/);
+  });
+
+  it("documents gw skills install for all three tools with its @denisvieiradev/gitwise-skills prerequisite", () => {
+    expect(content).toMatch(/gw skills install codex/);
+    expect(content).toMatch(/gw skills install kiro/);
+    expect(content).toMatch(/gw skills install copilot/);
+    expect(content).toMatch(/npm install --save-dev @denisvieiradev\/gitwise-skills/);
+  });
+
+  it("Updating section covers the npm CLI update", () => {
+    expect(docSection(content, "Updating")).toMatch(/npm install -g @denisvieiradev\/gitwise@latest/);
+  });
+
+  it("Updating section covers the Claude Code plugin marketplace refresh", () => {
+    expect(docSection(content, "Updating")).toMatch(/\/plugin marketplace update/);
+  });
+
+  it("Updating section says to re-run gw skills install for Codex/Kiro/Copilot skills", () => {
+    expect(docSection(content, "Updating")).toMatch(/re-run `gw skills install <tool>`/);
+  });
+});
+
+describe("docs/configuration.md multi-provider accuracy (DOC-03)", () => {
+  let content: string;
+
+  beforeAll(async () => {
+    content = await readFile(CONFIGURATION_MD, "utf-8");
+  });
+
+  it("documents the per-provider models.<provider>.<tier> shape", () => {
+    expect(content).toMatch(/models\.<provider>\.<tier>/);
+    expect(content).toMatch(/"codex": \{ "fast"/);
+  });
+
+  it("no longer shows the flat pre-feature models example", () => {
+    expect(content).not.toMatch(/"models": \{\s*\n\s*"fast":/);
+  });
+
+  it("documents claudeCliPath, codexCliPath, copilotCliPath, and kiroCliPath", () => {
+    for (const key of ["claudeCliPath", "codexCliPath", "copilotCliPath", "kiroCliPath"]) {
+      expect(content).toContain(key);
+    }
+  });
+
+  it("lists codex, copilot, and kiro as provider values", () => {
+    const provider = docSection(content, "Options");
+    expect(provider).toMatch(/`"codex"`/);
+    expect(provider).toMatch(/`"copilot"`/);
+    expect(provider).toMatch(/`"kiro"`/);
   });
 });
 

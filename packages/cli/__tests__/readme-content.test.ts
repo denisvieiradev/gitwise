@@ -126,6 +126,43 @@ describe("README.md — sections", () => {
   });
 });
 
+describe("README.md — multi-provider accuracy (DOC-01, DOC-06, DOC-07)", () => {
+  it("Privacy section no longer claims diffs always go to Claude", () => {
+    const sec = sectionContent(readme, "Privacy");
+    expect(sec).not.toMatch(/Diffs are sent to Claude/);
+    expect(sec).toMatch(/depends on|`provider` you configure/);
+  });
+
+  it("Privacy section maps every provider value to its destination", () => {
+    const sec = sectionContent(readme, "Privacy");
+    expect(sec).toMatch(/\| `api` \|[^\n]*Anthropic/);
+    expect(sec).toMatch(/\| `claude-code` \|[^\n]*Anthropic[^\n]*(on your machine|local)/);
+    expect(sec).toMatch(/\| `codex` \|[^\n]*OpenAI/);
+    expect(sec).toMatch(/\| `copilot` \|[^\n]*GitHub/);
+    expect(sec).toMatch(/\| `kiro` \|[^\n]*AWS/);
+  });
+
+  it("Requirements table lists Codex, Copilot, and Kiro CLI as LLM-access alternatives", () => {
+    const sec = sectionContent(readme, "Requirements");
+    const llmRow = sec.split("\n").find((l) => /LLM access/.test(l)) ?? "";
+    expect(llmRow).toMatch(/Claude Code/);
+    expect(llmRow).toMatch(/Codex CLI/);
+    expect(llmRow).toMatch(/Copilot CLI/);
+    expect(llmRow).toMatch(/Kiro CLI/);
+    expect(llmRow).toMatch(/ANTHROPIC_API_KEY/);
+  });
+
+  it("Commands table documents gw provider", () => {
+    const sec = sectionContent(readme, "Commands");
+    expect(sec).toMatch(/^\| `gw provider` \|/m);
+  });
+
+  it("Commands table documents gw skills install <tool>", () => {
+    const sec = sectionContent(readme, "Commands");
+    expect(sec).toMatch(/^\| `gw skills install <tool>` \|/m);
+  });
+});
+
 describe("README.md — link integrity", () => {
   it("all relative links resolve to existing files", () => {
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;

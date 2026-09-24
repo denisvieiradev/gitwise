@@ -517,6 +517,7 @@ describe("release lifecycle integration — legacy one-shot applyRelease", () =>
       notes: "Release notes that survive verbatim.",
       commits: "feat: snapshot",
       tokens: { input: 0, output: 0 },
+      tokensAvailable: true,
     };
 
     await applyRelease(fixedPlan, {

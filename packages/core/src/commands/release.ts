@@ -44,6 +44,13 @@ export interface ReleasePlan {
   notes: string;
   commits: string;
   tokens: { input: number; output: number };
+  /**
+   * AD-002: the logical AND of every contributing LLM call's tokensAvailable
+   * (version-suggestion, changelog, notes) — false if any of them didn't
+   * report usage. In practice always uniform within one run, since a run
+   * uses exactly one provider.
+   */
+  tokensAvailable: boolean;
 }
 
 export interface ReleaseOptions {
@@ -189,6 +196,10 @@ export async function release(opts: ReleaseOptions): Promise<ReleasePlan> {
   const tier = resolveModelTier("release");
   let totalInput = 0;
   let totalOutput = 0;
+  // AD-002: aggregate tokensAvailable as the logical AND of every
+  // contributing call — starts true, and any call that doesn't report usage
+  // flips the whole plan's tokensAvailable to false.
+  let tokensAvailable = true;
 
   // 1. Determine bump type
   let suggestedBump: BumpType;
@@ -206,6 +217,7 @@ export async function release(opts: ReleaseOptions): Promise<ReleasePlan> {
     });
     totalInput += versionResponse.tokens.input;
     totalOutput += versionResponse.tokens.output;
+    tokensAvailable = versionResponse.tokensAvailable;
 
     const suggestion = parseVersionSuggestion(versionResponse.content);
     suggestedBump = suggestion?.suggestion ?? heuristicBump(commits);
@@ -225,6 +237,7 @@ export async function release(opts: ReleaseOptions): Promise<ReleasePlan> {
   });
   totalInput += changelogResponse.tokens.input;
   totalOutput += changelogResponse.tokens.output;
+  tokensAvailable = tokensAvailable && changelogResponse.tokensAvailable;
   const changelog = changelogResponse.content;
 
   // 3. Generate release notes
@@ -243,6 +256,7 @@ export async function release(opts: ReleaseOptions): Promise<ReleasePlan> {
   });
   totalInput += notesResponse.tokens.input;
   totalOutput += notesResponse.tokens.output;
+  tokensAvailable = tokensAvailable && notesResponse.tokensAvailable;
   const notes = notesResponse.content;
 
   return {
@@ -253,6 +267,7 @@ export async function release(opts: ReleaseOptions): Promise<ReleasePlan> {
     notes,
     commits,
     tokens: { input: totalInput, output: totalOutput },
+    tokensAvailable,
   };
 }
 
@@ -666,6 +681,7 @@ export async function prepareRelease(
         targetBranch,
         releaseBranchCreated: releaseBranch !== null,
         tokens: plan.tokens,
+        tokensAvailable: plan.tokensAvailable,
       };
 
       await tx.run(savePlanStep(cwd, persistedPlan));
@@ -772,6 +788,7 @@ export async function applyRelease(
     targetBranch: await git.getBranch(cwd),
     releaseBranchCreated: false,
     tokens: plan.tokens,
+    tokensAvailable: plan.tokensAvailable,
   };
 
   await ensureGitignored(cwd, RELEASE_PLAN_REL_PATH);

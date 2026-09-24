@@ -43,8 +43,18 @@ jest.unstable_mockModule("@denisvieiradev/gitwise-core", () => ({
   })),
   getApiKey: jest.fn(async () => "fake-key"),
   createProvider: jest.fn(() => ({
-    chat: async () => ({ content: "", tokens: { input: 0, output: 0 } }),
+    chat: async () => ({ content: "", tokens: { input: 0, output: 0 }, tokensAvailable: true }),
   })),
+  buildProviderConfig: jest.fn((merged: unknown, apiKey?: string) => ({
+    kind: (merged as { provider?: string })?.provider ?? "api",
+    models: { fast: "f", balanced: "b", powerful: "p" },
+    apiKey,
+  })),
+  // T27: formatTokens relocated from ./token-format.js (cli-local) to
+  // @denisvieiradev/gitwise-core — release.ts's renderPlan() (hit by the
+  // `prepare` wiring tests below) now imports it from the mocked module.
+  formatTokens: (tokens: { input: number; output: number }, tokensAvailable: boolean): string =>
+    tokensAvailable ? `${tokens.input} in / ${tokens.output} out` : "n/a",
 }));
 
 // @clack/prompts must be mocked to avoid blocking on interactive prompts.

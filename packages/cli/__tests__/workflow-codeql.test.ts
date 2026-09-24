@@ -87,6 +87,24 @@ describe("codeql.yml — required Action references", () => {
   });
 });
 
+describe("codeql.yml — action version alignment", () => {
+  let content: string;
+
+  beforeAll(async () => {
+    content = await readFile(CODEQL_PATH, "utf-8");
+  });
+
+  it("pins init and analyze to the same commit SHA and version comment (the action aborts when they differ)", () => {
+    const refOf = (action: string): { sha: string; version: string } => {
+      const line = content.split("\n").find((l) => l.includes(`github/codeql-action/${action}@`));
+      const match = line?.match(/@([0-9a-f]{40})\s+#\s*(v\S+)/);
+      if (!match) throw new Error(`No SHA-pinned ${action} step with a version comment`);
+      return { sha: match[1]!, version: match[2]! };
+    };
+    expect(refOf("analyze")).toEqual(refOf("init"));
+  });
+});
+
 describe("codeql.yml — query suites", () => {
   let content: string;
 

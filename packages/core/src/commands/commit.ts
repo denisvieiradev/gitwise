@@ -19,6 +19,8 @@ export interface CommitPlan {
   kind: "single" | "split";
   commits: CommitEntry[];
   tokens: { input: number; output: number };
+  /** AD-002: false when the active provider doesn't report token usage. */
+  tokensAvailable: boolean;
 }
 
 export type SplitMode = "auto" | "never" | "always";
@@ -40,6 +42,8 @@ export interface CommitAlternatives {
   kind: "alternatives";
   options: string[];
   tokens: { input: number; output: number };
+  /** AD-002: false when the active provider doesn't report token usage. */
+  tokensAvailable: boolean;
 }
 
 export interface ApplyCommitPlanOptions {
@@ -321,18 +325,19 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan | CommitAl
 
   const parsed = parseCommitResponse(response.content);
   const tokens = { input: response.tokens.input, output: response.tokens.output };
+  const tokensAvailable = response.tokensAvailable;
 
   // Alternatives mode: return up to 3 options instead of a plan
   if (opts.generateAlternatives) {
     const options = parseAlternativesResponse(response.content);
     if (options && options.length > 0) {
-      return { kind: "alternatives", options, tokens } satisfies CommitAlternatives;
+      return { kind: "alternatives", options, tokens, tokensAvailable } satisfies CommitAlternatives;
     }
     // Fallback: wrap whatever was parsed as a single-option list
     const fallbackMsg = parsed.type === "single"
       ? parsed.message
       : parsed.commits[0]?.message ?? response.content.trim().slice(0, 100);
-    return { kind: "alternatives", options: [fallbackMsg], tokens } satisfies CommitAlternatives;
+    return { kind: "alternatives", options: [fallbackMsg], tokens, tokensAvailable } satisfies CommitAlternatives;
   }
 
   // Handle split modes
@@ -345,6 +350,7 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan | CommitAl
       kind: "single",
       commits: [{ message, files: stagedFiles }],
       tokens,
+      tokensAvailable,
     };
   }
 
@@ -359,6 +365,7 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan | CommitAl
         kind: "split",
         commits: parsed.commits,
         tokens,
+        tokensAvailable,
       };
     }
   }
@@ -377,6 +384,7 @@ export async function commit(opts: CommitOptions): Promise<CommitPlan | CommitAl
     kind: "single",
     commits: [{ message, files: stagedFiles }],
     tokens,
+    tokensAvailable,
   };
 }
 

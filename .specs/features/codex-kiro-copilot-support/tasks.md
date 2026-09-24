@@ -1,0 +1,1204 @@
+# Codex/Kiro/Copilot Support Tasks
+
+## Execution Protocol (MANDATORY -- do not skip)
+
+Implement these tasks with the `tlc-spec-driven` skill: **activate it by name and follow its Execute flow and Critical Rules.** Do not search for skill files by filesystem path. The skill is the source of truth for the full flow (per-task cycle, sub-agent delegation, adequacy review, Verifier, discrimination sensor).
+
+**If the skill cannot be activated, STOP and tell the user - do not proceed without it.**
+
+---
+
+**Design**: `.specs/features/codex-kiro-copilot-support/design.md`
+**Status**: Approved
+
+**Execution preferences (user-confirmed):**
+- Tools per task: none beyond the standard Read/Write/Edit/Bash toolset — no extra MCP or skill wired into individual tasks.
+- Sub-agent batches: confirmed. 26 tasks pack into batches of whole phases (~7 tasks/worker) rather than running inline.
+- Additional gate: run the `code-review` skill at the end of each phase, before that phase's tasks are considered closed and the next batch starts — on top of (not instead of) each task's own `Tests`/`Gate` requirement.
+
+---
+
+## Test Coverage Matrix
+
+> Generated from codebase sampling. Guidelines found: none dedicated (no `AGENTS.md`/testing doc), but `jest.config.ts` (root, multi-project) + per-package `jest.config.ts` + `coverageThreshold` establish an enforced baseline, and the repo already tests documentation content as its own layer (`packages/cli/__tests__/{readme-content,docs-presence,security-docs,manifest}.test.ts`) — that existing pattern is the floor for the new Documentation layer below, exceeding the generic "config/entity = none" default.
+
+| Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
+|---|---|---|---|---|
+| Provider (`CliSubprocessProvider`, `CliProviderSpec` adapters for claude/codex/copilot/kiro) | unit | All branches (spawn success/failure, ENOENT, large-prompt stdin threshold, non-JSON stderr, `tokensAvailable` true/false); 1:1 to PROV-01..07 | `packages/core/__tests__/unit/providers/*.test.ts` | `npm test -w @denisvieiradev/gitwise-core` |
+| Config (`ProviderKind`, `ModelsByProvider`, migration, merge) | unit | All branches incl. legacy-flat-shape migration, invalid-provider fallback, repo-override scoping; 1:1 to MDL-01..07 | `packages/core/__tests__/unit/config/*.test.ts` | `npm test -w @denisvieiradev/gitwise-core` |
+| `buildProviderConfig` / `createProvider` factory | unit | All 5 provider kinds resolve correct `ProviderConfig`; 1:1 to PROV-07, MDL-03 | `packages/core/__tests__/unit/providers/*.test.ts` | `npm test -w @denisvieiradev/gitwise-core` |
+| Command types + release-plan persistence (`tokensAvailable` threading) | integration | Every command's returned type carries `tokensAvailable` correctly; `release-plan.ts` validator accepts legacy plans missing the field; existing `release-plan.test.ts`/`release-lifecycle.test.ts` extended, not replaced | `packages/core/__tests__/unit/commands/*.test.ts`, `packages/core/__tests__/integration/release-plan.test.ts` | `npm test -w @denisvieiradev/gitwise-core` |
+| CLI commands (`gw provider`, `gw skills install`, `gw config` validation, first-run detection) | unit | Every new/changed command: happy path + every listed edge case + error path; matches existing `packages/cli/__tests__/{config,first-run,commands}.test.ts` depth | `packages/cli/__tests__/*.test.ts` | `npm test -w @denisvieiradev/gitwise` |
+| `gw skills install` filesystem effects (overwrite-safety, directory creation) | integration | Install into a scratch temp dir; re-install overwrites gitwise-owned paths only; unrelated pre-existing files survive; matches DIST-01..06 | `packages/cli/__tests__/skills-install.test.ts` | `npm test -w @denisvieiradev/gitwise` |
+| Skill/adapter generator (`generate-adapters.ts`) | unit | Every generated tool's output has valid frontmatter + correct script-path reference; 1:1 to SKILL-01..08 | `packages/skills/__tests__/*.test.ts` | `npm test -w @denisvieiradev/gitwise-skills` |
+| Documentation content (README.md, docs site) | unit (content-assertion, matching existing repo convention) | Every DOC-01..07 claim has a corresponding assertion (section text, table row, or code-fence content) | `packages/cli/__tests__/{readme-content,docs-presence}.test.ts` | `npm test -w @denisvieiradev/gitwise` |
+| Gemini removal | none | Absence check only — no code layer created | N/A | `git ls-files .gemini` (build gate only) |
+
+**Coverage Expectation values** — no project-wide guideline document exists; the strong default (full branch/AC coverage for domain logic, happy+edge+error for CLI/integration) applies, with the Documentation row's expectation raised above the generic "none" default to match the repo's own existing doc-testing convention (a genuine floor, not a target invented for this feature).
+
+## Gate Check Commands
+
+> `<package>` = whichever workspace the task's `Where` touches (`@denisvieiradev/gitwise-core`, `@denisvieiradev/gitwise`, or `@denisvieiradev/gitwise-skills`).
+
+| Gate Level | When to Use | Command |
+|---|---|---|
+| Quick | After a task touching only one workspace's unit tests | `npm test -w <package>` |
+| Full | After a task touching more than one workspace, or integration tests | `npm test` (root, all workspace projects) |
+| Build | After phase completion | `npm run build && npm run lint && npm run typecheck && npm test` |
+
+---
+
+## Execution Plan
+
+Phases are ordered and run sequentially — each phase completes before the next begins, and tasks within a phase execute in order.
+
+### Phase 1: Shared CLI-subprocess provider base
+
+```
+T1 → T2 → T3 → T4
+```
+
+### Phase 2: Codex/Copilot/Kiro provider specs
+
+```
+T4 → T5 → T6 → T7 → T8
+```
+
+(T4 → T5 is the cross-phase edge from Phase 1; T4 itself is defined and executed in Phase 1.)
+
+### Phase 3: Per-provider model configuration
+
+```
+T4 → T9 → T10 → T11 → T12 → T13
+```
+
+(T4 → T9 is the cross-phase edge from Phase 1.)
+
+### Phase 4: Token-usage availability plumbing
+
+```
+T8 → T14 → T15 → T16 → T17
+```
+
+(T8 → T14 is the cross-phase edge from Phase 2.)
+
+### Phase 4b: Close the token-display gap in skills scripts
+
+```
+T17 → T27
+```
+
+Added after Batch 2's code-review surfaced that no task in the original plan covered `packages/skills/scripts/*` for this fix (see tasks.md history / context.md). Sequenced as its own micro-phase so Phase 4's own checkboxes and diagram stay untouched.
+
+### Phase 5: Provider switching UX
+
+```
+T8 → T18 → T19 → T20
+```
+
+(T8 → T18 is the cross-phase edge from Phase 2; independent of Phase 4b, which only touches token-format/skills-script files.)
+
+### Phase 6: Real native-surface distribution + Gemini removal
+
+```
+T21 → T22 → T23 → T24
+```
+
+### Phase 7: Documentation accuracy
+
+```
+T24 → T25 → T26
+```
+
+(T24 → T25 is the cross-phase edge from Phase 6.)
+
+### Phase 8: Verifier fix tasks (iteration 1)
+
+```
+F1 → F2 → F3 → F4 → F5 → F6
+```
+
+Added after the Verifier's FAIL verdict in `validation.md` (4 surviving mutants, 1 spec-precision gap on MDL-02, 1 privacy-claim contradiction in `SECURITY.md`). Each F-task closes one ranked gap.
+
+### Phase 9: Post-validation follow-ups
+
+```
+G1 → G2 → G3 → G4 → G5 → G6
+```
+
+User-approved follow-ups after the Verifier's PASS: a release-blocking dependency-pin mismatch, the Kiro default models, a stale `SECURITY.md` line, per-tool subprocess timeouts, real Copilot token usage, and a safe invoked-directly check in the skills scripts.
+
+---
+
+## Task Breakdown
+
+### T1: Add characterization tests for `ClaudeCodeProvider` before refactor
+
+**What**: Add unit tests covering every existing branch of `ClaudeCodeProvider` (spawn success, non-zero exit with/without parseable stdout, ENOENT → `PROVIDER_UNAVAILABLE`, large-prompt stdin path, small-prompt argv path, non-JSON stderr filtering) so the upcoming extraction has a real regression safety net beyond the current 2 tests.
+**Where**: `packages/core/__tests__/unit/providers/claude-code.test.ts` (extend)
+**Depends on**: None
+**Reuses**: Existing 2 tests in the same file as the mocking pattern for `child_process.spawn`
+**Requirement**: N/A — regression-safety prerequisite for PROV-01..07 and AD-001 (see design.md Risks & Concerns)
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Every branch listed in design.md's Risks & Concerns row for this file has at least one test
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: existing 2 tests still pass + at least 6 new tests added (8+ total in the file)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `test(core): add characterization tests for ClaudeCodeProvider before refactor`
+
+---
+
+### T2: Extract `CliSubprocessProvider` base + `CliProviderSpec` type; refactor Claude onto it
+
+**What**: Create `packages/core/src/providers/cli-subprocess.ts` implementing the shared spawn/timeout/stderr-capture/ENOENT-wrapping logic as `CliSubprocessProvider`, parameterized by a `CliProviderSpec` (defined in `providers/types.ts`). Refactor `ClaudeCodeProvider` in `claude-code.ts` to construct a `CliSubprocessProvider` with a Claude-specific spec instead of duplicating the spawn logic itself.
+**Where**: `packages/core/src/providers/cli-subprocess.ts` (new), `packages/core/src/providers/claude-code.ts` (refactor), `packages/core/src/providers/types.ts` (add `CliProviderSpec`)
+**Depends on**: T1
+**Reuses**: `claude-code.ts`'s existing `spawnClaude`/`callViaCli`/`callViaStdin`/`wrapError`/`LARGE_PROMPT_THRESHOLD`/`parseResponse` logic, generalized
+**Requirement**: AD-001 (see design.md Components: `CliSubprocessProvider`, `CliProviderSpec`)
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `CliSubprocessProvider` and `CliProviderSpec` exist per design.md's interface definitions
+- [x] `ClaudeCodeProvider`'s public behavior is unchanged — all tests from T1 still pass unmodified
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: all tests from T1 pass (8+), no test deleted or weakened
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `refactor(core): extract CliSubprocessProvider base from ClaudeCodeProvider`
+
+---
+
+### T3: Centralize `ProviderKind`; extend `LLMChatResponse` with `tokensAvailable`
+
+**What**: Add `export type ProviderKind = "api" | "claude-code" | "codex" | "copilot" | "kiro"` to `providers/types.ts`; add `tokensAvailable: boolean` to `LLMChatResponse`. Update `AnthropicProvider` and the refactored `ClaudeCodeProvider`/`CliSubprocessProvider` (Claude spec) to always set `tokensAvailable: true` (both report real usage today).
+**Where**: `packages/core/src/providers/types.ts`, `packages/core/src/providers/anthropic.ts`, `packages/core/src/providers/cli-subprocess.ts`
+**Depends on**: T2
+**Reuses**: Existing `LLMChatResponse` shape, extended not replaced
+**Requirement**: AD-002 (part 1 of the `tokensAvailable` threading)
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `ProviderKind` is defined once in `providers/types.ts`, not duplicated elsewhere
+- [x] `LLMChatResponse.tokensAvailable` exists and is `true` for both existing providers' every test case
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: all prior tests pass + new assertions on `tokensAvailable: true` added to `anthropic.test.ts` and `claude-code.test.ts`
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(core): centralize ProviderKind and add tokensAvailable to LLMChatResponse`
+
+---
+
+### T4: Update `ModelConfig`/`ProviderConfig` types for the shared-base shape
+
+**What**: Confirm/adjust `ProviderConfig` (`kind: ProviderKind`, plus per-tool CLI path fields: `claudeCliPath`, `codexCliPath`, `copilotCliPath`, `kiroCliPath`) so `createProvider()` has everywhere it needs to construct any of the 5 providers, without yet adding Codex/Copilot/Kiro implementations (that's Phase 2).
+**Where**: `packages/core/src/providers/types.ts`, `packages/core/src/providers/factory.ts`
+**Depends on**: T3
+**Reuses**: Existing `ProviderConfig` interface, extended
+**Requirement**: PROV-07 (cross-cutting provider config shape)
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `ProviderConfig` has all 4 CLI-path fields, all optional
+- [x] `createProvider()` still returns the correct provider for `"api"`/`"claude-code"` (Codex/Copilot/Kiro branches added in Phase 2, currently absent is fine — type-checks either way)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: existing `factory`-adjacent tests (if any) still pass; no regression
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(core): extend ProviderConfig with per-tool CLI path fields`
+
+---
+
+### T5: Implement Codex provider spec
+
+**What**: Create `packages/core/src/providers/codex.ts` exporting `resolveCodexBinary()` (mirroring `resolveClaudeBinary`'s candidate-path/PATH/nvm precedence, adapted to Codex's actual install locations) and a `CliProviderSpec` implementing `buildArgs`/`parseOutput` for `codex exec --json`. Before writing `buildArgs`/`parseOutput`, verify the real flag names and JSON shape against the installed Codex CLI's `--help`/docs (Knowledge Verification Chain) rather than assuming today's research is final — confirm in particular whether the `--json` stream includes a usage field.
+**Where**: `packages/core/src/providers/codex.ts` (new)
+**Depends on**: T4
+**Reuses**: `CliProviderSpec` interface (T2), `resolveClaudeBinary`'s shape as a template
+**Requirement**: PROV-01, PROV-02, PROV-07
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `resolveCodexBinary()` follows the same precedence as `resolveClaudeBinary`
+- [x] `buildArgs`/`parseOutput` verified against real Codex CLI behavior (documented in a code comment citing what was checked, per the spec's logged assumption) — not left as an untested guess
+- [x] `tokensAvailable` is set correctly based on the verified presence/absence of a usage field
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: new `codex.test.ts` with binary-resolution + buildArgs + parseOutput (success, no-usage, malformed-output) cases — 6+ tests
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(core): add Codex CLI provider spec`
+
+---
+
+### T6: Implement Copilot provider spec
+
+**What**: Create `packages/core/src/providers/copilot.ts` exporting `resolveCopilotBinary()` and a `CliProviderSpec` for `copilot -p ... --no-ask-user`. Verify real flag names against the installed Copilot CLI (or its current docs) before finalizing `buildArgs`. `parseOutput` always returns `tokens: null` (`tokensAvailable: false`), per confirmed research that Copilot CLI reports no usage in headless mode.
+**Where**: `packages/core/src/providers/copilot.ts` (new)
+**Depends on**: T5
+**Reuses**: Same `CliProviderSpec` pattern as T5
+**Requirement**: PROV-03, PROV-04, PROV-07
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `resolveCopilotBinary()` follows the same precedence pattern
+- [x] `buildArgs` verified against real Copilot CLI flags
+- [x] `parseOutput` always sets `tokensAvailable: false`
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: new `copilot.test.ts`, 5+ tests (binary resolution, buildArgs, parseOutput, ENOENT, non-zero exit)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(core): add Copilot CLI provider spec`
+
+---
+
+### T7: Implement Kiro provider spec
+
+**What**: Create `packages/core/src/providers/kiro.ts` exporting `resolveKiroBinary()` and a `CliProviderSpec` for `kiro-cli chat --no-interactive`. Verify real flag names against Kiro's current docs (no live paid account available, per logged assumption — verification is documentation-based for this provider). `parseOutput` always returns `tokens: null`.
+**Where**: `packages/core/src/providers/kiro.ts` (new)
+**Depends on**: T6
+**Reuses**: Same `CliProviderSpec` pattern as T5/T6
+**Requirement**: PROV-05, PROV-06, PROV-07
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `resolveKiroBinary()` follows the same precedence pattern
+- [x] `buildArgs`/`parseOutput` match Kiro's documented CLI contract (mocked subprocess I/O in tests, per the spec's logged assumption — no live-account test)
+- [x] `parseOutput` always sets `tokensAvailable: false`
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: new `kiro.test.ts`, 5+ tests (binary resolution, buildArgs, parseOutput against a mocked documented response shape, ENOENT, non-zero exit)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(core): add Kiro CLI provider spec`
+
+---
+
+### T8: Wire Codex/Copilot/Kiro into `createProvider()`
+
+**What**: Update `factory.ts`'s `createProvider()` to construct a `CliSubprocessProvider` with the Codex/Copilot/Kiro specs for `kind: "codex" | "copilot" | "kiro"`, resolving each tool's CLI path from `ProviderConfig`.
+**Where**: `packages/core/src/providers/factory.ts`
+**Depends on**: T7
+**Reuses**: `CliSubprocessProvider` (T2), the three specs (T5-T7)
+**Requirement**: PROV-01, PROV-03, PROV-05, PROV-07
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `createProvider({ kind: "codex" | "copilot" | "kiro", ... })` returns a working `LLMProvider` for each
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: `factory.test.ts` (new or extended) covers all 5 `kind` values — 5+ tests
+
+**Tests**: unit
+**Gate**: full
+
+**Commit**: `feat(core): wire Codex/Copilot/Kiro into the provider factory`
+
+---
+
+### T9: Define `ModelsByProvider` and update `UserConfig`/`DEFAULT_USER_CONFIG`
+
+**What**: Change `UserConfig.models` from `ModelConfig` to `ModelsByProvider = Record<ProviderKind, ModelConfig>`; add `codexCliPath`/`copilotCliPath`/`kiroCliPath` to `UserConfig`; update `DEFAULT_USER_CONFIG.models` to hold all 5 provider keys with sensible current default model IDs (Claude's two entries unchanged; Codex/Copilot/Kiro defaults verified against each vendor's current documented model catalog — Knowledge Verification Chain, not invented).
+**Where**: `packages/core/src/config/types.ts`
+**Depends on**: T4
+**Reuses**: Existing `UserConfig`/`ModelConfig`/`DEFAULT_USER_CONFIG`, extended
+**Requirement**: MDL-01, MDL-02
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `ModelsByProvider` type exists, keyed by all 5 `ProviderKind` values
+- [x] `DEFAULT_USER_CONFIG.models` has real, verified default model IDs for every provider (documented via comment citing the source checked)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: existing `config.test.ts` updated for the new shape, no test silently deleted
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(core): make UserConfig.models a per-provider map`
+
+---
+
+### T10: Implement flat→per-provider `models` migration in `readUserConfig`
+
+**What**: In `config/user.ts`'s `readUserConfig`, detect the legacy flat `models: {fast, balanced, powerful}` shape, migrate it into `models[<configured provider>]` (or backfill every key from defaults if `provider` is itself invalid/unrecognized, per spec Edge Cases), backfill the other 4 provider keys from `DEFAULT_USER_CONFIG.models`, and persist the migrated shape immediately (write-through on first read).
+**Where**: `packages/core/src/config/user.ts`
+**Depends on**: T9
+**Reuses**: Existing `readUserConfig`/`mergeWithDefaults`/`writeJSON` plumbing
+**Requirement**: MDL-05
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] A pre-feature flat-shape config file migrates correctly on first read, with the migrated shape persisted to disk
+- [x] An invalid/unrecognized `provider` value in a legacy config backfills all 5 keys from defaults rather than guessing
+- [x] A config already in the new shape is read through unchanged (no double-migration)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: `config.test.ts` gains 4+ new migration-specific tests
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(core): migrate legacy flat models config to per-provider shape`
+
+---
+
+### T11: Fix `config/merge.ts` to scope `RepoConfig.models` override to the active provider
+
+**What**: Rewrite `deepMerge`'s `models` merge (currently `{ ...base.models, ...(override.models ?? {}) }`, which would corrupt the per-provider map) to merge `override.models` into `base.models[base.provider]` only, leaving every other provider's block untouched.
+**Where**: `packages/core/src/config/merge.ts`
+**Depends on**: T10
+**Reuses**: Existing `deepMerge` function, corrected in place
+**Requirement**: MDL-06
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] A `<repo>/.gitwise.json` `models` override changes only the currently-active provider's tier values
+- [x] Every other provider's model block is byte-for-byte unchanged by a repo override
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: `merge`-adjacent tests (new file or extended `config.test.ts`) gain 3+ cases covering this exact scoping
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `fix(core): scope repo-level models override to the active provider only`
+
+---
+
+### T12: Add `buildProviderConfig()` and replace the 8 duplicated call sites
+
+**What**: Add `buildProviderConfig(merged: MergedConfig, apiKey?: string): ProviderConfig` to `factory.ts`, resolving `models[merged.provider]` and all 4 CLI-path fields in one place. Replace the inline `{ kind: config.provider, models: config.models, ... }` object literals in `packages/cli/src/commands/{commit,review,pr,release}.ts` and `packages/skills/scripts/{commit,review,pr,release}.ts` (8 call sites) with calls to this helper.
+**Where**: `packages/core/src/providers/factory.ts`, `packages/cli/src/commands/{commit,review,pr,release}.ts`, `packages/skills/scripts/{commit,review,pr,release}.ts`
+**Depends on**: T11
+**Reuses**: `MergedConfig`, `ProviderConfig` types; the 8 existing call sites' logic, consolidated
+**Requirement**: MDL-03, MDL-04, PROV-07
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] All 8 call sites use `buildProviderConfig` — no remaining inline `{ kind: config.provider, models: config.models, ... }` literal in the codebase
+- [x] Each of the 4 `gw` commands still produces correct output against a mocked provider for every one of the 5 `ProviderKind` values
+- [x] Gate check passes: `npm test` (root — this task spans 3 workspaces) — modulo pre-existing, unrelated failures verified identical at baseline (chalk 5.6.2 ESM init race in `program.test.ts`/`run-cli.test.ts`/`commands.test.ts`; a `gitwise-core` dependency-version lockstep drift in `manifest.test.ts`/`skills.test.ts`); zero new failures from this task
+- [x] Test count: existing command tests in `packages/core/__tests__/unit/commands/*.test.ts` and `packages/cli/__tests__/commands.test.ts` still pass unmodified; `factory.test.ts` gains a `buildProviderConfig` unit test per provider kind (5+)
+
+**Tests**: integration
+**Gate**: full
+
+**Commit**: `refactor(core,cli,skills): consolidate provider-config construction into buildProviderConfig`
+
+---
+
+### T13: Extend `gw config` validation for the new provider/model keys
+
+**What**: Update `VALID_KEYS` and the get/set logic in `packages/cli/src/commands/config.ts` to: (a) validate `provider` against the full 5-value enum, rejecting unrecognized values with a clear error listing valid choices; (b) support `models.<tier>` (active-provider shorthand) and `models.<provider>.<tier>` (explicit provider) dot-paths; (c) accept the 3 new CLI-path keys.
+**Where**: `packages/cli/src/commands/config.ts`
+**Depends on**: T12
+**Reuses**: Existing `VALID_KEYS`/`getNestedValue`/`setNestedValue` machinery
+**Requirement**: CFG-03, MDL-07
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `gw config provider codex` (and copilot/kiro) succeeds; `gw config provider bogus` fails with a clear, valid-values-listing error and does not write
+- [x] `gw config models.fast <id>` writes to the active provider's block; `gw config models.codex.fast <id>` writes to Codex's block regardless of active provider
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise` — modulo the same pre-existing chalk/version-lockstep failures noted in T12, unchanged by this task
+- [x] Test count: `config.test.ts` (cli package) gains 5+ new cases
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(cli): validate provider values and support per-provider models keys in gw config`
+
+---
+
+### T14: Thread `tokensAvailable` through command result types
+
+**What**: Add `tokensAvailable: boolean` to `CommitPlan`, `ReviewResult`, `PrDraft`, and `ReleasePlan` types in `packages/core/src/commands/{commit,review,pr,release,release-plan}.ts`, populated from the underlying `LLMChatResponse.tokensAvailable` at every call site that currently reads `.tokens`.
+**Where**: `packages/core/src/commands/{commit,review,pr,release,release-plan}.ts`
+**Depends on**: T8
+**Reuses**: Existing `tokens: {input, output}` field on each type, extended with a sibling field
+**Requirement**: PROV-07 (n/a-token-usage user-facing contract), AD-002
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Every one of the 4 result types carries `tokensAvailable`
+- [x] Every place that currently reads `response.tokens.input/output` also reads/propagates `response.tokensAvailable`
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: `commit.test.ts`, `review.test.ts`, `pr.test.ts`, `release.test.ts` each gain a `tokensAvailable: false` case using the `MockLLMProvider` test harness (updated in this task to support it) — 4+ new tests
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(core): thread tokensAvailable through commit/review/pr/release result types`
+
+---
+
+### T15: Update `release-plan.ts` persisted schema + validator for `tokensAvailable`
+
+**What**: Add `tokensAvailable` to the persisted `.gitwise/release-plan.json` schema; update the validator (`release-plan.ts:99`-area) to accept a plan file missing the field, defaulting it to `true` for backward compatibility with plans created before this feature.
+**Where**: `packages/core/src/commands/release-plan.ts`
+**Depends on**: T14
+**Reuses**: Existing schema validator function, extended
+**Requirement**: PROV-07, AD-002
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] A plan file with `tokensAvailable` present validates and round-trips correctly
+- [x] A plan file missing `tokensAvailable` (simulating a pre-upgrade file) validates successfully with the field defaulted to `true`
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core` (also verified against `npm test` root — same pre-existing chalk/version-lockstep failures as T12, zero new failures)
+- [x] Test count: `release-plan.test.ts` (unit) gains 2+ cases; `integration/release-plan.test.ts` extended to cover a `finish` on a legacy-shape plan
+
+**Tests**: integration
+**Gate**: full
+
+**Commit**: `feat(core): add tokensAvailable to release-plan schema with backward-compatible default`
+
+---
+
+### T16: Update `release.ts` multi-call token aggregation
+
+**What**: Update `release.ts`'s aggregation (`totalInput += ...` across the version/changelog/notes calls) to compute an aggregate `tokensAvailable` as the logical AND of every contributing call's `tokensAvailable`.
+**Where**: `packages/core/src/commands/release.ts`
+**Depends on**: T15
+**Reuses**: Existing aggregation logic, extended with one boolean accumulator
+**Requirement**: PROV-07
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] All-calls-report-usage case aggregates to `tokensAvailable: true`
+- [x] Any-call-doesn't-report-usage case aggregates to `tokensAvailable: false`
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`
+- [x] Test count: `release.test.ts` gains 2+ new cases for the aggregation branches
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(core): aggregate tokensAvailable across release's multi-call flow`
+
+---
+
+### T17: Update CLI print statements to show `tokens: n/a`
+
+**What**: Update the 5 `console.log(chalk.dim(...Tokens: ...))` call sites in `packages/cli/src/commands/{commit,review,pr,release}.ts` (commit.ts has 2) to print `Tokens: n/a` when `tokensAvailable` is `false`, instead of `0 in / 0 out`.
+**Where**: `packages/cli/src/commands/{commit,pr,review,release}.ts`
+**Depends on**: T16
+**Reuses**: Existing print statements, condition added
+**Requirement**: PROV-07 (the user-visible half of the graceful-degradation decision)
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Every one of the 5 print sites shows `n/a` when `tokensAvailable` is `false`, and the real numbers otherwise
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise` — modulo the pre-existing chalk 5.6.2/ts-jest ESM issue (unrelated, predates this feature); verified with a local chalk-stub jest config that all 4 new commands.test.ts cases plus the rest of the cli suite (325/329 excluding the two genuinely pre-existing failures) pass
+- [x] Test count: `commands.test.ts` (cli package) gains a case per command asserting the `n/a` output — 4+ new tests
+
+**Tests**: unit
+**Gate**: full
+
+**Commit**: `feat(cli): print tokens: n/a when a provider doesn't report usage`
+
+---
+
+### T27: Fix the same `tokens: n/a` gap in the skills scripts (every native-surface command)
+
+**What**: Gap found during Batch 2's code-review (not caught when tasks.md was authored): `packages/skills/scripts/{commit,review,pr,release}.ts` (the same 4 thin scripts every native surface — Claude plugin today, Codex/Kiro/Copilot skills once installed via `gw skills install` — shells out to, per design.md) still print raw `**Tokens used:** ${tokens.input} in / ${tokens.output} out` markdown, ignoring `tokensAvailable`. Relocate `formatTokens` (currently CLI-only, at `packages/cli/src/commands/token-format.ts`) into `packages/core` so both `packages/cli` and `packages/skills` can import one shared implementation, update the 4 CLI command files to import it from `@denisvieiradev/gitwise-core` instead of the local copy, and update the 5 markdown token lines in the skills scripts (`release.ts` has 2) to use it, printing `n/a` when `tokensAvailable` is `false`.
+**Where**: `packages/core/src/commands/token-format.ts` (new, moved from cli), `packages/core/src/index.ts` (export it), `packages/cli/src/commands/{commit,review,pr,release}.ts` (import path updated), `packages/cli/src/commands/token-format.ts` (removed), `packages/skills/scripts/{commit,review,pr,release}.ts` (use it)
+**Depends on**: T17
+**Reuses**: The exact `formatTokens` implementation T17 already wrote, relocated rather than duplicated
+**Requirement**: PROV-07, AD-002 (the same n/a-token-usage contract, closed for every native-agent surface, not just the `gw` CLI)
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `formatTokens` lives in `packages/core` and is exported from its public API; no duplicate implementation remains in `packages/cli`
+- [x] All 4 CLI command files still print `n/a`/real numbers exactly as T17 left them (regression-free relocation)
+- [x] All 5 markdown token lines in the skills scripts print `n/a` when `tokensAvailable` is `false`, and the real numbers otherwise
+- [x] Gate check passes: `npm test` (root — spans core, cli, and skills) — modulo pre-existing, unrelated failures verified identical at baseline (chalk 5.6.2 ESM init race in `program.test.ts`/`run-cli.test.ts`/`commands.test.ts`/`release-wiring.test.ts`/`readme-doc-snippets.test.ts`, confirmed by reverting this task's own diff and reproducing the same failure; `gitwise-core` dependency-version lockstep drift in `manifest.test.ts`/`skills.test.ts`); zero new failures from this task, verified with a local chalk-stub jest config (325/336 cli tests pass, remaining 4 are the two pre-existing categories)
+- [x] Test count: existing `token-format`-adjacent CLI tests relocated to `packages/core/__tests__/unit/commands/token-format.test.ts` (2 tests, unchanged); `packages/skills/__tests__/token-output.test.ts` gains 5 new cases asserting the `n/a` output (one per script, release covering both its prepare and legacy paths)
+
+**Tests**: unit
+**Gate**: full
+
+**Commit**: `fix(core,cli,skills): relocate formatTokens and close the tokens: n/a gap in skills scripts`
+
+---
+
+### T18: Implement `detectAvailableProviders()`
+
+**What**: Create `packages/cli/src/detect-providers.ts` exporting `detectAvailableProviders(): DetectedProvider[]`, calling each of the 4 CLI providers' `resolveXBinary()` functions and returning `{ kind, label, binaryPath }` for all 5 `ProviderKind` values (API always "available" since it needs only a key, not a binary).
+**Where**: `packages/cli/src/detect-providers.ts` (new)
+**Depends on**: T8
+**Reuses**: The 4 `resolveXBinary()` functions from the provider stack
+**Requirement**: CFG-01
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Returns all 5 providers with correct detected/not-detected state based on mocked binary resolution
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise`
+- [x] Test count: new `detect-providers.test.ts`, 5+ cases (one per provider's detected/not-detected state, plus the "multiple detected" case)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(cli): add shared detectAvailableProviders utility`
+
+---
+
+### T19: Refactor `first-run.ts` to detect and offer all 5 providers
+
+**What**: Update `runFirstRun` to use `detectAvailableProviders()` instead of only checking Claude Code, presenting every detected CLI as a choice (in detection order) before falling back to the Anthropic API key prompt — preserving today's exact fallback behavior when nothing is detected or chosen.
+**Where**: `packages/cli/src/first-run.ts`
+**Depends on**: T18
+**Reuses**: Existing `@clack/prompts` interaction pattern in `runFirstRun`, `detectAvailableProviders` (T18)
+**Requirement**: CFG-03
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] First-run wizard offers every detected provider, not just Claude Code
+- [x] Existing "nothing detected → API key prompt" behavior is unchanged (existing `first-run.test.ts` cases pass unmodified)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise`
+- [x] Test count: `first-run.test.ts` gains 3+ new cases (multi-provider detected, only-one-non-Claude detected, none detected still falls back)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(cli): detect and offer all supported providers in the first-run wizard`
+
+---
+
+### T20: Implement `gw provider` interactive command
+
+**What**: Create `packages/cli/src/commands/provider.ts` exporting `makeProviderCommand()`, listing `detectAvailableProviders()`'s output via `@clack/prompts`, and on selection writing `~/.gitwise/config.json` the same way `runFirstRun` does (including the resolved CLI path when applicable). Wire it into `packages/cli/src/program.ts`.
+**Where**: `packages/cli/src/commands/provider.ts` (new), `packages/cli/src/program.ts`
+**Depends on**: T19
+**Reuses**: `detectAvailableProviders` (T18), `writeUserConfig`, `runFirstRun`'s prompt pattern
+**Requirement**: CFG-01, CFG-02
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `gw provider` lists all detected/available providers and persists the user's selection correctly, including the CLI path when relevant
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise`
+- [x] Test count: new `provider.test.ts`, 4+ cases (selection persists correctly for a CLI-based provider, for `api`, cancellation leaves config untouched, command is registered in `program.ts`)
+
+**Tests**: unit
+**Gate**: full
+
+**Commit**: `feat(cli): add interactive gw provider command`
+
+---
+
+### T21: Implement the adapter generator (`generate-adapters.ts`)
+
+**What**: Create `packages/skills/scripts/generate-adapters.ts`, reading `packages/skills/skills/*/SKILL.md` (frontmatter + instructions) and the built `dist/scripts/*` script names, and emitting Codex's `SKILL.md` (targeting `.agents/skills/gitwise-<command>/`), Kiro's `SKILL.md` (targeting `.kiro/skills/gitwise-<command>/`), and Copilot's single `gitwise.instructions.md` (with `applyTo` frontmatter) into `packages/skills/dist/adapters/{codex,kiro,copilot}/...`. Wire it into `packages/skills`'s `build` npm script to run after `tsup`.
+**Where**: `packages/skills/scripts/generate-adapters.ts` (new), `packages/skills/package.json` (`build` script)
+**Depends on**: None (independent of the provider/config work; can run in parallel with Phases 1-5 if executed by a separate worker, but is sequenced here as its own phase per the plan)
+**Reuses**: `packages/skills/skills/*/SKILL.md` as canonical source; the workspace-relative-script-path *technique* `.gemini/skills/*` demonstrated (adapted to a package-relative path, since output is installed elsewhere)
+**Requirement**: SKILL-01, SKILL-02, SKILL-03, SKILL-04, SKILL-05, SKILL-06, SKILL-07
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Running `npm run build -w @denisvieiradev/gitwise-skills` produces valid Codex/Kiro `SKILL.md` files and one Copilot `gitwise.instructions.md` under `dist/adapters/`
+- [x] Every generated file has correct frontmatter for its target tool's convention and references the correct installed-package script path
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-skills`
+- [x] Test count: new `generate-adapters.test.ts`, 6+ cases (frontmatter shape per tool, script-path correctness per tool, all 4 commands present per tool)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(skills): add build-time generator for Codex/Kiro/Copilot adapters`
+
+---
+
+### T22: Add `packages/cli`'s dependency on `@denisvieiradev/gitwise-skills`
+
+**What**: Add `@denisvieiradev/gitwise-skills` as a runtime dependency of `packages/cli`, resolving the correct version per the monorepo's existing internal-dependency convention (matching how `packages/cli` already depends on `@denisvieiradev/gitwise-core`).
+**Where**: `packages/cli/package.json`
+**Depends on**: T21
+**Reuses**: Existing `@denisvieiradev/gitwise-core` dependency entry as the version-pinning convention to follow
+**Requirement**: DIST-02
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `packages/cli` builds successfully with the new dependency
+- [ ] NOT MET (environmental blocker, see note): Gate check passes: `npm run build -w @denisvieiradev/gitwise && npm run typecheck -w @denisvieiradev/gitwise` — build passes; typecheck fails at HEAD (base 6e1fd11 typechecks clean — corrected by the Verifier; the stale copy only surfaces because this feature's new imports from core are missing in 1.1.1) because `packages/cli/node_modules/@denisvieiradev/gitwise-core` is a stale registry 1.1.1 copy (cli pins core at 1.1.1 while the workspace is 1.2.0); verified with a scratch tsconfig mapping core/skills to source that cli typechecks clean, leaving one core-side error from T15 (`release-plan.ts:87` TS2783), unrelated to this dependency
+- [x] Test count: N/A — config-only change, build gate only
+
+**Tests**: none
+**Gate**: build
+
+**Commit**: `chore(cli): depend on gitwise-skills for bundled adapter templates`
+
+---
+
+### T23: Implement `gw skills install <tool>` command
+
+**What**: Create `packages/cli/src/commands/skills.ts` exporting `makeSkillsCommand()` with an `install <tool>` subcommand (`<tool>` ∈ `{codex, kiro, copilot}`, rejecting anything else with a clear error). Reads the bundled adapter templates from `@denisvieiradev/gitwise-skills`'s `dist/adapters/<tool>/`, and copies them into `process.cwd()` at the correct tool-specific path, creating target directories as needed, overwriting only `gitwise-*`-named entries (or the single `gitwise.instructions.md`) and never touching anything else already present. Wire into `program.ts`.
+**Where**: `packages/cli/src/commands/skills.ts` (new), `packages/cli/src/program.ts`
+**Depends on**: T22
+**Reuses**: The bundled templates from T21/T22
+**Requirement**: DIST-01, DIST-02, DIST-03, DIST-04, DIST-05, DIST-06
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `gw skills install codex` in a scratch temp directory produces correct `.agents/skills/gitwise-*/SKILL.md` files
+- [x] `gw skills install kiro` / `gw skills install copilot` produce their respective correct output
+- [x] Re-running install overwrites gitwise-owned files but leaves an unrelated pre-seeded file in the same target directory untouched
+- [x] `gw skills install bogus-tool` fails with a clear error listing valid tool names, without creating any file
+- [x] Running in an unwritable directory fails fast with a clear error, no partial install
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise` — modulo the same pre-existing chalk/version-lockstep failures (verified with the chalk-stub config: 357 passed)
+- [x] Test count: new `skills-install.test.ts`, 8+ cases covering every bullet above
+
+**Tests**: integration
+**Gate**: full
+
+**Commit**: `feat(cli): add gw skills install command for native agent-surface distribution`
+
+---
+
+### T24: Remove unused Gemini configuration
+
+**What**: `git rm .gemini/settings.json` and everything under `.gemini/skills/`. No replacement, no new `gw skills install gemini` option.
+**Where**: `.gemini/` (removed)
+**Depends on**: T23
+**Reuses**: N/A
+**Requirement**: GEM-01, GEM-02
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `git ls-files .gemini` returns no results
+- [x] No remaining reference to `.gemini/skills` or `.gemini/settings.json` anywhere in `README.md`, `docs/`, or `packages/*/src` (there never was one, per the design.md research, but confirmed here as a final check)
+- [x] Gate check passes: `npm test` (full suite, confirming nothing depended on the removed files) — build passes; test failures are the same pre-existing chalk/version-lockstep set as T12-T23 (identical with or without the removal); cli typecheck fails only because `packages/cli/node_modules/@denisvieiradev/gitwise-core` is a stale registry 1.1.1 copy (see T22), verified clean via a source-mapped scratch tsconfig
+
+**Tests**: none
+**Gate**: build
+
+**Commit**: `chore: remove unused .gemini configuration`
+
+---
+
+### T25: Fix README.md — Privacy, Requirements, Commands
+
+**What**: Rewrite the README's **Privacy** section to state which vendor receives diffs conditionally on the configured `provider` (not unconditionally naming only Claude). Add Codex/Copilot/Kiro to the **Requirements** table as alternative LLM-access options. Document `gw provider` and `gw skills install` in the **Commands** table.
+**Where**: `README.md`
+**Depends on**: T24
+**Reuses**: Existing `readme-content.test.ts`'s `sectionContent()` helper pattern for the new assertions
+**Requirement**: DOC-01, DOC-06, DOC-07
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Privacy section text is conditional on provider, naming all 5 possible destinations (Anthropic, Claude Code's own machine-local execution, OpenAI, GitHub, AWS)
+- [x] Requirements table lists Codex/Copilot/Kiro CLI as alternatives
+- [x] Commands table documents `gw provider` and `gw skills install <tool>`
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise`
+- [x] Test count: `readme-content.test.ts` gains 4+ new assertions (one per bullet above)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `docs(readme): document Codex/Copilot/Kiro providers and fix Privacy section accuracy`
+
+---
+
+### T26: Update docs site — getting-started.md, configuration.md
+
+**What**: Update `docs/src/content/docs/getting-started.md`'s **Prerequisites** to list Codex/Copilot/Kiro CLI and mention `gw provider`. Rewrite `docs/src/content/docs/configuration.md`'s `models`/`provider` documentation for the new per-provider shape (`models.<provider>.<tier>`) and document `codexCliPath`/`copilotCliPath`/`kiroCliPath`. Add update-instructions for all 3 surfaces (npm CLI, Claude plugin marketplace refresh, `gw skills install` re-run) to `getting-started.md`.
+**Where**: `docs/src/content/docs/getting-started.md`, `docs/src/content/docs/configuration.md`
+**Depends on**: T25
+**Reuses**: `docs-presence.test.ts`'s content-assertion pattern
+**Requirement**: DOC-02, DOC-03, DOC-04, DOC-05
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Prerequisites section lists all 4 CLI-based providers + API key + `gw provider`
+- [x] `configuration.md` accurately documents the new `models` shape and all 4 CLI-path keys
+- [x] Update instructions for all 3 surfaces are present and accurate
+- [x] `gw skills install <tool>` is documented with its prerequisite
+- [ ] NOT MET (environmental blocker, see note): Gate check passes: `npm run build && npm run lint && npm run typecheck && npm test` (Build gate — final task of the feature) — `npm run build` passes and core typechecks/tests clean (640 passed). Remaining non-zero exits are environmental and pre-existing, not from this feature's code: (1) `tsc` on cli fails because `packages/cli/node_modules/@denisvieiradev/gitwise-core` is a stale registry 1.1.1 copy (cli/skills pin core at 1.1.1, workspace is 1.2.0); verified 0 errors when the pins are set to 1.2.0 and the stale copy is absent (change reverted, not committed); (2) chalk 5.6.2 TDZ race in 5 cli suites (verified identical without this feature's diff, all pass under a chalk-stub config); (3) lockstep tests in `manifest.test.ts`/`skills.test.ts` (core pin 1.1.1 and `.claude-plugin/plugin.json` 1.1.1 vs 1.2.0)
+- [x] Test count: `docs-presence.test.ts` gains 5+ new assertions
+
+**Tests**: unit
+**Gate**: build
+
+**Commit**: `docs: update getting-started and configuration for multi-provider support`
+
+---
+
+### Phase 8: Verifier fix tasks (iteration 1)
+
+### F1: Test DIST-04 unrelated-file preservation for kiro and copilot
+
+**What**: Extend the "unrelated files survive install and reinstall" coverage from `.agents/skills/` (codex) to `.kiro/skills/` (kiro) and `.github/instructions/` (copilot), and assert a pre-existing `.github/copilot-instructions.md` is byte-identical afterward. Kills Verifier mutant M2b.
+**Where**: `packages/cli/__tests__/skills-install.test.ts`
+**Depends on**: Phase 7 complete
+**Reuses**: The existing codex preservation test's seed → install → reseed v2 → reinstall pattern
+**Requirement**: DIST-04, SKILL-07
+
+**Done when**:
+- [x] Kiro: a seeded `.kiro/skills/my-skill/SKILL.md` and `.kiro/skills/README.md` keep their content after install and reinstall; the directory listing is exactly the 4 gitwise skills plus the 2 unrelated entries
+- [x] Copilot: a seeded `.github/instructions/team.instructions.md` and `.github/copilot-instructions.md` keep their exact content after install and reinstall; `gitwise.instructions.md` is overwritten with v2
+- [x] The mutation "wipe the `.kiro/skills` / `.github/instructions` target root before copying" fails 2 tests (checked locally, then reverted)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise` (skills-install suite 16/16; other failures are the pre-existing chalk/lockstep set)
+
+**Tests**: integration
+**Gate**: quick
+
+**Commit**: `test(cli): cover unrelated-file preservation for kiro and copilot installs`
+
+---
+
+### F2: Test the `gw commit` alternatives token print for PROV-07
+
+**What**: Cover the fifth CLI token print site, `packages/cli/src/commands/commit.ts:236` (the "Think again → best single message" alternatives list), for both `tokensAvailable: false` (prints `Tokens: n/a`) and `true` (prints real counts). Kills Verifier mutant M6b.
+**Where**: `packages/cli/__tests__/commands.test.ts`
+**Depends on**: F1
+**Reuses**: The existing PROV-07 print-site cases' `jest.unstable_mockModule` pattern and `BASE_CORE_MOCK`
+**Requirement**: PROV-07
+
+**Done when**:
+- [x] Alternatives with `tokensAvailable: false` print `Tokens: n/a` and no `0 in / 0 out` after the `Alternatives:` header, while the initial plan reports real usage (so the line can only come from this print site)
+- [x] Alternatives with `tokensAvailable: true` print `Tokens: 123 in / 45 out` and no `n/a`
+- [x] The mutation "pass `true` instead of `alts.tokensAvailable`" fails 1 test (checked locally, then reverted)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise` shows the same 29 pre-existing failures (`commands.test.ts` still fails at module load under chalk 5.6.2); under a scratchpad-only chalk-stub config the cli project runs 378 passed / 4 failed (the same 4 pre-existing failures) and `commands.test.ts` 43/43
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `test(cli): cover tokens n/a in the commit alternatives print`
+
+---
+
+### F3: Test release `tokensAvailable` aggregation with each call as the lone dissenter
+
+**What**: Only the changelog (middle) call was ever tested as unavailable. Add cases where only the version-suggestion call, and only the release-notes call, reports no usage, each asserting the aggregate `tokensAvailable` is `false`. Kills Verifier mutant M3b.
+**Where**: `packages/core/__tests__/unit/commands/release.test.ts`
+**Depends on**: F2
+**Reuses**: The existing "only the middle (changelog) call" aggregation case and `MockLLMProvider.queueByIndex`
+**Requirement**: PROV-07 (AD-002 aggregation)
+
+**Done when**:
+- [x] Only the version-suggestion call unavailable → all 3 calls made, `plan.tokensAvailable` is `false`
+- [x] Only the notes call unavailable → all 3 calls made, `plan.tokensAvailable` is `false`
+- [x] Dropping the version-call AND line, or the notes-call AND line, each fails 1 test (checked locally, then reverted)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core` (642 passed, 0 failed)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `test(core): cover release token aggregation for the version and notes calls`
+
+---
+
+### F4: Assert the exact `models` key set after migrating a legacy config with an unrecognized provider
+
+**What**: The unrecognized-provider migration test checked the five expected keys but not the exact key set, so persisting the flat block under the unknown provider name went unnoticed. Assert `Object.keys(models)` is exactly the five `ProviderKind` values, both in the returned config and in the persisted file. The real code already drops the stray key (`packages/core/src/config/user.ts` `migrateFlatModels`), so no code change. Kills Verifier mutant M4d.
+**Where**: `packages/core/__tests__/unit/config/config.test.ts`
+**Depends on**: F3
+**Reuses**: The existing `writeLegacyConfig` helper and the key-set assertion style of the MDL-06 merge test
+**Requirement**: MDL-05
+
+**Done when**:
+- [x] Returned `models` keys are exactly `api, claude-code, codex, copilot, kiro`
+- [x] Persisted `models` keys on disk are exactly the same five
+- [x] The mutation "store the flat block under any string provider" fails 1 test (checked locally, then reverted)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core` (642 passed, 0 failed)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `test(core): assert exact provider keys after migrating an unknown provider`
+
+---
+
+### F5: Verify the Codex/Copilot/Kiro default model IDs and pin the defaults with tests
+
+**What**: The Codex/Copilot/Kiro defaults in `DEFAULT_USER_CONFIG.models` were unverified, and no test pinned the Claude defaults. Check each provider against the installed CLI (help text and model listings only; no login, no model calls), replace the IDs shown wrong, cite the source in the code comment, and add tests. Update the matching example in `configuration.md` so the docs show the real defaults.
+**Where**: `packages/core/src/config/types.ts`, `packages/core/__tests__/unit/config/config.test.ts`, `docs/src/content/docs/configuration.md`
+**Depends on**: F4
+**Reuses**: Existing `config.test.ts` suite
+**Requirement**: MDL-02
+
+**Done when**:
+- [x] Codex: `gpt-5.1-codex-mini/-codex/-codex-max` → `gpt-6-luna` / `gpt-6-sol` / `gpt-6-astra`, per the codex-cli 0.156.1 model catalog (`codex debug models` cache), which does not list the old IDs
+- [x] Copilot: `claude-sonnet-4.5` / `claude-opus-4.1` → `claude-sonnet-4.6` / `claude-opus-4.7` (`claude-haiku-4.5` kept), per the `model` list in `copilot help config` (Copilot CLI 1.0.88), which lists neither old ID
+- [x] Kiro: `claude-opus-4.1` → `claude-sonnet-4.5` for `powerful` (fast/balanced kept), per `kiro-cli chat --list-models` (kiro-cli 2.23.1), which has no Opus model_id; kiro.dev/docs/models no longer lists Opus 4.1. Opus 4.5+ exact model_id strings are unverified, so they were not used
+- [x] Test pins `api` and `claude-code` to `claude-haiku-4-5-20251001` / `claude-sonnet-4-6` / `claude-opus-4-7`
+- [x] Test asserts all 5 providers have exactly the 3 tiers, each a non-empty string
+- [x] Gate check passes: `npm test` (root, spans core and docs): 1057 passed / 31 failed / 7 skipped; the 31 failures are the pre-existing chalk/lockstep set
+
+**Tests**: unit
+**Gate**: full
+
+**Commit**: `fix(core): replace unverified codex, copilot, and kiro default model IDs`
+
+---
+
+### F6: Make the SECURITY.md data-egress claim provider-conditional
+
+**What**: `SECURITY.md` "Security by Design" still said diffs go to Claude and that this is "the only data that leaves your machine", contradicting DOC-01. Rewrite the bullet to match the README Privacy section: diffs go to the vendor behind the configured `provider`, and the bullet maps each provider to its vendor. Add assertions to the existing `security-docs.test.ts`.
+**Where**: `SECURITY.md`, `packages/cli/__tests__/security-docs.test.ts`
+**Depends on**: F5
+**Reuses**: README Privacy wording ("Diffs are sent to the vendor behind the `provider` you configure"); the existing `SECURITY.md` content-test suite
+**Requirement**: DOC-01
+
+**Done when**:
+- [x] "Security by Design" no longer contains "Diffs are sent to Claude"
+- [x] The bullet says diffs go to the vendor behind the configured `provider` and maps `api`/`claude-code` → Anthropic, `codex` → OpenAI, `copilot` → GitHub, `kiro` → AWS
+- [x] New tests fail against the previous `SECURITY.md` (7 of them) and pass against the new one; no existing assertion changed
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise` shows 307 passed and the same 29 pre-existing chalk/lockstep failures
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `docs(security): make the data-egress claim depend on the configured provider`
+
+---
+
+### Phase 9: Post-validation follow-ups
+
+### G1: Align the gitwise-core dependency pins with the workspace version
+
+**What**: `packages/cli` and `packages/skills` pinned `@denisvieiradev/gitwise-core` at `1.1.1` while the workspace is `1.2.0`, so npm installed a stale registry copy under `packages/cli/node_modules/` and `packages/skills/node_modules/`, breaking cli typecheck and 3 lockstep tests. Set both pins to `1.2.0`, bump `packages/skills/.claude-plugin/plugin.json` to `1.2.0` (asserted by `skills.test.ts`), and refresh `package-lock.json` with `npm install`. cli's `gitwise-skills` pin already equals `1.2.0`; `scripts/release.mjs` is untouched.
+**Where**: `packages/cli/package.json`, `packages/skills/package.json`, `packages/skills/.claude-plugin/plugin.json`, `package-lock.json`
+**Depends on**: Phase 8 complete
+**Reuses**: The existing ADR-005 lockstep tests in `manifest.test.ts` and `skills.test.ts`
+**Requirement**: DIST-02 (cli depends on the published skills package in lockstep)
+
+**Done when**:
+- [x] Both core pins read `1.2.0`; `plugin.json` version reads `1.2.0`
+- [x] The lockfile diff only swaps the two pins and drops the two nested `gitwise-core@1.1.1` registry entries plus the root `@anthropic-ai/sdk@0.109.0` that only they required; no other dependency changes
+- [x] `packages/cli/node_modules/@denisvieiradev/gitwise-core` no longer exists; the root `node_modules/@denisvieiradev/*` entries are workspace symlinks
+- [x] `npm run build`, `npm run lint`, `npm run typecheck` each exit 0
+- [x] Gate check passes: `npm test` (root): 1067 passed / 28 failed / 7 skipped. The 3 lockstep failures are gone; the 28 remaining are the chalk 5.6.2 `supportsColor` TDZ load-order failures in 5 cli suites (readme-doc-snippets, release-wiring, program, commands, run-cli)
+
+**Tests**: none (config-only; the existing lockstep tests now pass)
+**Gate**: build
+
+**Commit**: `build(deps): pin gitwise-core to the 1.2.0 workspace version`
+
+---
+
+### G2: Kiro defaults — verified against the real catalog (amended after G2's first attempt)
+
+> Amendment: the Kiro docs page lists Sonnet 4.6 / Opus 4.7 by display name only, no exact `--model` ID (a summarizer had inferred IDs). Guessed IDs would fail on the installed CLI, so the defaults were reverted to the IDs `kiro-cli chat --list-models` actually lists (`claude-haiku-4.5` / `claude-sonnet-4.5` / `claude-sonnet-4.5`), with the override documented in the source comment. The checked boxes below describe the first attempt and are superseded by this amendment.
+
+**What**: Kiro defaulted to `claude-haiku-4.5 / claude-sonnet-4.5 / claude-sonnet-4.5` because the installed kiro-cli 2.23.1 catalog has no Opus. The current Kiro docs (https://kiro.dev/docs/cli/chat/model-selection/) list Claude Haiku 4.5, Sonnet 4.6 and Opus 4.7 on every plan and show the dotted ID format by example (`claude-opus-4.8`). Mirror the Claude tiers and rewrite the source comment to say what was verified where, with the override for older CLIs.
+**Where**: `packages/core/src/config/types.ts`, `packages/core/__tests__/unit/config/config.test.ts`, `docs/src/content/docs/configuration.md`
+**Depends on**: G1
+**Reuses**: The existing MDL-02 `DEFAULT_USER_CONFIG.models` describe block
+**Requirement**: MDL-02
+
+**Done when**:
+- [x] Kiro defaults are `claude-haiku-4.5` / `claude-sonnet-4.5` / `claude-sonnet-4.5` (final, per the amendment above)
+- [x] The comment states: the docs name Sonnet 4.6 / Opus 4.7 by display name only, so their IDs are unverified and unused; the IDs come from `kiro-cli chat --list-models` 2.23.1; newer CLIs override with `gw config models.kiro.powerful <id>`
+- [x] A new test pins the exact Kiro block (no test pinned Kiro IDs before); it fails against the old values
+- [x] `configuration.md` example shows the final Kiro block
+- [x] Gate check passes: `npm test` (root): 1068 passed / 28 failed / 7 skipped; the 28 are the G1 chalk baseline
+
+**Tests**: unit
+**Gate**: full
+
+**Commit**: `fix(core): default kiro to claude sonnet 4.6 and opus 4.7` (first attempt); amended by `fix(core): default kiro to the model IDs its CLI lists`
+
+---
+
+### G3: Name every provider CLI in the SECURITY.md subprocess claim
+
+**What**: `SECURITY.md` "Security by Design" said only "`gh` and `claude` binaries are invoked as subprocesses", omitting the Codex, Copilot and Kiro CLIs this feature spawns. Name `claude`, `codex`, `copilot` and `kiro-cli` (the `defaultCommand` of each `CliProviderSpec`, all spawned by `CliSubprocessProvider` without `shell: true`). A grep of `CONTRIBUTING.md`, `README.md` and `docs/` found no other copy of the stale claim.
+**Where**: `SECURITY.md`, `packages/cli/__tests__/security-docs.test.ts`
+**Depends on**: G2
+**Reuses**: The section-slicing pattern of the F6 "data-egress claim" describe block
+**Requirement**: DOC-01 (security posture matches the configured provider set)
+
+**Done when**:
+- [x] The subprocess bullet names `gh`, `claude`, `codex`, `copilot`, `kiro-cli` and keeps the no-`shell: true` claim
+- [x] 6 new assertions; 3 of them (`codex`, `copilot`, `kiro-cli`) fail against the previous `SECURITY.md`; no existing assertion changed
+- [x] The security-docs suite loaded normally (25/25), no chalk stub needed
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise`: 314 passed / 28 failed / 7 skipped; the 28 are the G1 chalk baseline
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `docs(security): name the codex, copilot and kiro-cli subprocesses`
+
+---
+
+### G4: Give Codex, Copilot and Kiro a 300s subprocess timeout
+
+**What**: `DEFAULT_TIMEOUT_MS` (120s) was shared by every CLI provider, but Codex/Copilot/Kiro run full agent turns. Add an optional `timeoutMs` to `CliProviderSpec` (marked `SPEC_DEVIATION`, since design.md does not define it), have `CliSubprocessProvider` pass `spec.timeoutMs ?? 120_000` to `spawn`, keep Claude Code on the default, and set Codex/Copilot/Kiro to `300_000`.
+**Where**: `packages/core/src/providers/types.ts`, `packages/core/src/providers/cli-subprocess.ts`, `packages/core/src/providers/{codex,copilot,kiro}.ts`, `packages/core/__tests__/unit/providers/cli-subprocess.test.ts`
+**Depends on**: G3
+**Reuses**: The `jest.unstable_mockModule("node:child_process")` spawn mock from the ENOENT test in `claude-code.test.ts`
+**Requirement**: PROV-01, PROV-03, PROV-05 (the provider call completes for agent-turn CLIs)
+
+**Done when**:
+- [x] A spec with `timeoutMs` → `spawn` receives that value as `options.timeout`; a spec without it → `120_000`
+- [x] Claude Code spawns with `120_000`; Codex, Copilot and Kiro each spawn with `300_000` (one test per spec, asserted on the `spawn` options)
+- [x] Reverting the provider to the shared constant fails 4 of the 6 new tests (checked locally, then reverted)
+- [x] `npm run typecheck` and `npm run lint` exit 0
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`: 655 passed, 0 failed
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(core): give agent-turn provider CLIs a 300s timeout`
+
+---
+
+### G5: Research Copilot usage via `--usage-output-file` (researched, left unavailable)
+
+**What**: Copilot always reports `tokensAvailable: false`. Research `--usage-output-file` before building on it: `copilot --help` / `copilot help billing` (1.0.88), docs.github.com, then at most one minimal live run. Outcome: the format is undocumented and the one live run failed before any model call (`Model "gpt-5-mini" from --model flag is not available.`), so the contract stays unchanged and Copilot stays at `tokensAvailable: false`. Record the finding in the `copilot.ts` comment and `context.md`; drop the now-done timeout item (G4) from Deferred Ideas.
+**Where**: `packages/core/src/providers/copilot.ts` (comment only), `.specs/features/codex-kiro-copilot-support/context.md`
+**Depends on**: G4
+**Reuses**: The existing CLI-contract comment block in `copilot.ts`
+**Requirement**: PROV-03 (Copilot AC 2: usage n/a when output has no usage data; unchanged)
+
+**Done when**:
+- [x] `copilot --help` documents only "Write final usage statistics as JSON to the specified file"; docs.github.com (CLI command reference and docs search) has no format description
+- [x] One live run made (scratch dir, `--silent --no-custom-instructions`, cheapest-looking model); it exited 1 on model availability, and the file it wrote shows the top-level shape only (`lastCallInputTokens`/`lastCallOutputTokens` 0, `modelMetrics` empty); not retried
+- [x] `copilot.ts` comment and `context.md` Deferred Ideas record the finding and the next step; the timeout item is removed
+- [x] `spec.md` left unchanged (Copilot AC 2 still describes the behavior); `validate_spec.py` reports 0 errors
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-core`: 655 passed, 0 failed
+
+**Tests**: none (comment and planning notes only; no behavior change)
+**Gate**: quick
+
+**Commit**: `docs(core): record why copilot usage output is not read yet`
+
+---
+
+### G6: Make the skills scripts' invoked-directly check safe without a resolvable argv[1]
+
+**What**: `packages/skills/scripts/{commit,review,pr,release}.ts` guarded only against an `undefined` `argv[1]`; an `argv[1]` that does not resolve made `realpathSync` throw at import time. Guard inline in each script (absent or unresolvable → `false`), leaving direct invocation unchanged. Inline rather than a shared helper, because tsup builds each script as its own entry and a shared module would become an extra chunk. `scripts/generate-adapters.ts` has the same pattern but is outside this task's four scripts; left as is.
+**Where**: `packages/skills/scripts/{commit,review,pr,release}.ts`, `packages/skills/__tests__/invoked-directly.test.ts`
+**Depends on**: G5
+**Reuses**: The `jest.unstable_mockModule("@denisvieiradev/gitwise-core")` + dynamic-import pattern of `token-output.test.ts`
+**Requirement**: SKILL-02, SKILL-05 (the installed scripts are importable and invocable)
+
+**Done when**:
+- [x] Per script: importing with `argv[1]` absent resolves and does not run the script (`getMergedConfig` not called)
+- [x] Per script: importing with a non-existent `argv[1]` resolves and does not run the script; these 4 tests failed before the fix
+- [x] Per script: with `argv[1]` set to the script itself, the script still runs (reaches `getMergedConfig`, exits 1 on the stubbed error)
+- [x] `npm run build`, `npm run lint`, `npm run typecheck` each exit 0 (tracked `packages/skills/dist` restored after the build)
+- [x] Gate check passes: `npm test -w @denisvieiradev/gitwise-skills`: 123 passed; root `npm test`: 1092 passed / 28 failed / 7 skipped, the 28 being the G1 chalk baseline
+
+**Tests**: unit
+**Gate**: build
+
+**Commit**: `fix(skills): treat an unresolvable argv[1] as not invoked directly`
+
+---
+
+## Phase Execution Map
+
+```
+Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 4b → Phase 5 → Phase 6 → Phase 7 → Phase 8 → Phase 9
+
+Phase 1:   T1 ------→ T2 ------→ T3 ------→ T4
+Phase 2:                                     T4 -→ T5 ------→ T6 ------→ T7 ------→ T8
+Phase 3:                                     T4 -→ T9 ------→ T10 -----→ T11 -----→ T12 -----→ T13
+Phase 4:                                                                             T8 -→ T14 -----→ T15 -----→ T16 -----→ T17
+Phase 4b:                                                                                                                    T17 -→ T27
+Phase 5:                                                                             T8 -→ T18 -----→ T19 -----→ T20
+Phase 6:   T21 -----→ T22 -----→ T23 -----→ T24
+Phase 7:                                     T24 -→ T25 -----→ T26
+Phase 8:                                                         T26 ⇒ F1 -→ F2 -→ F3 -→ F4 -→ F5 -→ F6
+Phase 9:                                                                                                F6 ⇒ G1 -→ G2 -→ G3 -→ G4 -→ G5 -→ G6
+```
+
+Execution is strictly sequential — there is no intra-phase parallelism. A single agent (or batch worker) works one task at a time, in order. Total: 26 tasks across 7 phases — above the ~8-task single-batch threshold, so batch sub-agents will be offered at Execute (see Sub-Agent Delegation in `SKILL.md`).
+
+---
+
+## Task Granularity Check
+
+| Task | Scope | Status |
+|---|---|---|
+| T1: Characterization tests for ClaudeCodeProvider | 1 test file (extended) | ✅ Granular |
+| T2: Extract CliSubprocessProvider + refactor Claude | 2 files (1 new, 1 refactor), 1 concept | ✅ Granular |
+| T3: Centralize ProviderKind + tokensAvailable | 3 files, 1 concept (type extension) | ✅ Granular |
+| T4: Extend ProviderConfig with CLI-path fields | 2 files, 1 concept | ✅ Granular |
+| T5: Codex provider spec | 1 file, 1 component | ✅ Granular |
+| T6: Copilot provider spec | 1 file, 1 component | ✅ Granular |
+| T7: Kiro provider spec | 1 file, 1 component | ✅ Granular |
+| T8: Wire 3 providers into factory | 1 file, 1 function | ✅ Granular |
+| T9: ModelsByProvider + UserConfig update | 1 file, 1 concept | ✅ Granular |
+| T10: Flat→per-provider migration | 1 file, 1 function | ✅ Granular |
+| T11: Fix merge.ts scoping | 1 file, 1 function | ✅ Granular |
+| T12: buildProviderConfig + 8 call sites | 9 files, 1 concept (mechanical replacement) | ⚠️ OK if cohesive — single mechanical substitution pattern applied uniformly, not independent design decisions |
+| T13: gw config validation extension | 1 file, 1 concept | ✅ Granular |
+| T14: tokensAvailable through result types | 5 files, 1 concept (field threading) | ⚠️ OK if cohesive — single field added uniformly following one established pattern |
+| T15: release-plan schema/validator | 1 file, 1 concept | ✅ Granular |
+| T16: release.ts aggregation | 1 file, 1 function | ✅ Granular |
+| T17: CLI print statements | 4 files, 1 concept (conditional print) | ⚠️ OK if cohesive — identical one-line change repeated at 5 call sites |
+| T27: Relocate formatTokens + fix skills scripts | 7 files, 1 concept (relocate one function, apply it uniformly at 5 more call sites) | ⚠️ OK if cohesive — same "one mechanical change, many call sites" shape as T12/T14/T17, added mid-plan after a real gap was found by code-review |
+| T18: detectAvailableProviders | 1 file, 1 function | ✅ Granular |
+| T19: first-run.ts refactor | 1 file, 1 function | ✅ Granular |
+| T20: gw provider command | 2 files (1 new, 1 wiring), 1 component | ✅ Granular |
+| T21: generate-adapters.ts | 2 files (1 new, 1 config), 1 component | ✅ Granular |
+| T22: gitwise-skills dependency | 1 file, 1 concept | ✅ Granular |
+| T23: gw skills install command | 2 files (1 new, 1 wiring), 1 component | ✅ Granular |
+| T24: Remove .gemini/* | 1 directory removal | ✅ Granular |
+| T25: README.md fixes | 1 file, 1 concept (3 sections) | ✅ Granular |
+| T26: docs site updates | 2 files, 1 concept | ✅ Granular |
+
+**Granularity check**: All tasks are single-component/single-function/single-concept. The three flagged ⚠️ rows (T12, T14, T17) touch multiple files but apply one mechanical, uniform change across them — splitting further would create artificial task boundaries with no independent test/commit value (each half would be untestable alone).
+
+---
+
+## Diagram-Definition Cross-Check
+
+| Task | Depends On (task body) | Diagram Shows | Status |
+|---|---|---|---|
+| T1 | None | (start of Phase 1) | ✅ Match |
+| T2 | T1 | T1 → T2 | ✅ Match |
+| T3 | T2 | T2 → T3 | ✅ Match |
+| T4 | T3 | T3 → T4 | ✅ Match |
+| T5 | T4 | T4 → T5 (Phase 1 → Phase 2) | ✅ Match |
+| T6 | T5 | T5 → T6 | ✅ Match |
+| T7 | T6 | T6 → T7 | ✅ Match |
+| T8 | T7 | T7 → T8 | ✅ Match |
+| T9 | T4 | Phase 1 → Phase 3 (T4 → T9) | ✅ Match |
+| T10 | T9 | T9 → T10 | ✅ Match |
+| T11 | T10 | T10 → T11 | ✅ Match |
+| T12 | T11 | T11 → T12 | ✅ Match |
+| T13 | T12 | T12 → T13 | ✅ Match |
+| T14 | T8 | Phase 2 → Phase 4 (T8 → T14) | ✅ Match |
+| T15 | T14 | T14 → T15 | ✅ Match |
+| T16 | T15 | T15 → T16 | ✅ Match |
+| T17 | T16 | T16 → T17 | ✅ Match |
+| T27 | T17 | T17 → T27 (Phase 4 → Phase 4b) | ✅ Match |
+| T18 | T8 | Phase 2 → Phase 5 (T8 → T18) | ✅ Match |
+| T19 | T18 | T18 → T19 | ✅ Match |
+| T20 | T19 | T19 → T20 | ✅ Match |
+| T21 | None | (start of Phase 6, independent lineage) | ✅ Match |
+| T22 | T21 | T21 → T22 | ✅ Match |
+| T23 | T22 | T22 → T23 | ✅ Match |
+| T24 | T23 | T23 → T24 | ✅ Match |
+| T25 | T24 | T24 → T25 (Phase 6 → Phase 7) | ✅ Match |
+| T26 | T25 | T25 → T26 | ✅ Match |
+
+**Note on T9 and T21's cross-phase dependencies**: T9 depends on T4 (Phase 1), not on Phase 2's output — it's sequenced into Phase 3 rather than Phase 1 because it's conceptually about config, not the provider base, keeping phases cohesive by concern. T21 has no dependency on any earlier phase (the generator only reads `packages/skills/skills/*`, untouched by this feature) — it is sequenced last only for narrative/phase-grouping clarity, not because Execute requires it; a batch-splitting worker could run Phase 6 in parallel with Phases 1-5 if the orchestrator chooses to, but the plan below keeps strict sequential phases as the default, simpler execution model. No dependency points to a later phase in either direction.
+
+---
+
+## Test Co-location Validation
+
+| Task | Code Layer Created/Modified | Matrix Requires | Task Says | Status |
+|---|---|---|---|---|
+| T1: Characterization tests | Provider | unit | unit | ✅ OK |
+| T2: CliSubprocessProvider extraction | Provider | unit | unit | ✅ OK |
+| T3: ProviderKind + tokensAvailable | Provider | unit | unit | ✅ OK |
+| T4: ProviderConfig extension | Provider | unit | unit | ✅ OK |
+| T5: Codex spec | Provider | unit | unit | ✅ OK |
+| T6: Copilot spec | Provider | unit | unit | ✅ OK |
+| T7: Kiro spec | Provider | unit | unit | ✅ OK |
+| T8: Factory wiring | Provider / factory | unit | unit | ✅ OK |
+| T9: ModelsByProvider | Config | unit | unit | ✅ OK |
+| T10: Migration | Config | unit | unit | ✅ OK |
+| T11: Merge fix | Config | unit | unit | ✅ OK |
+| T12: buildProviderConfig + call sites | Provider/factory + command wiring | integration (multi-workspace) | integration | ✅ OK |
+| T13: gw config validation | CLI commands | unit | unit | ✅ OK |
+| T14: tokensAvailable threading | Command types + release-plan | integration | unit | ✅ OK — unit is the floor for the pure type/field-threading change itself; T15 carries the integration-level release-plan persistence test the matrix also requires for this layer |
+| T15: release-plan schema | Command types + release-plan | integration | integration | ✅ OK |
+| T16: release.ts aggregation | Command types + release-plan | integration | unit | ✅ OK — aggregation logic is pure-function unit-testable; `integration/release-lifecycle.test.ts` (untouched by this task) already exercises it end-to-end |
+| T17: CLI print statements | CLI commands | unit | unit | ✅ OK |
+| T27: formatTokens relocation + skills scripts fix | Provider/shared utility (core) + native-surface scripts | unit | unit | ✅ OK |
+| T18: detectAvailableProviders | CLI commands | unit | unit | ✅ OK |
+| T19: first-run.ts | CLI commands | unit | unit | ✅ OK |
+| T20: gw provider command | CLI commands | unit | unit | ✅ OK — the interactive-picker + config-persistence flow tested at CLI-command depth matches the matrix's floor; full-workspace regression covered by the `full` gate this task also runs |
+| T21: generate-adapters.ts | Skill/adapter generator | unit | unit | ✅ OK |
+| T22: gitwise-skills dependency | none (config-only) | — (not a code layer) | none | ✅ OK |
+| T23: gw skills install command | gw skills install filesystem effects | integration | integration | ✅ OK |
+| T24: Remove .gemini/* | Gemini removal | none | none | ✅ OK |
+| T25: README.md fixes | Documentation content | unit | unit | ✅ OK |
+| T26: docs site updates | Documentation content | unit | unit | ✅ OK |
+
+**Rules confirmed**: no task uses "tested in another task" as a justification for `Tests: none`; every `Tests: none` (T22, T24) corresponds exactly to a matrix row marked `none`; no task defers its required tests to a later task — T14/T16's `unit` choice is the matrix's own floor for a pure-logic sub-slice of a layer whose integration-level requirement is met within the same phase (T15), not deferred past it.

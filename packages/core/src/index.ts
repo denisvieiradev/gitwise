@@ -28,11 +28,15 @@ export type {
 } from "./infra/transaction.js";
 export { acquireRepoLock, STALE_LOCK_MS } from "./infra/lockfile.js";
 export type { LockPayload, AcquireRepoLockOptions } from "./infra/lockfile.js";
-// Export resolveClaudeBinary for CLI use
+// Export the per-tool binary resolvers for CLI use (CFG-01:
+// detectAvailableProviders reuses these instead of re-implementing detection).
 export { resolveClaudeBinary } from "./providers/claude-code.js";
+export { resolveCodexBinary } from "./providers/codex.js";
+export { resolveCopilotBinary } from "./providers/copilot.js";
+export { resolveKiroBinary } from "./providers/kiro.js";
 
 // Config exports — note: ModelConfig here is the config-layer version
-export type { UserConfig, RepoConfig, MergedConfig, Language, CommitConvention } from "./config/types.js";
+export type { UserConfig, RepoConfig, MergedConfig, Language, CommitConvention, ModelsByProvider } from "./config/types.js";
 export type { ModelConfig as ConfigModelConfig } from "./config/types.js";
 export { DEFAULT_USER_CONFIG } from "./config/types.js";
 export { getMergedConfig, getApiKey } from "./config/merge.js";
@@ -88,8 +92,10 @@ export type { PersistedReleasePlan } from "./commands/release-plan.js";
 export type { PrOptions, PrDraft, ApplyPrOptions, ApplyPrResult } from "./commands/pr.js";
 export type { ReviewOptions, ReviewResult, ReviewFinding } from "./commands/review.js";
 export type { CommitOptions, CommitPlan, CommitEntry, SplitMode, ApplyCommitPlanOptions, CommitStepResult, CommitAlternatives } from "./commands/commit.js";
+export { formatTokens } from "./commands/token-format.js";
 
 // Provider exports — ModelConfig here is the provider-layer version
-export type { LLMProvider, LLMChatRequest, LLMChatResponse, ModelTier, ModelConfig, ProviderConfig } from "./providers/types.js";
-export { createProvider } from "./providers/factory.js";
+export type { LLMProvider, LLMChatRequest, LLMChatResponse, ModelTier, ModelConfig, ProviderConfig, ProviderKind } from "./providers/types.js";
+export { PROVIDER_KINDS } from "./providers/types.js";
+export { createProvider, buildProviderConfig } from "./providers/factory.js";
 export { resolveModelTier, SUPPORTED_COMMANDS } from "./providers/model-router.js";

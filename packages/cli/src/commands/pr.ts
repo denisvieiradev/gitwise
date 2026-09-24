@@ -5,8 +5,10 @@ import {
   getMergedConfig,
   getApiKey,
   createProvider,
+  buildProviderConfig,
   pr,
   applyPr,
+  formatTokens,
 } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
 
@@ -30,7 +32,7 @@ export function makePrCommand(): Command {
       }
 
       const apiKey = await getApiKey(homeDir);
-      const provider = createProvider({ kind: config.provider, models: config.models, apiKey, claudeCliPath: config.claudeCliPath });
+      const provider = createProvider(buildProviderConfig(config, apiKey));
 
       p.intro(chalk.bold("gitwise pr"));
 
@@ -64,7 +66,7 @@ export function makePrCommand(): Command {
       console.log(chalk.dim("─".repeat(60)));
       console.log(draft.body);
       console.log(chalk.dim("─".repeat(60)));
-      console.log(chalk.dim(`\n  Tokens: ${draft.tokens.input} in / ${draft.tokens.output} out`));
+      console.log(chalk.dim(`\n  Tokens: ${formatTokens(draft.tokens, draft.tokensAvailable)}`));
 
       let confirmed = opts.apply;
       if (!confirmed) {

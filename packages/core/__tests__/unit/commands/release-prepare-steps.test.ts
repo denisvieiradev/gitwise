@@ -348,6 +348,7 @@ describe("savePlanStep", () => {
       targetBranch: "main",
       releaseBranchCreated: false,
       tokens: { input: 0, output: 0 },
+      tokensAvailable: true,
     };
 
     const step = savePlanStep(cwd, plan);
@@ -375,6 +376,7 @@ describe("savePlanStep", () => {
       targetBranch: "main",
       releaseBranchCreated: false,
       tokens: { input: 0, output: 0 },
+      tokensAvailable: true,
     };
     const step = savePlanStep(cwd, plan);
     await expect(step.compensate()).resolves.toBeUndefined();

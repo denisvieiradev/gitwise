@@ -2,7 +2,32 @@ import os from "node:os";
 import { read as readEnvValue } from "../infra/env.js";
 import { readUserConfig } from "./user.js";
 import { readRepoConfig } from "./repo.js";
-import type { MergedConfig, RepoConfig, UserConfig } from "./types.js";
+import { PROVIDER_KINDS } from "../providers/types.js";
+import type { MergedConfig, ModelConfig, ModelsByProvider, RepoConfig, UserConfig } from "./types.js";
+
+function isPlainObject(value: unknown): value is object {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+const MODEL_TIERS: readonly (keyof ModelConfig)[] = ["fast", "balanced", "powerful"];
+
+function mergeRepoModels(base: UserConfig, override: RepoConfig["models"]): ModelsByProvider {
+  if (!isPlainObject(override)) return base.models;
+  // MDL-06: flat tiers target the active provider; per-provider blocks target each named provider and win over flat tiers.
+  const source = override as Record<string, unknown>;
+  const flat: Partial<ModelConfig> = {};
+  for (const tier of MODEL_TIERS) {
+    const value = source[tier];
+    if (typeof value === "string") flat[tier] = value;
+  }
+  const merged = { ...base.models };
+  merged[base.provider] = { ...base.models[base.provider], ...flat };
+  for (const kind of PROVIDER_KINDS) {
+    const block = source[kind];
+    if (isPlainObject(block)) merged[kind] = { ...merged[kind], ...block };
+  }
+  return merged;
+}
 
 export function deepMerge(base: UserConfig, override: RepoConfig): MergedConfig {
   return {
@@ -13,10 +38,7 @@ export function deepMerge(base: UserConfig, override: RepoConfig): MergedConfig 
     ...(override.templatesPath !== undefined && { templatesPath: override.templatesPath }),
     ...(override.releaseStrategy !== undefined && { releaseStrategy: override.releaseStrategy }),
     ...(override.developBranch !== undefined && { developBranch: override.developBranch }),
-    models: {
-      ...base.models,
-      ...(override.models ?? {}),
-    },
+    models: mergeRepoModels(base, override.models),
   };
 }
 

@@ -5,7 +5,9 @@ import {
   getMergedConfig,
   getApiKey,
   createProvider,
+  buildProviderConfig,
   review,
+  formatTokens,
 } from "@denisvieiradev/gitwise-core";
 import os from "node:os";
 
@@ -27,7 +29,7 @@ export function makeReviewCommand(): Command {
       }
 
       const apiKey = await getApiKey(homeDir);
-      const provider = createProvider({ kind: config.provider, models: config.models, apiKey, claudeCliPath: config.claudeCliPath });
+      const provider = createProvider(buildProviderConfig(config, apiKey));
 
       p.intro(chalk.bold("gitwise review"));
 
@@ -89,7 +91,7 @@ export function makeReviewCommand(): Command {
         }
       }
 
-      console.log(chalk.dim(`\n  Tokens: ${result.tokens.input} in / ${result.tokens.output} out`));
+      console.log(chalk.dim(`\n  Tokens: ${formatTokens(result.tokens, result.tokensAvailable)}`));
       p.outro(chalk.bold(`Review complete — ${result.critical.length} critical, ${result.suggestions.length} suggestions, ${result.nitpicks.length} nitpicks`));
     });
 }

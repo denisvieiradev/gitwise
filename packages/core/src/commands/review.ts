@@ -21,6 +21,8 @@ export interface ReviewResult {
   nitpicks: ReviewFinding[];
   markdown: string;
   tokens: { input: number; output: number };
+  /** AD-002: false when the active provider doesn't report token usage. */
+  tokensAvailable: boolean;
 }
 
 export interface ReviewOptions {
@@ -197,6 +199,7 @@ export async function review(opts: ReviewOptions): Promise<ReviewResult> {
     nitpicks: parsed.nitpicks,
     markdown,
     tokens,
+    tokensAvailable: response.tokensAvailable,
   };
 }
 

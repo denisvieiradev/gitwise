@@ -1,13 +1,7 @@
-import { execSync, spawn } from "node:child_process";
-import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { debug } from "../infra/logger.js";
-import { EXIT_CODES, GitwiseError } from "../errors.js";
-import type { LLMChatRequest, LLMChatResponse, LLMProvider, ModelConfig, ModelTier } from "./types.js";
-
-const LARGE_PROMPT_THRESHOLD = 100_000;
-const DEFAULT_TIMEOUT_MS = 120_000;
+import { CliSubprocessProvider, resolveCliBinary } from "./cli-subprocess.js";
+import type { CliProviderSpec, ModelConfig } from "./types.js";
 
 const COMMON_CLAUDE_PATHS = [
   // Native installs (Homebrew, manual) — preferred over npm
@@ -18,97 +12,22 @@ const COMMON_CLAUDE_PATHS = [
   path.join(os.homedir(), ".npm-global", "bin", "claude"),
 ];
 
-interface ClaudeCliResult {
-  result: string;
-  is_error: boolean;
-  usage: {
-    input_tokens: number;
-    output_tokens: number;
-  };
-}
-
-function isExecutable(filePath: string): boolean {
-  try {
-    fs.accessSync(filePath, fs.constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
+// Same precedence as the other CLI providers (see resolveCliBinary).
 export function resolveClaudeBinary(customPath?: string): string | null {
-  if (customPath) {
-    if (isExecutable(customPath)) return customPath;
-    return null;
-  }
-
-  // 1. Check known native install paths first (Homebrew, manual)
-  for (const candidate of COMMON_CLAUDE_PATHS) {
-    if (isExecutable(candidate)) return candidate;
-  }
-
-  // 2. Fall back to PATH lookup (may find nvm/npm version)
-  try {
-    const found = execSync("which claude", { stdio: "pipe" }).toString().trim();
-    if (found && isExecutable(found)) return found;
-  } catch {
-    // not in PATH
-  }
-
-  // 3. Check nvm installations as last resort
-  const nvmDir = path.join(os.homedir(), ".nvm", "versions", "node");
-  try {
-    const versions = fs.readdirSync(nvmDir);
-    for (const version of versions) {
-      const candidate = path.join(nvmDir, version, "bin", "claude");
-      if (isExecutable(candidate)) return candidate;
-    }
-  } catch {
-    // nvm not installed
-  }
-
-  return null;
+  return resolveCliBinary("claude", COMMON_CLAUDE_PATHS, customPath);
 }
 
-export class ClaudeCodeProvider implements LLMProvider {
-  private readonly models: ModelConfig;
-  private readonly claudeBinaryPath: string;
+export const claudeCodeSpec: CliProviderSpec = {
+  toolName: "Claude Code CLI",
+  installHint: "Re-run `gw config` to reconfigure.",
+  defaultCommand: "claude",
+  foldSystemPrompt: false,
+  resolveBinary: resolveClaudeBinary,
 
-  constructor(models: ModelConfig, claudeCliPath?: string) {
-    this.models = models;
-    this.claudeBinaryPath =
-      claudeCliPath ?? resolveClaudeBinary() ?? "claude";
-  }
-
-  async chat(req: LLMChatRequest): Promise<LLMChatResponse> {
-    const modelId = this.resolveModel(req.tier);
-    debug("Calling Claude Code CLI", { model: modelId, tier: req.tier, binary: this.claudeBinaryPath });
-
-    const userContent = req.userMessage;
-    const args = this.buildArgs(req.systemPrompt, modelId, userContent);
-
-    const result =
-      userContent.length > LARGE_PROMPT_THRESHOLD
-        ? await this.callViaStdin(args, userContent)
-        : await this.callViaCli(args);
-
-    return {
-      content: result.result,
-      tokens: {
-        input: result.usage.input_tokens,
-        output: result.usage.output_tokens,
-      },
-    };
-  }
-
-  private buildArgs(
-    systemPrompt: string,
-    modelId: string,
-    userContent: string,
-  ): string[] {
-    const args = [
+  buildArgs({ prompt, systemPrompt, modelId, large }) {
+    return [
       "-p",
-      ...(userContent.length <= LARGE_PROMPT_THRESHOLD ? [userContent] : []),
+      ...(large ? [] : [prompt]),
       "--system-prompt",
       systemPrompt,
       "--model",
@@ -116,116 +35,40 @@ export class ClaudeCodeProvider implements LLMProvider {
       "--output-format",
       "json",
     ];
-    return args;
-  }
+  },
 
-  private async callViaCli(args: string[]): Promise<ClaudeCliResult> {
-    // No stdin payload for this path — the prompt travels via argv (-p ...).
-    // Closing stdin immediately (rather than leaving it open) matters: the
-    // `claude` CLI treats a non-TTY stdin as possible piped input and waits
-    // on it before proceeding.
-    return this.spawnClaude(args, "");
-  }
-
-  private async callViaStdin(
-    args: string[],
-    input: string,
-  ): Promise<ClaudeCliResult> {
-    return this.spawnClaude(args, input);
-  }
-
-  private async spawnClaude(args: string[], input: string): Promise<ClaudeCliResult> {
-    return new Promise((resolve, reject) => {
-      const child = spawn(this.claudeBinaryPath, args, {
-        stdio: ["pipe", "pipe", "pipe"],
-        timeout: DEFAULT_TIMEOUT_MS,
-      });
-
-      let stdout = "";
-      let stderr = "";
-
-      child.stdout.on("data", (data: Buffer) => {
-        stdout += data.toString();
-      });
-      child.stderr.on("data", (data: Buffer) => {
-        stderr += data.toString();
-      });
-
-      child.on("close", (code) => {
-        if (code !== 0) {
-          if (stdout) {
-            try {
-              const parsed = JSON.parse(stdout);
-              if (parsed.is_error) {
-                reject(new Error(`Claude CLI error: ${parsed.result}`));
-                return;
-              }
-            } catch {
-              // stdout wasn't valid JSON
-            }
-          }
-          const filteredStderr = stderr
-            .replace(/Warning: no stdin data.*\n?/g, "")
-            .trim();
-          reject(
-            new Error(
-              `Claude CLI exited with code ${code}${filteredStderr ? `: ${filteredStderr}` : ""}`,
-            ),
-          );
-          return;
-        }
-        try {
-          resolve(this.parseResponse(stdout));
-        } catch (err) {
-          reject(err);
-        }
-      });
-
-      child.on("error", (err) => {
-        reject(this.wrapError(err));
-      });
-
-      child.stdin.write(input);
-      child.stdin.end();
-    });
-  }
-
-  private parseResponse(stdout: string): ClaudeCliResult {
+  parseOutput(stdout) {
     const parsed = JSON.parse(stdout);
 
     if (parsed.is_error) {
       throw new Error(`Claude CLI returned error: ${parsed.result}`);
     }
 
-    const usage = { input_tokens: 0, output_tokens: 0 };
-    if (parsed.usage) {
-      usage.input_tokens = parsed.usage.input_tokens ?? 0;
-      usage.output_tokens = parsed.usage.output_tokens ?? 0;
-    }
-
     return {
-      result: parsed.result ?? "",
-      is_error: false,
-      usage,
+      content: parsed.result ?? "",
+      tokens: {
+        input: parsed.usage?.input_tokens ?? 0,
+        output: parsed.usage?.output_tokens ?? 0,
+      },
     };
-  }
+  },
 
-  private resolveModel(tier: ModelTier): string {
-    return this.models[tier];
-  }
-
-  private wrapError(err: unknown): Error {
-    if (err instanceof Error) {
-      if (err.message.includes("ENOENT")) {
-        return new GitwiseError({
-          code: "PROVIDER_UNAVAILABLE",
-          message: `Claude Code CLI not found at "${this.claudeBinaryPath}". Re-run \`gw config\` to reconfigure.`,
-          exitCode: EXIT_CODES.API_FAILED,
-          cause: err,
-        });
+  formatExitError(code, stdout, stderr) {
+    if (stdout) {
+      try {
+        const parsed = JSON.parse(stdout);
+        if (parsed.is_error) return `Claude CLI error: ${parsed.result}`;
+      } catch {
+        // stdout wasn't valid JSON
       }
-      return err;
     }
-    return new Error(String(err));
+    const filteredStderr = stderr.replace(/Warning: no stdin data.*\n?/g, "").trim();
+    return `Claude CLI exited with code ${code}${filteredStderr ? `: ${filteredStderr}` : ""}`;
+  },
+};
+
+export class ClaudeCodeProvider extends CliSubprocessProvider {
+  constructor(models: ModelConfig, claudeCliPath?: string) {
+    super(claudeCodeSpec, models, claudeCliPath);
   }
 }
