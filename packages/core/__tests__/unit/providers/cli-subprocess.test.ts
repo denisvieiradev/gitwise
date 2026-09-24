@@ -3,6 +3,8 @@ import { EventEmitter } from "node:events";
 import { mkdtempSync, rmSync, writeFileSync, chmodSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import * as realTimers from "node:timers";
+import { setTimeout as sleep } from "node:timers/promises";
 import { CliSubprocessProvider } from "../../../src/providers/cli-subprocess.js";
 import type { CliProviderSpec } from "../../../src/providers/types.js";
 
@@ -119,12 +121,20 @@ process.stdin.on("end", () => {
 // so a real provider spec can be imported against the same mock.
 async function spawnOptionsFor(
   loadSpec: () => Promise<CliProviderSpec>,
-): Promise<{ timeout?: number }> {
-  let captured: { timeout?: number } | undefined;
+): Promise<{ timeout?: number; detached?: boolean }> {
+  let captured: { detached?: boolean } | undefined;
+  const delays: number[] = [];
   await jest.isolateModulesAsync(async () => {
+    jest.unstable_mockModule("node:timers", () => ({
+      ...realTimers,
+      setTimeout: (fn: () => void, ms: number) => {
+        delays.push(ms);
+        return realTimers.setTimeout(fn, ms);
+      },
+    }));
     jest.unstable_mockModule("node:child_process", () => ({
       execSync: jest.fn(),
-      spawn: jest.fn((_binary: string, _args: string[], options: { timeout?: number }) => {
+      spawn: jest.fn((_binary: string, _args: string[], options: { detached?: boolean }) => {
         captured = options;
         const child = new EventEmitter() as EventEmitter & {
           stdout: EventEmitter;
@@ -148,10 +158,16 @@ async function spawnOptionsFor(
     await provider.chat(req("x"));
   });
   if (!captured) throw new Error("spawn was not called");
-  return captured;
+  // The timeout is a manual timer (so it can kill the whole process group).
+  return { ...captured, timeout: delays[0] };
 }
 
 describe("CliSubprocessProvider subprocess timeout", () => {
+  it("spawns the CLI in its own process group on POSIX so a timeout can kill its tool subprocesses", async () => {
+    const options = await spawnOptionsFor(async () => makeSpec());
+    expect(options.detached).toBe(process.platform !== "win32");
+  });
+
   it("passes the spec's timeoutMs to spawn when the spec sets one", async () => {
     const options = await spawnOptionsFor(async () => makeSpec({ timeoutMs: 45_000 }));
     expect(options.timeout).toBe(45_000);
@@ -180,5 +196,35 @@ describe("CliSubprocessProvider subprocess timeout", () => {
   it("gives Kiro 300_000 ms", async () => {
     const options = await spawnOptionsFor(async () => (await import("../../../src/providers/kiro.js")).kiroSpec);
     expect(options.timeout).toBe(300_000);
+  });
+});
+
+const posixIt = process.platform === "win32" ? it.skip : it;
+
+describe("CliSubprocessProvider timeout process tree", () => {
+  posixIt("kills tool subprocesses spawned by the CLI, not just the CLI itself, when the timeout fires", async () => {
+    const f = script(`
+const { spawn } = require("node:child_process");
+const fs = require("node:fs");
+const grandchild = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { stdio: "ignore" });
+fs.writeFileSync(__dirname + "/grandchild.pid", String(grandchild.pid));
+setInterval(() => {}, 1000);`);
+    const provider = new CliSubprocessProvider(makeSpec({ timeoutMs: 1_000 }), MODELS, f.path);
+
+    const err = (await provider.chat(req("x")).catch((e: unknown) => e)) as Error;
+    expect(err.message).toBe("Fake CLI was terminated by signal SIGTERM");
+
+    const pid = Number(readFileSync(join(f.dir, "grandchild.pid"), "utf8"));
+    let alive = true;
+    for (let i = 0; i < 20 && alive; i++) {
+      try {
+        process.kill(pid, 0);
+        await sleep(50);
+      } catch {
+        alive = false;
+      }
+    }
+    if (alive) process.kill(pid, "SIGKILL");
+    expect(alive).toBe(false);
   });
 });

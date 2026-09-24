@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { StringDecoder } from "node:string_decoder";
+import { clearTimeout, setTimeout } from "node:timers";
 import { debug } from "../infra/logger.js";
 import { EXIT_CODES, GitwiseError } from "../errors.js";
 import type {
@@ -60,6 +61,7 @@ export function resolveCliBinary(
 
 export const LARGE_PROMPT_THRESHOLD = 100_000;
 const DEFAULT_TIMEOUT_MS = 120_000;
+const KILL_GRACE_MS = 5_000;
 
 // AD-001: one spawn/timeout/stderr-capture/ENOENT-wrapping implementation
 // shared by every CLI-backed LLM provider. Tool specifics live in the spec.
@@ -99,10 +101,41 @@ export class CliSubprocessProvider implements LLMProvider {
 
   private spawnCli(args: string[], input: string): Promise<string> {
     return new Promise((resolve, reject) => {
+      // Agentic CLIs run tool calls as child processes. Own process group (POSIX)
+      // so a timeout can signal the whole tree; Node's `timeout` option would
+      // only signal the direct child and orphan any tool subprocess.
+      const ownGroup = process.platform !== "win32";
       const child = spawn(this.binaryPath, args, {
         stdio: ["pipe", "pipe", "pipe"],
-        timeout: this.spec.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+        detached: ownGroup,
       });
+
+      const killTree = (sig: NodeJS.Signals): void => {
+        try {
+          if (ownGroup && child.pid !== undefined) process.kill(-child.pid, sig);
+          else child.kill(sig);
+        } catch {
+          // group already gone
+        }
+      };
+
+      let timedOut = false;
+      let escalation: NodeJS.Timeout | undefined;
+      const timer = setTimeout(() => {
+        timedOut = true;
+        killTree("SIGTERM");
+        escalation = setTimeout(() => killTree("SIGKILL"), KILL_GRACE_MS);
+        escalation.unref();
+      }, this.spec.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+
+      // A detached group no longer receives the terminal's Ctrl-C, so reap it on parent exit.
+      const reapOnExit = (): void => killTree("SIGKILL");
+      process.once("exit", reapOnExit);
+      const cleanup = (): void => {
+        clearTimeout(timer);
+        clearTimeout(escalation);
+        process.off("exit", reapOnExit);
+      };
 
       let stdout = "";
       let stderr = "";
@@ -118,6 +151,9 @@ export class CliSubprocessProvider implements LLMProvider {
       });
 
       child.on("close", (code, signal) => {
+        // Sweep tool subprocesses that outlived the CLI itself after a timeout.
+        if (timedOut) killTree("SIGKILL");
+        cleanup();
         stdout += outDecoder.end();
         stderr += errDecoder.end();
         if (code === null && signal) {
@@ -132,6 +168,7 @@ export class CliSubprocessProvider implements LLMProvider {
       });
 
       child.on("error", (err) => {
+        cleanup();
         reject(this.wrapError(err));
       });
 

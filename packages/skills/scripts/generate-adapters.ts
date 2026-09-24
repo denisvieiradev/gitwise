@@ -14,9 +14,10 @@
  * of the installed @denisvieiradev/gitwise-skills package.
  */
 
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isInvokedDirectly } from "./invoked-directly.js";
 
 export const COMMANDS = ["commit", "review", "pr", "release"] as const;
 
@@ -77,9 +78,7 @@ export function generateAdapters(skillsDir: string, outDir: string): void {
 
 // Only run when invoked directly (`node dist/scripts/generate-adapters.js`),
 // so the tests can import generateAdapters without side effects.
-const invokedDirectly =
-  process.argv[1] !== undefined &&
-  realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+const invokedDirectly = isInvokedDirectly(import.meta.url);
 
 if (invokedDirectly) {
   // dist/scripts/generate-adapters.js → package root is two levels up.

@@ -4,8 +4,7 @@
  * Usage: node scripts/commit.js [intent] [--split auto|never|always] [--apply] [--push]
  */
 
-import { realpathSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { isInvokedDirectly } from "./invoked-directly.js";
 import {
   getMergedConfig,
   getApiKey,
@@ -95,16 +94,7 @@ export async function runCommitSkill(
 // Only execute the runner when this module is invoked directly (i.e. `node
 // dist/scripts/commit.js`). Skipping the auto-run when the file is imported
 // keeps `runCommitSkill` testable without triggering side effects.
-// An absent or unresolvable argv[1] (REPL, `node -e`) means "imported", not a throw.
-const invokedDirectly = ((): boolean => {
-  const entry = process.argv[1];
-  if (entry === undefined) return false;
-  try {
-    return realpathSync(entry) === realpathSync(fileURLToPath(import.meta.url));
-  } catch {
-    return false;
-  }
-})();
+const invokedDirectly = isInvokedDirectly(import.meta.url);
 
 if (invokedDirectly) {
   runCommitSkill(process.argv.slice(2)).catch((err: unknown) => {
