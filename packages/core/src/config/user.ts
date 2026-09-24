@@ -30,12 +30,14 @@ function isLegacyFlatModels(value: unknown): value is ModelConfig {
  * `models[<configured provider>]`, backfilling every other provider key from
  * defaults. When `provider` is itself unrecognized, every key — including
  * the one the flat block might have belonged to — is backfilled from
- * defaults instead of guessing which provider it was meant for.
+ * defaults instead of guessing which provider it was meant for. An absent
+ * `provider` means the default provider.
  */
 function migrateFlatModels(flat: ModelConfig, provider: unknown): ModelsByProvider {
+  const target = provider === undefined ? DEFAULT_USER_CONFIG.provider : provider;
   const migrated: ModelsByProvider = { ...DEFAULT_USER_CONFIG.models };
-  if (typeof provider === "string" && PROVIDER_KINDS.includes(provider as ProviderKind)) {
-    migrated[provider as ProviderKind] = { ...flat };
+  if (typeof target === "string" && PROVIDER_KINDS.includes(target as ProviderKind)) {
+    migrated[target as ProviderKind] = { ...flat };
   }
   return migrated;
 }
@@ -60,7 +62,11 @@ export async function readUserConfig(homeDir?: string): Promise<UserConfig> {
     const migratedModels = migrateFlatModels(raw.models, raw.provider);
     const merged = mergeWithDefaults({ ...raw, models: migratedModels });
     debug("Migrated legacy flat models config to per-provider shape", { path: configPath });
-    await writeJSON(configPath, merged);
+    try {
+      await writeJSON(configPath, merged);
+    } catch (err) {
+      debug("Could not persist migrated config; using it in memory", { path: configPath, error: String(err) });
+    }
     return merged;
   }
 

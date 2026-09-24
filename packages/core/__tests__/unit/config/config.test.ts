@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
-import { mkdtemp, rm, mkdir, writeFile, readFile, stat } from "node:fs/promises";
+import { mkdtemp, rm, mkdir, writeFile, readFile, stat, chmod } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { getMergedConfig, getApiKey } from "../../../src/config/merge.js";
@@ -382,6 +382,34 @@ describe("config (core)", () => {
       await writeFile(path, JSON.stringify(cfg, null, 2), "utf-8");
       return path;
     }
+
+    const posixIt = process.platform === "win32" || process.getuid?.() === 0 ? it.skip : it;
+
+    it("migrates a legacy flat block with no provider key into the default provider's block", async () => {
+      await writeLegacyConfig({
+        models: { fast: "legacy-fast", balanced: "legacy-balanced", powerful: "legacy-powerful" },
+      });
+
+      const loaded = await readUserConfig(homeDir);
+
+      expect(loaded.models[DEFAULT_USER_CONFIG.provider]).toEqual({
+        fast: "legacy-fast",
+        balanced: "legacy-balanced",
+        powerful: "legacy-powerful",
+      });
+    });
+
+    posixIt("still returns the migrated config when the migration cannot be persisted", async () => {
+      const path = await writeLegacyConfig({
+        provider: "claude-code",
+        models: { fast: "legacy-fast", balanced: "legacy-balanced", powerful: "legacy-powerful" },
+      });
+      await chmod(path, 0o400);
+
+      const loaded = await readUserConfig(homeDir);
+
+      expect(loaded.models["claude-code"].fast).toBe("legacy-fast");
+    });
 
     it("migrates a pre-feature flat models config into the configured provider's block and persists it", async () => {
       const path = await writeLegacyConfig({
