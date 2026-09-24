@@ -1,6 +1,8 @@
 import { describe, it, expect, afterEach, jest } from "@jest/globals";
 import { EventEmitter } from "node:events";
 import { mkdtempSync, rmSync, writeFileSync, chmodSync, readFileSync, existsSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as realTimers from "node:timers";
@@ -306,4 +308,87 @@ setInterval(() => {}, 1000);`);
 
     expect(err.message).toBe("Fake CLI timed out after 1s");
   });
+});
+
+// The re-raise only matters in a real process: Jest's own process must not be signalled, so the
+// provider runs in a child bundled from the TypeScript source.
+describe("CliSubprocessProvider re-raises the signal in a real process", () => {
+  const providerSource = fileURLToPath(new URL("../../../src/providers/cli-subprocess.ts", import.meta.url));
+
+  async function bundleHarness(dir: string): Promise<string> {
+    const { build } = await import("esbuild");
+    const entry = join(dir, "harness.ts");
+    writeFileSync(
+      entry,
+      `import { CliSubprocessProvider } from ${JSON.stringify(providerSource)};
+const spec = {
+  toolName: "Fake CLI",
+  installHint: "",
+  defaultCommand: "unused",
+  foldSystemPrompt: true,
+  timeoutMs: 30000,
+  resolveBinary: () => null,
+  buildArgs: ({ prompt }: { prompt: string }) => [prompt],
+  parseOutput: (stdout: string) => ({ content: stdout, tokens: null }),
+};
+let otherListenerCalls = 0;
+if (process.env["HARNESS_OTHER_LISTENER"]) process.on("SIGTERM", () => { otherListenerCalls++; });
+const provider = new CliSubprocessProvider(spec, { fast: "f", balanced: "b", powerful: "p" }, process.argv[2]);
+provider.chat({ systemPrompt: "s", userMessage: "u", tier: "fast" }).then(
+  () => console.log("resolved"),
+  (err: Error) => { setTimeout(() => console.log("rejected: " + err.message + " calls=" + otherListenerCalls), 300); },
+);`,
+    );
+    const outfile = join(dir, "harness.mjs");
+    await build({ entryPoints: [entry], bundle: true, platform: "node", format: "esm", outfile, logLevel: "silent" });
+    return outfile;
+  }
+
+  async function runHarness(env: Record<string, string>): Promise<{ code: number | null; signal: NodeJS.Signals | null; stdout: string; cliPid: number }> {
+    const f = script(`
+require("node:fs").writeFileSync(__dirname + "/cli.pid", String(process.pid));
+setInterval(() => {}, 1000);`);
+    const harness = await bundleHarness(f.dir);
+    const child = spawn(process.execPath, [harness, f.path], { env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "inherit"] });
+    let stdout = "";
+    child.stdout.on("data", (d: Buffer) => {
+      stdout += d.toString();
+    });
+    const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) =>
+      child.on("exit", (code, signal) => resolve({ code, signal })),
+    );
+    for (let i = 0; i < 200 && !existsSync(join(f.dir, "cli.pid")); i++) await sleep(50);
+    child.kill("SIGTERM");
+    const result = await exited;
+    return { ...result, stdout, cliPid: Number(readFileSync(join(f.dir, "cli.pid"), "utf8")) };
+  }
+
+  async function isDead(pid: number): Promise<boolean> {
+    for (let i = 0; i < 20; i++) {
+      try {
+        process.kill(pid, 0);
+        await sleep(50);
+      } catch {
+        return true;
+      }
+    }
+    process.kill(pid, "SIGKILL");
+    return false;
+  }
+
+  posixIt("dies from the signal itself, after reaping the CLI, when nothing else listens for it", async () => {
+    const run = await runHarness({});
+
+    expect(run.signal).toBe("SIGTERM");
+    expect(await isDead(run.cliPid)).toBe(true);
+  }, 20_000);
+
+  posixIt("stays alive and rejects when another listener handles the signal", async () => {
+    const run = await runHarness({ HARNESS_OTHER_LISTENER: "1" });
+
+    expect(run.signal).toBeNull();
+    expect(run.code).toBe(0);
+    expect(run.stdout).toContain("rejected: Fake CLI was interrupted by SIGTERM calls=1");
+    expect(await isDead(run.cliPid)).toBe(true);
+  }, 20_000);
 });

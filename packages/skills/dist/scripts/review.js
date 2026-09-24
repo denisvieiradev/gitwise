@@ -17073,14 +17073,20 @@ async function readRepoConfig(cwd) {
 function isPlainObject(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+var MODEL_TIERS = ["fast", "balanced", "powerful"];
 function mergeRepoModels(base, override) {
   if (!isPlainObject(override)) return base.models;
-  const isPerProvider = PROVIDER_KINDS.some((kind) => kind in override);
-  const perProvider = isPerProvider ? override : { [base.provider]: override };
+  const source = override;
+  const flat = {};
+  for (const tier of MODEL_TIERS) {
+    const value = source[tier];
+    if (typeof value === "string") flat[tier] = value;
+  }
   const merged = { ...base.models };
+  merged[base.provider] = { ...base.models[base.provider], ...flat };
   for (const kind of PROVIDER_KINDS) {
-    const block = perProvider[kind];
-    if (isPlainObject(block)) merged[kind] = { ...base.models[kind], ...block };
+    const block = source[kind];
+    if (isPlainObject(block)) merged[kind] = { ...merged[kind], ...block };
   }
   return merged;
 }
