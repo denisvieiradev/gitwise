@@ -41,7 +41,7 @@ var init_esm_shims = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/tslib.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/tslib.mjs
 function __classPrivateFieldSet(receiver, state, value, kind, f) {
   if (kind === "m")
     throw new TypeError("Private method is not writable");
@@ -59,16 +59,16 @@ function __classPrivateFieldGet(receiver, state, kind, f) {
   return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 }
 var init_tslib = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/tslib.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/tslib.mjs"() {
     "use strict";
     init_esm_shims();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/uuid.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/uuid.mjs
 var uuid4;
 var init_uuid = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/uuid.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/uuid.mjs"() {
     "use strict";
     init_esm_shims();
     uuid4 = function() {
@@ -84,7 +84,7 @@ var init_uuid = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/errors.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/errors.mjs
 function isAbortError(err) {
   return typeof err === "object" && err !== null && // Spec-compliant fetch implementations
   ("name" in err && err.name === "AbortError" || // Expo fetch
@@ -92,7 +92,7 @@ function isAbortError(err) {
 }
 var castToError;
 var init_errors = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/errors.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/errors.mjs"() {
     "use strict";
     init_esm_shims();
     castToError = (err) => {
@@ -100,8 +100,7 @@ var init_errors = __esm({
         return err;
       if (typeof err === "object" && err !== null) {
         try {
-          const tag = Object.prototype.toString.call(err);
-          if (tag === "[object Error]" || tag === "[object DOMException]") {
+          if (Object.prototype.toString.call(err) === "[object Error]") {
             const error = new Error(err.message, err.cause ? { cause: err.cause } : {});
             if (err.stack)
               error.stack = err.stack;
@@ -123,10 +122,10 @@ var init_errors = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/core/error.mjs
+// ../../node_modules/@anthropic-ai/sdk/core/error.mjs
 var AnthropicError, APIError, APIUserAbortError, APIConnectionError, APIConnectionTimeoutError, RetryableError, BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError, ConflictError, UnprocessableEntityError, RateLimitError, InternalServerError;
 var init_error = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/core/error.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/core/error.mjs"() {
     "use strict";
     init_esm_shims();
     init_errors();
@@ -138,7 +137,6 @@ var init_error = __esm({
         this.status = status2;
         this.headers = headers;
         this.requestID = headers?.get("request-id");
-        this.workspaceID = headers?.get("anthropic-workspace-id");
         this.error = error;
         this.type = type ?? null;
       }
@@ -231,7 +229,7 @@ var init_error = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/values.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/values.mjs
 function maybeObj(x) {
   if (typeof x !== "object") {
     return {};
@@ -248,14 +246,9 @@ function isEmptyObj(obj) {
 function hasOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
-function isObj(obj) {
-  return obj != null && typeof obj === "object" && !Array.isArray(obj);
-}
-function checkNever(_value) {
-}
 var startsWithSchemeRegexp, isAbsoluteURL, isArray, isReadonlyArray, validatePositiveInteger, safeJSON;
 var init_values = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/values.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/values.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
@@ -284,39 +277,39 @@ var init_values = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/sleep.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/sleep.mjs
 var sleep;
 var init_sleep = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/sleep.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/sleep.mjs"() {
     "use strict";
     init_esm_shims();
-    sleep = (ms, signal) => new Promise((resolve5) => {
+    sleep = (ms, signal) => new Promise((resolve4) => {
       if (signal?.aborted)
-        return resolve5();
+        return resolve4();
       const onAbort = () => {
         clearTimeout(timer);
-        resolve5();
+        resolve4();
       };
       const timer = setTimeout(() => {
         signal?.removeEventListener("abort", onAbort);
-        resolve5();
+        resolve4();
       }, ms);
       signal?.addEventListener("abort", onAbort, { once: true });
     });
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/version.mjs
+// ../../node_modules/@anthropic-ai/sdk/version.mjs
 var VERSION;
 var init_version = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/version.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/version.mjs"() {
     "use strict";
     init_esm_shims();
-    VERSION = "0.122.0";
+    VERSION = "0.109.0";
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs
 function getDetectedPlatform() {
   if (typeof Deno !== "undefined" && Deno.build != null) {
     return "deno";
@@ -354,7 +347,7 @@ function getBrowserInfo() {
 }
 var isRunningInBrowser, getPlatformProperties, normalizeArch, normalizePlatform, _platformHeaders, getPlatformHeaders;
 var init_detect_platform = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs"() {
     "use strict";
     init_esm_shims();
     init_version();
@@ -385,7 +378,7 @@ var init_detect_platform = __esm({
           "X-Stainless-OS": "Unknown",
           "X-Stainless-Arch": `other:${EdgeRuntime}`,
           "X-Stainless-Runtime": "edge",
-          "X-Stainless-Runtime-Version": globalThis.process?.version ?? "unknown"
+          "X-Stainless-Runtime-Version": globalThis.process.version
         };
       }
       if (detectedPlatform === "node") {
@@ -457,36 +450,7 @@ var init_detect_platform = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/request-signal.mjs
-function makeCleanup(signal, listener) {
-  return () => signal.removeEventListener("abort", listener);
-}
-function registerRequestSignalCleanup(controller, signal, listener) {
-  cleanups.set(controller, makeCleanup(signal, listener));
-}
-function armAbandonmentBackstop(body, controller) {
-  if (cleanups.has(controller))
-    registry?.register(body, controller, controller);
-}
-function releaseRequestSignal(controller) {
-  const cleanup = cleanups.get(controller);
-  if (cleanup) {
-    cleanups.delete(controller);
-    registry?.unregister(controller);
-    cleanup();
-  }
-}
-var cleanups, registry;
-var init_request_signal = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/request-signal.mjs"() {
-    "use strict";
-    init_esm_shims();
-    cleanups = /* @__PURE__ */ new WeakMap();
-    registry = typeof globalThis.FinalizationRegistry === "function" ? new globalThis.FinalizationRegistry((controller) => releaseRequestSignal(controller)) : null;
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/internal/shims.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/shims.mjs
 function getDefaultFetch() {
   if (typeof fetch !== "undefined") {
     return fetch;
@@ -558,16 +522,16 @@ async function CancelReadableStream(stream) {
   await cancelPromise;
 }
 var init_shims = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/shims.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/shims.mjs"() {
     "use strict";
     init_esm_shims();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/request-options.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/request-options.mjs
 var FallbackEncoder;
 var init_request_options = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/request-options.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/request-options.mjs"() {
     "use strict";
     init_esm_shims();
     FallbackEncoder = ({ headers, body }) => {
@@ -581,10 +545,10 @@ var init_request_options = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/qs/formats.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/qs/formats.mjs
 var default_format, default_formatter, formatters, RFC1738;
 var init_formats = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/qs/formats.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/qs/formats.mjs"() {
     "use strict";
     init_esm_shims();
     default_format = "RFC3986";
@@ -597,7 +561,7 @@ var init_formats = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/qs/utils.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/qs/utils.mjs
 function is_buffer(obj) {
   if (!obj || typeof obj !== "object") {
     return false;
@@ -616,7 +580,7 @@ function maybe_map(val, fn) {
 }
 var has, hex_table, limit, encode;
 var init_utils = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/qs/utils.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/qs/utils.mjs"() {
     "use strict";
     init_esm_shims();
     init_formats();
@@ -685,7 +649,7 @@ var init_utils = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/qs/stringify.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/qs/stringify.mjs
 function is_non_nullish_primitive(v) {
   return typeof v === "string" || typeof v === "number" || typeof v === "boolean" || typeof v === "symbol" || typeof v === "bigint";
 }
@@ -925,7 +889,7 @@ function stringify(object, opts = {}) {
 }
 var array_prefix_generators, push_to_array, toISOString, defaults, sentinel;
 var init_stringify = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/qs/stringify.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/qs/stringify.mjs"() {
     "use strict";
     init_esm_shims();
     init_utils();
@@ -972,19 +936,19 @@ var init_stringify = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/query.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/query.mjs
 function stringifyQuery(query) {
   return stringify(query, { arrayFormat: "brackets" });
 }
 var init_query = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/query.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/query.mjs"() {
     "use strict";
     init_esm_shims();
     init_stringify();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/credentials/types.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/credentials/types.mjs
 function requireSecureTokenEndpoint(baseURL) {
   if (!baseURL)
     return;
@@ -1042,14 +1006,14 @@ function redactSensitive(body) {
   }
   return null;
 }
-async function checkCredentialsFileSafety(path14, onWarn = (m) => console.warn(`anthropic-sdk: ${m}`)) {
+async function checkCredentialsFileSafety(path12, onWarn = (m) => console.warn(`anthropic-sdk: ${m}`)) {
   if (typeof process === "undefined" || process.platform === "win32")
     return;
   const fs5 = await import("fs");
-  let resolved = path14;
+  let resolved = path12;
   let st;
   try {
-    resolved = await fs5.promises.realpath(path14);
+    resolved = await fs5.promises.realpath(path12);
     st = await fs5.promises.stat(resolved);
   } catch {
     return;
@@ -1067,8 +1031,8 @@ async function checkCredentialsFileSafety(path14, onWarn = (m) => console.warn(`
 }
 async function writeCredentialsFileAtomic(targetPath, data) {
   const fs5 = await import("fs");
-  const path14 = await import("path");
-  const dir = path14.dirname(targetPath);
+  const path12 = await import("path");
+  const dir = path12.dirname(targetPath);
   await fs5.promises.mkdir(dir, { recursive: true, mode: 448 });
   const tmpPath = `${targetPath}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
   try {
@@ -1131,7 +1095,7 @@ async function readLimitedText(resp) {
 }
 var GRANT_TYPE_JWT_BEARER, GRANT_TYPE_REFRESH_TOKEN, TOKEN_ENDPOINT, OAUTH_API_BETA_HEADER, FEDERATION_BETA_HEADER, ADVISORY_REFRESH_THRESHOLD_IN_SECONDS, MANDATORY_REFRESH_THRESHOLD_IN_SECONDS, ADVISORY_REFRESH_BACKOFF_IN_SECONDS, MAX_TOKEN_RESPONSE_BYTES, MAX_ERROR_BODY_CHARS, SAFE_ERROR_KEYS, WorkloadIdentityError;
 var init_types = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/credentials/types.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/credentials/types.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
@@ -1157,21 +1121,21 @@ var init_types = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/time.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/time.mjs
 function nowAsSeconds() {
   return Math.floor(Date.now() / 1e3);
 }
 var init_time = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/time.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/time.mjs"() {
     "use strict";
     init_esm_shims();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/credentials/token-cache.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/credentials/token-cache.mjs
 var TokenCache;
 var init_token_cache = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/credentials/token-cache.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/credentials/token-cache.mjs"() {
     "use strict";
     init_esm_shims();
     init_types();
@@ -1266,10 +1230,10 @@ var init_token_cache = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/env.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/env.mjs
 var readEnv;
 var init_env = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/env.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/env.mjs"() {
     "use strict";
     init_esm_shims();
     readEnv = (env) => {
@@ -1284,7 +1248,7 @@ var init_env = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/bytes.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/bytes.mjs
 function concatBytes(buffers) {
   let length = 0;
   for (const buffer of buffers) {
@@ -1308,39 +1272,23 @@ function decodeUTF8(bytes) {
 }
 var encodeUTF8_, decodeUTF8_;
 var init_bytes = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/bytes.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/bytes.mjs"() {
     "use strict";
     init_esm_shims();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/base64.mjs
-var fromBase64;
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/base64.mjs
 var init_base64 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/base64.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/base64.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
     init_bytes();
-    fromBase64 = (str) => {
-      if (typeof globalThis.Buffer !== "undefined") {
-        const buf = globalThis.Buffer.from(str, "base64");
-        return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
-      }
-      if (typeof atob !== "undefined") {
-        const bstr = atob(str);
-        const buf = new Uint8Array(bstr.length);
-        for (let i = 0; i < bstr.length; i++) {
-          buf[i] = bstr.charCodeAt(i);
-        }
-        return buf;
-      }
-      throw new AnthropicError("Cannot decode base64 string; Expected `Buffer` or `atob` to be defined");
-    };
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/log.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/log.mjs
 function noop() {
 }
 function makeLogFn(fnLevel, logger, logLevel) {
@@ -1382,7 +1330,7 @@ function defaultLogger() {
 }
 var defaultLogLevel, levelNumbers, parseLogLevel, noopLogger, cachedLoggers, lastEnvLevel, cachedDefaultLogger, formatRequestDetails;
 var init_log = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/log.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/log.mjs"() {
     "use strict";
     init_esm_shims();
     init_values();
@@ -1434,9 +1382,9 @@ var init_log = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils.mjs
 var init_utils2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils.mjs"() {
     "use strict";
     init_esm_shims();
     init_values();
@@ -1449,7 +1397,7 @@ var init_utils2 = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/core/credentials.mjs
+// ../../node_modules/@anthropic-ai/sdk/core/credentials.mjs
 function validateProfileName(name) {
   if (!name) {
     throw new Error("profile name is empty");
@@ -1466,7 +1414,7 @@ function validateProfileName(name) {
 }
 var CREDENTIALS_FILE_VERSION, PROFILE_NAME_PATTERN, loadConfigWithSource, getCredentialsPath, getRootConfigPath, supportsLocalConfigFiles, getActiveProfileName;
 var init_credentials = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/core/credentials.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/core/credentials.mjs"() {
     "use strict";
     init_esm_shims();
     init_detect_platform();
@@ -1485,8 +1433,8 @@ var init_credentials = __esm({
       }
       validateProfileName(profileName);
       const fs5 = await import("fs");
-      const path14 = await import("path");
-      const configPath = path14.join(rootConfigPath, "configs", `${profileName}.json`);
+      const path12 = await import("path");
+      const configPath = path12.join(rootConfigPath, "configs", `${profileName}.json`);
       let configRaw;
       try {
         configRaw = await fs5.promises.readFile(configPath, "utf-8");
@@ -1570,14 +1518,14 @@ var init_credentials = __esm({
         return null;
       }
       validateProfileName(profileName);
-      const path14 = await import("path");
-      return path14.join(rootConfigPath, "credentials", `${profileName}.json`);
+      const path12 = await import("path");
+      return path12.join(rootConfigPath, "credentials", `${profileName}.json`);
     };
     getRootConfigPath = async () => {
       if (!supportsLocalConfigFiles()) {
         return null;
       }
-      const path14 = await import("path");
+      const path12 = await import("path");
       const configDir = readEnv("ANTHROPIC_CONFIG_DIR");
       if (configDir) {
         return configDir;
@@ -1586,21 +1534,21 @@ var init_credentials = __esm({
       if (os9 === "Windows") {
         const appData = readEnv("APPDATA");
         if (appData) {
-          return path14.join(appData, "Anthropic");
+          return path12.join(appData, "Anthropic");
         }
         const userProfile = readEnv("USERPROFILE");
         if (userProfile) {
-          return path14.join(userProfile, "AppData", "Roaming", "Anthropic");
+          return path12.join(userProfile, "AppData", "Roaming", "Anthropic");
         }
         return null;
       }
       const xdgConfigHome = readEnv("XDG_CONFIG_HOME");
       if (xdgConfigHome) {
-        return path14.join(xdgConfigHome, "anthropic");
+        return path12.join(xdgConfigHome, "anthropic");
       }
       const home = readEnv("HOME");
       if (home) {
-        return path14.join(home, ".config", "anthropic");
+        return path12.join(home, ".config", "anthropic");
       }
       return null;
     };
@@ -1618,8 +1566,8 @@ var init_credentials = __esm({
         return profileName;
       }
       const fs5 = await import("fs");
-      const path14 = await import("path");
-      const filePath = path14.join(rootConfigPath, "active_config");
+      const path12 = await import("path");
+      const filePath = path12.join(rootConfigPath, "active_config");
       try {
         return (await fs5.promises.readFile(filePath, "utf-8")).trim() || "default";
       } catch (err) {
@@ -1632,22 +1580,22 @@ var init_credentials = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/credentials/identity-token.mjs
-function identityTokenFromFile(path14) {
-  if (!path14) {
+// ../../node_modules/@anthropic-ai/sdk/lib/credentials/identity-token.mjs
+function identityTokenFromFile(path12) {
+  if (!path12) {
     throw new AnthropicError("Identity token file path is empty");
   }
   return async () => {
     const fs5 = await import("fs");
     let content;
     try {
-      content = await fs5.promises.readFile(path14, "utf-8");
+      content = await fs5.promises.readFile(path12, "utf-8");
     } catch (err) {
-      throw new AnthropicError(`Failed to read identity token file at ${path14}: ${err}`);
+      throw new AnthropicError(`Failed to read identity token file at ${path12}: ${err}`);
     }
     const token = content.trim();
     if (!token) {
-      throw new AnthropicError(`Identity token file at ${path14} is empty`);
+      throw new AnthropicError(`Identity token file at ${path12} is empty`);
     }
     return token;
   };
@@ -1659,14 +1607,14 @@ function identityTokenFromValue(token) {
   return () => token;
 }
 var init_identity_token = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/credentials/identity-token.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/credentials/identity-token.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/credentials/oidc-federation.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/credentials/oidc-federation.mjs
 function oidcFederationProvider(config) {
   return async () => {
     requireSecureTokenEndpoint(config.baseURL);
@@ -1724,7 +1672,7 @@ function oidcFederationProvider(config) {
   };
 }
 var init_oidc_federation = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/credentials/oidc-federation.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/credentials/oidc-federation.mjs"() {
     "use strict";
     init_esm_shims();
     init_types();
@@ -1733,7 +1681,7 @@ var init_oidc_federation = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/credentials/user-oauth.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/credentials/user-oauth.mjs
 function userOAuthProvider(config) {
   return async (opts) => {
     const fs5 = await import("fs");
@@ -1807,7 +1755,7 @@ function userOAuthProvider(config) {
   };
 }
 var init_user_oauth = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/credentials/user-oauth.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/credentials/user-oauth.mjs"() {
     "use strict";
     init_esm_shims();
     init_credentials();
@@ -1817,7 +1765,7 @@ var init_user_oauth = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/credentials/credential-chain.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/credentials/credential-chain.mjs
 function resolveCredentialsFromConfig(config, options) {
   const credentialsPath = config.authentication.credentials_path ?? null;
   const effectiveBaseURL = (config.base_url || options.baseURL).replace(/\/+$/, "");
@@ -1949,7 +1897,7 @@ function cachedExchangeProvider(exchange, credentialsPath, onCacheWriteError, on
   };
 }
 var init_credential_chain = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/credentials/credential-chain.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/credentials/credential-chain.mjs"() {
     "use strict";
     init_esm_shims();
     init_env();
@@ -1962,7 +1910,7 @@ var init_credential_chain = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs
 function findNewlineIndex(buffer, startIndex) {
   const newline = 10;
   const carriage = 13;
@@ -1994,7 +1942,7 @@ function findDoubleNewlineIndex(buffer) {
 }
 var _LineDecoder_buffer, _LineDecoder_carriageReturnIndex, LineDecoder;
 var init_line = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
@@ -2046,7 +1994,7 @@ var init_line = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/core/streaming.mjs
+// ../../node_modules/@anthropic-ai/sdk/core/streaming.mjs
 async function* _iterSSEMessages(response, controller) {
   if (!response.body) {
     controller.abort();
@@ -2101,7 +2049,7 @@ function partition(str, delimiter2) {
 }
 var _Stream_client, Stream, SSEDecoder;
 var init_streaming = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/core/streaming.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/core/streaming.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
@@ -2114,7 +2062,6 @@ var init_streaming = __esm({
     init_bytes();
     init_log();
     init_error();
-    init_request_signal();
     Stream = class _Stream {
       constructor(iterator, controller, client) {
         this.iterator = iterator;
@@ -2179,7 +2126,6 @@ var init_streaming = __esm({
           } finally {
             if (!done)
               controller.abort();
-            releaseRequestSignal(controller);
           }
         }
         return new _Stream(iterator, controller, client);
@@ -2223,7 +2169,6 @@ var init_streaming = __esm({
           } finally {
             if (!done)
               controller.abort();
-            releaseRequestSignal(controller);
           }
         }
         return new _Stream(iterator, controller, client);
@@ -2327,13 +2272,13 @@ var init_streaming = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/parse.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/parse.mjs
 async function defaultParseResponse(client, props) {
   const { response, requestLogID, retryOfRequestLogID, startTime } = props;
   const body = await (async () => {
     if (props.options.stream) {
       loggerFor(client).debug("response", response.status, response.url, response.headers, response.body);
-      return Stream.fromSSEResponse(response, props.controller, client);
+      return Stream.fromSSEResponse(response, props.controller);
     }
     if (response.status === 204) {
       return null;
@@ -2350,15 +2295,11 @@ async function defaultParseResponse(client, props) {
         return void 0;
       }
       const json = await response.json();
-      return addResponseIDs(json, response);
+      return addRequestID(json, response);
     }
     const text = await response.text();
     return text;
-  })().finally(() => {
-    if (!props.options.stream && !props.options.__binaryResponse) {
-      releaseRequestSignal(props.controller);
-    }
-  });
+  })();
   loggerFor(client).debug(`[${requestLogID}] response parsed`, formatRequestDetails({
     retryOfRequestLogID,
     url: response.url,
@@ -2368,26 +2309,25 @@ async function defaultParseResponse(client, props) {
   }));
   return body;
 }
-function addResponseIDs(value, response) {
+function addRequestID(value, response) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return value;
   }
-  return Object.defineProperties(value, {
-    _request_id: { value: response.headers.get("request-id"), enumerable: false },
-    _workspace_id: { value: response.headers.get("anthropic-workspace-id"), enumerable: false }
+  return Object.defineProperty(value, "_request_id", {
+    value: response.headers.get("request-id"),
+    enumerable: false
   });
 }
 var init_parse = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/parse.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/parse.mjs"() {
     "use strict";
     init_esm_shims();
     init_streaming();
     init_log();
-    init_request_signal();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/core/middleware.mjs
+// ../../node_modules/@anthropic-ai/sdk/core/middleware.mjs
 function isFetchOriginError(err) {
   return typeof err === "object" && err !== null && fetchOriginErrors.has(err);
 }
@@ -2428,23 +2368,23 @@ function createMiddlewareContext(options, client) {
     logger: client ? loggerFor(client) : defaultLogger(),
     parse(response) {
       if (options?.stream && response.ok) {
-        return parseMiddlewareResponse(response, options, client);
+        return parseMiddlewareResponse(response, options);
       }
       let parsed = cache.get(response);
       if (!parsed) {
-        parsed = parseMiddlewareResponse(response, options, client);
+        parsed = parseMiddlewareResponse(response, options);
         cache.set(response, parsed);
       }
       return parsed;
     }
   };
 }
-async function parseMiddlewareResponse(response, options, client) {
+async function parseMiddlewareResponse(response, options) {
   if (response.bodyUsed || response.body?.locked) {
     throw new AnthropicError("cannot ctx.parse() a response whose body was already consumed; call ctx.parse() instead of reading the body, or read via response.clone()");
   }
   if (options?.stream && response.ok) {
-    return Stream.fromSSEResponse(response.clone(), new AbortController(), client);
+    return Stream.fromSSEResponse(response.clone(), new AbortController());
   }
   if (response.status === 204) {
     return null;
@@ -2459,7 +2399,7 @@ async function parseMiddlewareResponse(response, options, client) {
     if (response.headers.get("content-length") === "0") {
       return void 0;
     }
-    return addResponseIDs(await response.clone().json(), response);
+    return addRequestID(await response.clone().json(), response);
   }
   return await response.clone().text();
 }
@@ -2483,7 +2423,7 @@ function applyMiddleware(fetchFn, middleware, options, client) {
 }
 var fetchOriginErrors;
 var init_middleware = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/core/middleware.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/core/middleware.mjs"() {
     "use strict";
     init_esm_shims();
     init_errors();
@@ -2495,18 +2435,18 @@ var init_middleware = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/core/api-promise.mjs
+// ../../node_modules/@anthropic-ai/sdk/core/api-promise.mjs
 var _APIPromise_client, APIPromise;
 var init_api_promise = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/core/api-promise.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/core/api-promise.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
     init_parse();
     APIPromise = class _APIPromise extends Promise {
       constructor(client, responsePromise, parseResponse = defaultParseResponse) {
-        super((resolve5) => {
-          resolve5(null);
+        super((resolve4) => {
+          resolve4(null);
         });
         this.responsePromise = responsePromise;
         this.parseResponse = parseResponse;
@@ -2514,7 +2454,7 @@ var init_api_promise = __esm({
         __classPrivateFieldSet(this, _APIPromise_client, client, "f");
       }
       _thenUnwrap(transform) {
-        return new _APIPromise(__classPrivateFieldGet(this, _APIPromise_client, "f"), this.responsePromise, async (client, props) => addResponseIDs(transform(await this.parseResponse(client, props), props), props.response));
+        return new _APIPromise(__classPrivateFieldGet(this, _APIPromise_client, "f"), this.responsePromise, async (client, props) => addRequestID(transform(await this.parseResponse(client, props), props), props.response));
       }
       /**
        * Gets the raw `Response` instance instead of parsing the response
@@ -2544,12 +2484,7 @@ var init_api_promise = __esm({
        */
       async withResponse() {
         const [data, response] = await Promise.all([this.parse(), this.asResponse()]);
-        return {
-          data,
-          response,
-          request_id: response.headers.get("request-id"),
-          workspace_id: response.headers.get("anthropic-workspace-id")
-        };
+        return { data, response, request_id: response.headers.get("request-id") };
       }
       parse() {
         if (!this.parsedPromise) {
@@ -2571,10 +2506,10 @@ var init_api_promise = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/core/pagination.mjs
+// ../../node_modules/@anthropic-ai/sdk/core/pagination.mjs
 var _AbstractPage_client, AbstractPage, PagePromise, Page, PageCursor, BidirectionalPageCursor;
 var init_pagination = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/core/pagination.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/core/pagination.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
@@ -2731,7 +2666,7 @@ var init_pagination = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/uploads.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/uploads.mjs
 function makeFile(fileBits, fileName, options) {
   checkFileSupport();
   return new File(fileBits, fileName ?? "unknown_file", options);
@@ -2760,9 +2695,9 @@ function supportsFormData(fetchObject) {
   supportsFormDataMap.set(fetch2, promise);
   return promise;
 }
-var checkFileSupport, isAsyncIterable, multipartFormRequestOptions, supportsFormDataMap, createForm, addFormValue;
+var checkFileSupport, isAsyncIterable, multipartFormRequestOptions, supportsFormDataMap, createForm, isNamedBlob, addFormValue;
 var init_uploads = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/uploads.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/uploads.mjs"() {
     "use strict";
     init_esm_shims();
     init_shims();
@@ -2786,6 +2721,7 @@ var init_uploads = __esm({
       await Promise.all(Object.entries(body || {}).map(([key, value]) => addFormValue(form, key, value, stripFilenames)));
       return form;
     };
+    isNamedBlob = (value) => value instanceof Blob && "name" in value;
     addFormValue = async (form, key, value, stripFilenames) => {
       if (value === void 0)
         return;
@@ -2803,14 +2739,10 @@ var init_uploads = __esm({
         form.append(key, makeFile([await value.blob()], getName(value, stripFilenames), options));
       } else if (isAsyncIterable(value)) {
         form.append(key, makeFile([await new Response(ReadableStreamFrom(value)).blob()], getName(value, stripFilenames)));
-      } else if (value instanceof Blob) {
-        form.append(key, makeFile([value], getName(value, stripFilenames) || void 0, { type: value.type }));
+      } else if (isNamedBlob(value)) {
+        form.append(key, makeFile([value], getName(value, stripFilenames), { type: value.type }));
       } else if (Array.isArray(value)) {
         await Promise.all(value.map((entry) => addFormValue(form, key + "[]", entry, stripFilenames)));
-      } else if (typeof value.then === "function") {
-        throw new TypeError(`Received a Promise for "${key}"; await it first, e.g. \`await toFile(...)\``);
-      } else if (value instanceof ArrayBuffer || ArrayBuffer.isView(value)) {
-        throw new TypeError(`Received ${value.constructor.name} for "${key}"; to upload raw bytes, wrap them with \`await toFile(bytes, 'filename')\``);
       } else if (typeof value === "object") {
         await Promise.all(Object.entries(value).map(([name, prop]) => addFormValue(form, `${key}[${name}]`, prop, stripFilenames)));
       } else {
@@ -2820,7 +2752,7 @@ var init_uploads = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/to-file.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/to-file.mjs
 async function toFile(value, name, options) {
   checkFileSupport();
   value = await value;
@@ -2874,7 +2806,7 @@ function propsForError(value) {
 }
 var isBlobLike, isFileLike, isResponseLike;
 var init_to_file = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/to-file.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/to-file.mjs"() {
     "use strict";
     init_esm_shims();
     init_uploads();
@@ -2885,27 +2817,27 @@ var init_to_file = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/core/uploads.mjs
+// ../../node_modules/@anthropic-ai/sdk/core/uploads.mjs
 var init_uploads2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/core/uploads.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/core/uploads.mjs"() {
     "use strict";
     init_esm_shims();
     init_to_file();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/shared.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/shared.mjs
 var init_shared = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/shared.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/shared.mjs"() {
     "use strict";
     init_esm_shims();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/core/resource.mjs
+// ../../node_modules/@anthropic-ai/sdk/core/resource.mjs
 var APIResource;
 var init_resource = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/core/resource.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/core/resource.mjs"() {
     "use strict";
     init_esm_shims();
     APIResource = class {
@@ -2916,7 +2848,7 @@ var init_resource = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/headers.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/headers.mjs
 function* iterateHeaders(headers) {
   if (!headers)
     return;
@@ -2957,7 +2889,7 @@ function* iterateHeaders(headers) {
 }
 var brand_privateNullableHeaders, clearSentinel, APPEND_HEADERS, appendHeaderValue, buildHeaders;
 var init_headers = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/headers.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/headers.mjs"() {
     "use strict";
     init_esm_shims();
     init_values();
@@ -3011,23 +2943,23 @@ var init_headers = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/path.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/path.mjs
 function encodeURIPath(str) {
   return str.replace(/[^A-Za-z0-9\-._~!$&'()*+,;=:@]+/g, encodeURIComponent);
 }
 var EMPTY, createPathTagFunction, path8;
 var init_path = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/path.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/path.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
     EMPTY = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.create(null));
-    createPathTagFunction = (pathEncoder = encodeURIPath) => function path14(statics, ...params) {
+    createPathTagFunction = (pathEncoder = encodeURIPath) => function path12(statics, ...params) {
       if (statics.length === 1)
         return statics[0];
       let postPath = false;
       const invalidSegments = [];
-      const path15 = statics.reduce((previousValue, currentValue, index) => {
+      const path13 = statics.reduce((previousValue, currentValue, index) => {
         if (/[?#]/.test(currentValue)) {
           postPath = true;
         }
@@ -3044,7 +2976,7 @@ var init_path = __esm({
         }
         return previousValue + currentValue + (index === params.length ? "" : encoded);
       }, "");
-      const pathOnly = path15.split(/[?#]/, 1)[0];
+      const pathOnly = path13.split(/[?#]/, 1)[0];
       const invalidSegmentPattern = /(?<=^|\/)(?:\.|%2e){1,2}(?=\/|$)/gi;
       let match;
       while ((match = invalidSegmentPattern.exec(pathOnly)) !== null) {
@@ -3065,19 +2997,19 @@ var init_path = __esm({
         }, "");
         throw new AnthropicError(`Path parameters result in path with invalid segments:
 ${invalidSegments.map((e) => e.error).join("\n")}
-${path15}
+${path13}
 ${underline}`);
       }
-      return path15;
+      return path13;
     };
     path8 = /* @__PURE__ */ createPathTagFunction(encodeURIPath);
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs
 var DeploymentRuns;
 var init_deployment_runs = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -3132,10 +3064,10 @@ var init_deployment_runs = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs
 var Deployments;
 var init_deployments = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -3331,126 +3263,7 @@ var init_deployments = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/dreams.mjs
-var Dreams;
-var init_dreams = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/dreams.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_headers();
-    init_path();
-    Dreams = class extends APIResource {
-      /**
-       * Create a Dream
-       *
-       * @example
-       * ```ts
-       * const betaDream = await client.beta.dreams.create({
-       *   inputs: [{ memory_store_id: 'x', type: 'memory_store' }],
-       *   model: 'string',
-       * });
-       * ```
-       */
-      create(params, options) {
-        const { betas, ...body } = params;
-        return this._client.post("/v1/dreams?beta=true", {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "dreaming-2026-04-21"].toString() },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * Get a Dream
-       *
-       * @example
-       * ```ts
-       * const betaDream = await client.beta.dreams.retrieve(
-       *   'dream_id',
-       * );
-       * ```
-       */
-      retrieve(dreamID, params = {}, options) {
-        const { betas } = params ?? {};
-        return this._client.get(path8`/v1/dreams/${dreamID}?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "dreaming-2026-04-21"].toString() },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * List Dreams
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaDream of client.beta.dreams.list()) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(params = {}, options) {
-        const { betas, ...query } = params ?? {};
-        return this._client.getAPIList("/v1/dreams?beta=true", PageCursor, {
-          query,
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "dreaming-2026-04-21"].toString() },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * Archive a Dream
-       *
-       * @example
-       * ```ts
-       * const betaDream = await client.beta.dreams.archive(
-       *   'dream_id',
-       * );
-       * ```
-       */
-      archive(dreamID, params = {}, options) {
-        const { betas } = params ?? {};
-        return this._client.post(path8`/v1/dreams/${dreamID}/archive?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "dreaming-2026-04-21"].toString() },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * Cancel a Dream
-       *
-       * @example
-       * ```ts
-       * const betaDream = await client.beta.dreams.cancel(
-       *   'dream_id',
-       * );
-       * ```
-       */
-      cancel(dreamID, params = {}, options) {
-        const { betas } = params ?? {};
-        return this._client.post(path8`/v1/dreams/${dreamID}/cancel?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "dreaming-2026-04-21"].toString() },
-            options?.headers
-          ])
-        });
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs
 function helperHeader(value) {
   return { [STAINLESS_HELPER_HEADER]: value };
 }
@@ -3497,7 +3310,7 @@ function stainlessHelperHeaderFromFile(file) {
 }
 var STAINLESS_HELPER_HEADER, STAINLESS_HELPER_METHOD_HEADER, SDK_HELPER_SYMBOL;
 var init_stainless_helper_header = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs"() {
     "use strict";
     init_esm_shims();
     STAINLESS_HELPER_HEADER = "x-stainless-helper";
@@ -3506,10 +3319,10 @@ var init_stainless_helper_header = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/files.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/files.mjs
 var Files;
 var init_files = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/files.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/files.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -3525,18 +3338,18 @@ var init_files = __esm({
        * @example
        * ```ts
        * // Automatically fetches more pages as needed.
-       * for await (const betaFileMetadata of client.beta.files.list()) {
+       * for await (const fileMetadata of client.beta.files.list()) {
        *   // ...
        * }
        * ```
        */
       list(params = {}, options) {
         const { betas, ...query } = params ?? {};
-        return this._client.getAPIList("/v1/files?beta=true", PageCursor, {
+        return this._client.getAPIList("/v1/files?beta=true", Page, {
           query,
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
+            { "anthropic-beta": [...betas ?? [], "files-api-2025-04-14"].toString() },
             options?.headers
           ])
         });
@@ -3546,7 +3359,7 @@ var init_files = __esm({
        *
        * @example
        * ```ts
-       * const betaDeletedFile = await client.beta.files.delete(
+       * const deletedFile = await client.beta.files.delete(
        *   'file_id',
        * );
        * ```
@@ -3556,7 +3369,7 @@ var init_files = __esm({
         return this._client.delete(path8`/v1/files/${fileID}?beta=true`, {
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
+            { "anthropic-beta": [...betas ?? [], "files-api-2025-04-14"].toString() },
             options?.headers
           ])
         });
@@ -3580,8 +3393,8 @@ var init_files = __esm({
           ...options,
           headers: buildHeaders([
             {
-              Accept: "application/binary",
-              ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0
+              "anthropic-beta": [...betas ?? [], "files-api-2025-04-14"].toString(),
+              Accept: "application/binary"
             },
             options?.headers
           ]),
@@ -3593,7 +3406,7 @@ var init_files = __esm({
        *
        * @example
        * ```ts
-       * const betaFileMetadata =
+       * const fileMetadata =
        *   await client.beta.files.retrieveMetadata('file_id');
        * ```
        */
@@ -3602,7 +3415,7 @@ var init_files = __esm({
         return this._client.get(path8`/v1/files/${fileID}?beta=true`, {
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
+            { "anthropic-beta": [...betas ?? [], "files-api-2025-04-14"].toString() },
             options?.headers
           ])
         });
@@ -3612,7 +3425,7 @@ var init_files = __esm({
        *
        * @example
        * ```ts
-       * const betaFileMetadata = await client.beta.files.upload({
+       * const fileMetadata = await client.beta.files.upload({
        *   file: fs.createReadStream('path/to/file'),
        * });
        * ```
@@ -3623,7 +3436,7 @@ var init_files = __esm({
           body,
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
+            { "anthropic-beta": [...betas ?? [], "files-api-2025-04-14"].toString() },
             stainlessHelperHeaderFromFile(body.file),
             options?.headers
           ])
@@ -3633,10 +3446,10 @@ var init_files = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/models.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/models.mjs
 var Models;
 var init_models = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/models.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/models.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -3696,10 +3509,10 @@ var init_models = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/user-profiles.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/user-profiles.mjs
 var UserProfiles;
 var init_user_profiles = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/user-profiles.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/user-profiles.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -3722,7 +3535,7 @@ var init_user_profiles = __esm({
           body,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "user-profiles-2026-08-18"].toString() },
+            { "anthropic-beta": [...betas ?? [], "user-profiles-2026-03-24"].toString() },
             options?.headers
           ])
         });
@@ -3743,7 +3556,7 @@ var init_user_profiles = __esm({
         return this._client.get(path8`/v1/user_profiles/${userProfileID}?beta=true`, {
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "user-profiles-2026-08-18"].toString() },
+            { "anthropic-beta": [...betas ?? [], "user-profiles-2026-03-24"].toString() },
             options?.headers
           ])
         });
@@ -3765,7 +3578,7 @@ var init_user_profiles = __esm({
           body,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "user-profiles-2026-08-18"].toString() },
+            { "anthropic-beta": [...betas ?? [], "user-profiles-2026-03-24"].toString() },
             options?.headers
           ])
         });
@@ -3787,7 +3600,7 @@ var init_user_profiles = __esm({
           query,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "user-profiles-2026-08-18"].toString() },
+            { "anthropic-beta": [...betas ?? [], "user-profiles-2026-03-24"].toString() },
             options?.headers
           ])
         });
@@ -3808,7 +3621,7 @@ var init_user_profiles = __esm({
         return this._client.post(path8`/v1/user_profiles/${userProfileID}/enrollment_url?beta=true`, {
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "user-profiles-2026-08-18"].toString() },
+            { "anthropic-beta": [...betas ?? [], "user-profiles-2026-03-24"].toString() },
             options?.headers
           ])
         });
@@ -4601,46 +4414,33 @@ var require_dist = __commonJS({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/webhooks.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/webhooks.mjs
 var import_standardwebhooks, Webhooks;
 var init_webhooks = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/webhooks.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/webhooks.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
     import_standardwebhooks = __toESM(require_dist(), 1);
     Webhooks = class extends APIResource {
-      /**
-       * Parses a webhook payload into an event without verifying its signature. Prefer
-       * `unwrap()` unless you have already verified the signature yourself.
-       */
-      parseUnverified(body) {
-        return JSON.parse(body);
-      }
-      /**
-       * Verifies the webhook signature from the `webhook-id`, `webhook-timestamp` and
-       * `webhook-signature` headers using your webhook signing key, then parses the
-       * payload into an event. Fails if the signature is missing or invalid.
-       */
-      unwrap(body, options) {
-        const headers = options?.headers;
-        if (headers == null)
-          throw new Error("Webhook headers are required in order to verify the signature");
-        const keyStr = options.key === void 0 ? this._client.webhookKey : options.key;
-        if (!keyStr)
-          throw new Error("Webhook key must not be null or empty in order to unwrap");
-        const wh = new import_standardwebhooks.Webhook(keyStr);
-        wh.verify(body, headers);
+      unwrap(body, { headers, key }) {
+        if (headers !== void 0) {
+          const keyStr = key === void 0 ? this._client.webhookKey : key;
+          if (keyStr === null)
+            throw new Error("Webhook key must not be null in order to unwrap");
+          const wh = new import_standardwebhooks.Webhook(keyStr);
+          wh.verify(body, headers);
+        }
         return JSON.parse(body);
       }
     };
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/agents/versions.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/agents/versions.mjs
 var Versions;
 var init_versions = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/agents/versions.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/agents/versions.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -4676,10 +4476,10 @@ var init_versions = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/agents/agents.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/agents/agents.mjs
 var Agents;
 var init_agents = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/agents/agents.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/agents/agents.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -4700,7 +4500,7 @@ var init_agents = __esm({
        * ```ts
        * const betaManagedAgentsAgent =
        *   await client.beta.agents.create({
-       *     model: 'claude-opus-5',
+       *     model: 'claude-sonnet-4-6',
        *     name: 'My First Agent',
        *   });
        * ```
@@ -4746,7 +4546,7 @@ var init_agents = __esm({
        * const betaManagedAgentsAgent =
        *   await client.beta.agents.update(
        *     'agent_011CZkYpogX7uDKUyvBTophP',
-       *     { description: 'updated' },
+       *     { version: 1 },
        *   );
        * ```
        */
@@ -4809,7 +4609,7 @@ var init_agents = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/abort.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/abort.mjs
 function linkAbort(external, controller) {
   if (!external)
     return () => {
@@ -4824,13 +4624,13 @@ function linkAbort(external, controller) {
   return () => external.removeEventListener("abort", onAbort);
 }
 var init_abort = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/abort.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/abort.mjs"() {
     "use strict";
     init_esm_shims();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/backoff.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/backoff.mjs
 function isStatus(e, code) {
   return e instanceof APIError && e.status === code;
 }
@@ -4850,14 +4650,14 @@ function applyJitter(ms) {
   return ms * (1 - Math.random() * 0.25);
 }
 var init_backoff = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/backoff.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/backoff.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/helper-client.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/helper-client.mjs
 function copyClientForHelper(client, { authToken, helper }) {
   if (!authToken) {
     throw new AnthropicError(`copyClientForHelper: expected a non-empty authToken but received ${JSON.stringify(authToken)}`);
@@ -4883,7 +4683,7 @@ function copyClientForHelper(client, { authToken, helper }) {
   });
 }
 var init_helper_client = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/helper-client.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/helper-client.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
@@ -4892,7 +4692,7 @@ var init_helper_client = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/environments/poller.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/environments/poller.mjs
 function backoff2(attempt) {
   return backoff(attempt, POLL_BACKOFF_BASE_MS, POLL_BACKOFF_CAP_MS);
 }
@@ -4901,9 +4701,9 @@ function defaultWorkerId() {
   const host = env?.["HOSTNAME"];
   return host ? `${host}-${uuid4()}` : uuid4();
 }
-var _WorkPoller_runnerClient, _WorkPoller_consumed, _WorkPoller_controller, _WorkPoller_detachExternal, _WorkPoller_autoStop, _WorkPoller_drain, _WorkPoller_blockMs, _WorkPoller_reclaimOlderThanMs, _WorkPoller_requestOpts, _IdleLog_log, _IdleLog_environmentId, _IdleLog_idleSince, _IdleLog_lastReport, POLL_BLOCK_MS, POLL_BACKOFF_BASE_MS, POLL_BACKOFF_CAP_MS, IDLE_REPORT_INTERVAL_MS, WorkPoller, IdleLog;
+var _WorkPoller_runnerClient, _WorkPoller_consumed, _WorkPoller_controller, _WorkPoller_detachExternal, _WorkPoller_autoStop, _WorkPoller_drain, _WorkPoller_blockMs, _WorkPoller_reclaimOlderThanMs, _WorkPoller_requestOpts, POLL_BLOCK_MS, POLL_BACKOFF_BASE_MS, POLL_BACKOFF_CAP_MS, WorkPoller;
 var init_poller = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/environments/poller.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/environments/poller.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
@@ -4919,7 +4719,6 @@ var init_poller = __esm({
     POLL_BLOCK_MS = 999;
     POLL_BACKOFF_BASE_MS = 1e3;
     POLL_BACKOFF_CAP_MS = 6e4;
-    IDLE_REPORT_INTERVAL_MS = 3e5;
     WorkPoller = class {
       constructor(opts) {
         _WorkPoller_runnerClient.set(this, void 0);
@@ -4965,7 +4764,6 @@ var init_poller = __esm({
           component: "work-poller",
           environment_id: this.environmentId
         });
-        const idle = new IdleLog(log, this.environmentId);
         try {
           let attempt = 0;
           while (!__classPrivateFieldGet(this, _WorkPoller_controller, "f").signal.aborted) {
@@ -4993,11 +4791,9 @@ var init_poller = __esm({
             if (work == null) {
               if (__classPrivateFieldGet(this, _WorkPoller_drain, "f"))
                 return;
-              idle.onEmptyPoll();
               await sleep(jitter(1e3, 3e3), __classPrivateFieldGet(this, _WorkPoller_controller, "f").signal);
               continue;
             }
-            idle.onClaim();
             log.info("claimed work", {
               component: "work-poller",
               environment_id: this.environmentId,
@@ -5028,40 +4824,13 @@ var init_poller = __esm({
         }
       }
     };
-    IdleLog = class {
-      constructor(log, environmentId) {
-        _IdleLog_log.set(this, void 0);
-        _IdleLog_environmentId.set(this, void 0);
-        _IdleLog_idleSince.set(this, void 0);
-        _IdleLog_lastReport.set(this, 0);
-        __classPrivateFieldSet(this, _IdleLog_log, log, "f");
-        __classPrivateFieldSet(this, _IdleLog_environmentId, environmentId, "f");
-      }
-      onEmptyPoll() {
-        const now = Date.now();
-        const fields = { component: "work-poller", environment_id: __classPrivateFieldGet(this, _IdleLog_environmentId, "f") };
-        if (__classPrivateFieldGet(this, _IdleLog_idleSince, "f") === void 0) {
-          __classPrivateFieldSet(this, _IdleLog_idleSince, __classPrivateFieldSet(this, _IdleLog_lastReport, now, "f"), "f");
-          __classPrivateFieldGet(this, _IdleLog_log, "f").info("idle; polling for work", fields);
-        } else if (now - __classPrivateFieldGet(this, _IdleLog_lastReport, "f") >= IDLE_REPORT_INTERVAL_MS) {
-          __classPrivateFieldSet(this, _IdleLog_lastReport, now, "f");
-          __classPrivateFieldGet(this, _IdleLog_log, "f").info(`still polling; idle for ${Math.round((now - __classPrivateFieldGet(this, _IdleLog_idleSince, "f")) / 1e3)}s`, fields);
-        } else {
-          __classPrivateFieldGet(this, _IdleLog_log, "f").debug("poll returned no work", fields);
-        }
-      }
-      onClaim() {
-        __classPrivateFieldSet(this, _IdleLog_idleSince, void 0, "f");
-      }
-    };
-    _IdleLog_log = /* @__PURE__ */ new WeakMap(), _IdleLog_environmentId = /* @__PURE__ */ new WeakMap(), _IdleLog_idleSince = /* @__PURE__ */ new WeakMap(), _IdleLog_lastReport = /* @__PURE__ */ new WeakMap();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/async-queue.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/async-queue.mjs
 var _AsyncQueue_items, _AsyncQueue_waiters, _AsyncQueue_closed, AsyncQueue;
 var init_async_queue = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/async-queue.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/async-queue.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
@@ -5105,16 +4874,16 @@ var init_async_queue = __esm({
         if (__classPrivateFieldGet(this, _AsyncQueue_closed, "f") || signal?.aborted) {
           return Promise.resolve({ done: true, value: void 0 });
         }
-        return new Promise((resolve5) => {
+        return new Promise((resolve4) => {
           const waiter = (r) => {
             signal?.removeEventListener("abort", onAbort);
-            resolve5(r);
+            resolve4(r);
           };
           const onAbort = () => {
             const idx = __classPrivateFieldGet(this, _AsyncQueue_waiters, "f").indexOf(waiter);
             if (idx >= 0)
               __classPrivateFieldGet(this, _AsyncQueue_waiters, "f").splice(idx, 1);
-            resolve5({ done: true, value: void 0 });
+            resolve4({ done: true, value: void 0 });
           };
           __classPrivateFieldGet(this, _AsyncQueue_waiters, "f").push(waiter);
           signal?.addEventListener("abort", onAbort, { once: true });
@@ -5129,10 +4898,10 @@ var init_async_queue = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/tools/ToolError.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/tools/ToolError.mjs
 var ToolError;
 var init_ToolError = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/tools/ToolError.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/tools/ToolError.mjs"() {
     "use strict";
     init_esm_shims();
     ToolError = class extends Error {
@@ -5150,9 +4919,9 @@ var init_ToolError = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs
 function toolName(tool) {
-  return "name" in tool ? tool.name : "mcp_server_name" in tool ? tool.mcp_server_name : tool.type;
+  return "name" in tool ? tool.name : tool.mcp_server_name;
 }
 function toolErrorContent(e) {
   return e instanceof ToolError ? e.content : `Error: ${e instanceof Error ? e.message : String(e)}`;
@@ -5167,14 +4936,14 @@ async function runRunnableTool(tool, rawInput, context) {
   }
 }
 var init_BetaRunnableTool = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs"() {
     "use strict";
     init_esm_shims();
     init_ToolError();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs
 function isEndTurnIdle(ev) {
   return ev.type === "session.status_idle" && ev.stop_reason?.type === "end_turn";
 }
@@ -5205,9 +4974,9 @@ function toSessionContent(content) {
   });
   return out.length > 0 ? out : [{ type: "text", text: "(no output)" }];
 }
-var _IdleClock_maxIdleMs, _IdleClock_onExpire, _IdleClock_blockers, _IdleClock_armPending, _IdleClock_timer, _SessionToolRunner_instances, _SessionToolRunner_consumed, _SessionToolRunner_controller, _SessionToolRunner_detachExternal, _SessionToolRunner_requestOpts, _SessionToolRunner_toolByName, _SessionToolRunner_logger, _SessionToolRunner_seen, _SessionToolRunner_answered, _SessionToolRunner_confirmationVerdicts, _SessionToolRunner_awaitingConfirmation, _SessionToolRunner_results, _SessionToolRunner_inFlightCount, _SessionToolRunner_sendRetryWindowMs, _SessionToolRunner_onIdle, _SessionToolRunner_idleClock, _SessionToolRunner_requestOptions, _SessionToolRunner_streamLoop, _SessionToolRunner_reconcile, _SessionToolRunner_ingestHistory, _SessionToolRunner_handleStreamEvent, _SessionToolRunner_routeToolEvent, _SessionToolRunner_noteConfirmation, _SessionToolRunner_applyVerdict, _SessionToolRunner_surfaceCall, _SessionToolRunner_execute, _SessionToolRunner_sendResult, _SessionToolRunner_drain, STREAM_BACKOFF_START_MS, STREAM_BACKOFF_CAP_MS, TOOL_TIMEOUT_MS, DRAIN_TIMEOUT_MS, SEND_BACKOFF_START_MS, SEND_BACKOFF_CAP_MS, SEND_RETRY_WINDOW_MS, DEFAULT_MAX_IDLE_MS, IdleClock, SessionToolRunner;
+var _SessionToolRunner_instances, _SessionToolRunner_consumed, _SessionToolRunner_controller, _SessionToolRunner_detachExternal, _SessionToolRunner_requestOpts, _SessionToolRunner_toolByName, _SessionToolRunner_logger, _SessionToolRunner_seen, _SessionToolRunner_answered, _SessionToolRunner_results, _SessionToolRunner_inFlightCount, _SessionToolRunner_onIdle, _SessionToolRunner_idleTimer, _SessionToolRunner_requestOptions, _SessionToolRunner_streamLoop, _SessionToolRunner_reconcile, _SessionToolRunner_ingestHistory, _SessionToolRunner_handleStreamEvent, _SessionToolRunner_armIdleTimer, _SessionToolRunner_disarmIdleTimer, _SessionToolRunner_execute, _SessionToolRunner_sendResult, _SessionToolRunner_drain, STREAM_BACKOFF_START_MS, STREAM_BACKOFF_CAP_MS, TOOL_TIMEOUT_MS, DRAIN_TIMEOUT_MS, SEND_RETRIES, DEFAULT_MAX_IDLE_MS, SessionToolRunner;
 var init_SessionToolRunner = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
@@ -5224,84 +4993,8 @@ var init_SessionToolRunner = __esm({
     STREAM_BACKOFF_CAP_MS = 1e4;
     TOOL_TIMEOUT_MS = 12e4;
     DRAIN_TIMEOUT_MS = 3e4;
-    SEND_BACKOFF_START_MS = 1e3;
-    SEND_BACKOFF_CAP_MS = 3e4;
-    SEND_RETRY_WINDOW_MS = 5 * 6e4;
+    SEND_RETRIES = 3;
     DEFAULT_MAX_IDLE_MS = 6e4;
-    IdleClock = class {
-      constructor(maxIdleMs, onExpire) {
-        _IdleClock_maxIdleMs.set(this, void 0);
-        _IdleClock_onExpire.set(this, void 0);
-        _IdleClock_blockers.set(this, /* @__PURE__ */ new Set());
-        _IdleClock_armPending.set(this, false);
-        _IdleClock_timer.set(this, void 0);
-        __classPrivateFieldSet(this, _IdleClock_maxIdleMs, maxIdleMs, "f");
-        __classPrivateFieldSet(this, _IdleClock_onExpire, onExpire, "f");
-      }
-      /**
-       * Arm on `status_idle{end_turn}`; disarm otherwise. `user.tool_confirmation`
-       * is neutral: it signals neither agent activity nor an idle, and its effect
-       * on the clock flows through {@link block} / {@link unblock} instead —
-       * disarming here would discard the pending arm the verdict is about to
-       * settle.
-       */
-      noteEvent(ev) {
-        if (ev.type === "user.tool_confirmation")
-          return;
-        if (isEndTurnIdle(ev))
-          this.arm();
-        else
-          this.disarm();
-      }
-      /** Register gated work that must resolve before an idle countdown starts. */
-      block(toolUseId) {
-        __classPrivateFieldGet(this, _IdleClock_blockers, "f").add(toolUseId);
-        if (__classPrivateFieldGet(this, _IdleClock_timer, "f") !== void 0) {
-          __classPrivateFieldSet(this, _IdleClock_armPending, true, "f");
-          clearTimeout(__classPrivateFieldGet(this, _IdleClock_timer, "f"));
-          __classPrivateFieldSet(this, _IdleClock_timer, void 0, "f");
-        }
-      }
-      /**
-       * Retire gated work (a no-op for ids never blocked); applies a pending arm —
-       * with a fresh full `maxIdleMs` window — once the last blocker retires.
-       */
-      unblock(toolUseId) {
-        __classPrivateFieldGet(this, _IdleClock_blockers, "f").delete(toolUseId);
-        if (__classPrivateFieldGet(this, _IdleClock_blockers, "f").size === 0 && __classPrivateFieldGet(this, _IdleClock_armPending, "f"))
-          this.arm();
-      }
-      /**
-       * (Re)start the idle countdown — or, while blockers are outstanding, hold
-       * the arm pending instead. Stopping then would drop a held call when its
-       * verdict later arrives, or cut the runner off before a released call's
-       * result can drive the next turn.
-       */
-      arm() {
-        if (__classPrivateFieldGet(this, _IdleClock_maxIdleMs, "f") <= 0)
-          return;
-        if (__classPrivateFieldGet(this, _IdleClock_blockers, "f").size > 0) {
-          __classPrivateFieldSet(this, _IdleClock_armPending, true, "f");
-          return;
-        }
-        __classPrivateFieldSet(this, _IdleClock_armPending, false, "f");
-        if (__classPrivateFieldGet(this, _IdleClock_timer, "f") !== void 0)
-          clearTimeout(__classPrivateFieldGet(this, _IdleClock_timer, "f"));
-        __classPrivateFieldSet(this, _IdleClock_timer, setTimeout(__classPrivateFieldGet(this, _IdleClock_onExpire, "f"), __classPrivateFieldGet(this, _IdleClock_maxIdleMs, "f")), "f");
-      }
-      /**
-       * Cancel the idle countdown and any pending arm. Blockers persist — they
-       * track real outstanding work, retired only by {@link unblock}.
-       */
-      disarm() {
-        __classPrivateFieldSet(this, _IdleClock_armPending, false, "f");
-        if (__classPrivateFieldGet(this, _IdleClock_timer, "f") !== void 0) {
-          clearTimeout(__classPrivateFieldGet(this, _IdleClock_timer, "f"));
-          __classPrivateFieldSet(this, _IdleClock_timer, void 0, "f");
-        }
-      }
-    };
-    _IdleClock_maxIdleMs = /* @__PURE__ */ new WeakMap(), _IdleClock_onExpire = /* @__PURE__ */ new WeakMap(), _IdleClock_blockers = /* @__PURE__ */ new WeakMap(), _IdleClock_armPending = /* @__PURE__ */ new WeakMap(), _IdleClock_timer = /* @__PURE__ */ new WeakMap();
     SessionToolRunner = class {
       constructor(sessionId, opts) {
         _SessionToolRunner_instances.add(this);
@@ -5313,13 +5006,10 @@ var init_SessionToolRunner = __esm({
         _SessionToolRunner_logger.set(this, void 0);
         _SessionToolRunner_seen.set(this, /* @__PURE__ */ new Set());
         _SessionToolRunner_answered.set(this, /* @__PURE__ */ new Set());
-        _SessionToolRunner_confirmationVerdicts.set(this, /* @__PURE__ */ new Map());
-        _SessionToolRunner_awaitingConfirmation.set(this, /* @__PURE__ */ new Map());
         _SessionToolRunner_results.set(this, new AsyncQueue());
         _SessionToolRunner_inFlightCount.set(this, 0);
-        _SessionToolRunner_sendRetryWindowMs.set(this, SEND_RETRY_WINDOW_MS);
         _SessionToolRunner_onIdle.set(this, null);
-        _SessionToolRunner_idleClock.set(this, void 0);
+        _SessionToolRunner_idleTimer.set(this, void 0);
         this.client = opts.client;
         this.sessionId = sessionId;
         this.tools = opts.tools;
@@ -5329,14 +5019,6 @@ var init_SessionToolRunner = __esm({
         __classPrivateFieldSet(this, _SessionToolRunner_controller, new AbortController(), "f");
         __classPrivateFieldSet(this, _SessionToolRunner_detachExternal, linkAbort(opts.signal, __classPrivateFieldGet(this, _SessionToolRunner_controller, "f")), "f");
         __classPrivateFieldSet(this, _SessionToolRunner_requestOpts, opts.requestOptions, "f");
-        __classPrivateFieldSet(this, _SessionToolRunner_idleClock, new IdleClock(this.maxIdleMs, () => {
-          __classPrivateFieldGet(this, _SessionToolRunner_logger, "f").info("session idle after end_turn; stopping", {
-            component: "session-tool-runner",
-            session_id: this.sessionId,
-            max_idle_ms: this.maxIdleMs
-          });
-          __classPrivateFieldGet(this, _SessionToolRunner_controller, "f").abort();
-        }), "f");
       }
       /** Read-only view of this runner's abort signal. */
       get signal() {
@@ -5346,15 +5028,7 @@ var init_SessionToolRunner = __esm({
       abort() {
         __classPrivateFieldGet(this, _SessionToolRunner_controller, "f").abort();
       }
-      /**
-       * @internal
-       * `EnvironmentWorker` keeps this equal to the lease TTL each heartbeat
-       * reports; applies to a send already retrying.
-       */
-      _setSendRetryWindow(ms) {
-        __classPrivateFieldSet(this, _SessionToolRunner_sendRetryWindowMs, ms, "f");
-      }
-      async *[(_SessionToolRunner_consumed = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_controller = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_detachExternal = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_requestOpts = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_toolByName = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_logger = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_seen = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_answered = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_confirmationVerdicts = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_awaitingConfirmation = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_results = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_inFlightCount = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_sendRetryWindowMs = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_onIdle = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_idleClock = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_instances = /* @__PURE__ */ new WeakSet(), Symbol.asyncIterator)]() {
+      async *[(_SessionToolRunner_consumed = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_controller = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_detachExternal = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_requestOpts = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_toolByName = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_logger = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_seen = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_answered = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_results = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_inFlightCount = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_onIdle = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_idleTimer = /* @__PURE__ */ new WeakMap(), _SessionToolRunner_instances = /* @__PURE__ */ new WeakSet(), Symbol.asyncIterator)]() {
         if (__classPrivateFieldGet(this, _SessionToolRunner_consumed, "f")) {
           throw new AnthropicError("Cannot iterate over a consumed SessionToolRunner");
         }
@@ -5383,7 +5057,7 @@ var init_SessionToolRunner = __esm({
           }
         } finally {
           __classPrivateFieldGet(this, _SessionToolRunner_controller, "f").abort();
-          __classPrivateFieldGet(this, _SessionToolRunner_idleClock, "f").disarm();
+          __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_disarmIdleTimer).call(this);
           await streamPromise;
           try {
             await __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_drain).call(this);
@@ -5459,19 +5133,12 @@ var init_SessionToolRunner = __esm({
         return;
       }
       const unanswered = pending.filter((ev) => !__classPrivateFieldGet(this, _SessionToolRunner_answered, "f").has(ev.id));
-      __classPrivateFieldGet(this, _SessionToolRunner_idleClock, "f").disarm();
-      for (const ev of unanswered)
-        await __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_routeToolEvent).call(this, ev);
-      for (const held of [...__classPrivateFieldGet(this, _SessionToolRunner_awaitingConfirmation, "f").values()]) {
-        const verdict = __classPrivateFieldGet(this, _SessionToolRunner_confirmationVerdicts, "f").get(held.id);
-        if (verdict !== void 0)
-          await __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_applyVerdict).call(this, held, verdict);
-      }
-      const outstanding = unanswered.filter((ev) => !__classPrivateFieldGet(this, _SessionToolRunner_answered, "f").has(ev.id) && !__classPrivateFieldGet(this, _SessionToolRunner_awaitingConfirmation, "f").has(ev.id));
-      if (lastWasEndTurn && outstanding.length === 0)
-        __classPrivateFieldGet(this, _SessionToolRunner_idleClock, "f").arm();
+      if (lastWasEndTurn && unanswered.length === 0)
+        __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_armIdleTimer).call(this);
       else
-        __classPrivateFieldGet(this, _SessionToolRunner_idleClock, "f").disarm();
+        __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_disarmIdleTimer).call(this);
+      for (const ev of unanswered)
+        await __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_execute).call(this, ev);
     }, _SessionToolRunner_ingestHistory = function _SessionToolRunner_ingestHistory2(ev, pending) {
       if (ev.type === "agent.tool_use" || ev.type === "agent.custom_tool_use") {
         __classPrivateFieldGet(this, _SessionToolRunner_seen, "f").add(ev.id);
@@ -5481,23 +5148,20 @@ var init_SessionToolRunner = __esm({
         __classPrivateFieldGet(this, _SessionToolRunner_answered, "f").add(ev.tool_use_id);
       } else if (ev.type === "user.custom_tool_result") {
         __classPrivateFieldGet(this, _SessionToolRunner_answered, "f").add(ev.custom_tool_use_id);
-      } else if (ev.type === "user.tool_confirmation") {
-        if (!__classPrivateFieldGet(this, _SessionToolRunner_answered, "f").has(ev.tool_use_id))
-          __classPrivateFieldGet(this, _SessionToolRunner_confirmationVerdicts, "f").set(ev.tool_use_id, ev.result);
       }
     }, _SessionToolRunner_handleStreamEvent = /** Returns true when the runner should exit. */
     async function _SessionToolRunner_handleStreamEvent2(ev) {
-      __classPrivateFieldGet(this, _SessionToolRunner_idleClock, "f").noteEvent(ev);
+      if (isEndTurnIdle(ev))
+        __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_armIdleTimer).call(this);
+      else
+        __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_disarmIdleTimer).call(this);
       switch (ev.type) {
         case "agent.tool_use":
         case "agent.custom_tool_use":
           if (!__classPrivateFieldGet(this, _SessionToolRunner_seen, "f").has(ev.id)) {
             __classPrivateFieldGet(this, _SessionToolRunner_seen, "f").add(ev.id);
-            await __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_routeToolEvent).call(this, ev);
+            await __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_execute).call(this, ev);
           }
-          return false;
-        case "user.tool_confirmation":
-          await __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_noteConfirmation).call(this, ev);
           return false;
         case "user.tool_result":
           __classPrivateFieldGet(this, _SessionToolRunner_answered, "f").add(ev.tool_use_id);
@@ -5516,88 +5180,25 @@ var init_SessionToolRunner = __esm({
         default:
           return false;
       }
-    }, _SessionToolRunner_routeToolEvent = // ===== confirmation gating (always_ask tools) =====
-    /**
-     * Dispatch `ev`, honoring its evaluated permission. A call the server gated
-     * (`evaluated_permission == "ask"`) is held until its `user.tool_confirmation`
-     * arrives. Fails closed: only an explicit `allow` verdict releases a gated
-     * call; a server-side `deny` overrides any recorded verdict; an unrecognized
-     * permission is held like `ask` and an unrecognized verdict is denied.
-     */
-    async function _SessionToolRunner_routeToolEvent2(ev) {
-      const permission = ev.evaluated_permission;
-      const verdict = permission === "deny" ? "deny" : __classPrivateFieldGet(this, _SessionToolRunner_confirmationVerdicts, "f").get(ev.id);
-      if (verdict === void 0) {
-        if (permission === void 0 || permission === "allow") {
-          await __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_execute).call(this, ev, void 0);
-        } else if (!__classPrivateFieldGet(this, _SessionToolRunner_awaitingConfirmation, "f").has(ev.id)) {
-          __classPrivateFieldGet(this, _SessionToolRunner_logger, "f").info("tool call awaiting confirmation; holding", {
-            component: "session-tool-runner",
-            session_id: this.sessionId,
-            tool: ev.name,
-            tool_use_id: ev.id
-          });
-          __classPrivateFieldGet(this, _SessionToolRunner_awaitingConfirmation, "f").set(ev.id, ev);
-          __classPrivateFieldGet(this, _SessionToolRunner_idleClock, "f").block(ev.id);
-        }
+    }, _SessionToolRunner_armIdleTimer = function _SessionToolRunner_armIdleTimer2() {
+      __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_disarmIdleTimer).call(this);
+      if (this.maxIdleMs <= 0)
         return;
-      }
-      await __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_applyVerdict).call(this, ev, verdict);
-    }, _SessionToolRunner_noteConfirmation = /** Record an allow/deny verdict and release the held call it gates, if any. */
-    async function _SessionToolRunner_noteConfirmation2(ev) {
-      __classPrivateFieldGet(this, _SessionToolRunner_confirmationVerdicts, "f").set(ev.tool_use_id, ev.result);
-      const held = __classPrivateFieldGet(this, _SessionToolRunner_awaitingConfirmation, "f").get(ev.tool_use_id);
-      if (held === void 0)
-        return;
-      await __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_applyVerdict).call(this, held, ev.result);
-    }, _SessionToolRunner_applyVerdict = /**
-     * Dispatch or resolve a gated call according to its verdict.
-     *
-     * The idle-clock blocker accounting lives here: a denial retires the held
-     * call's blocker, while an allow keeps one on the call — taking it now if the
-     * verdict was already known when the call was routed, so it was never held —
-     * until `#execute` has finished with it. The countdown must not run over
-     * gated work that is still in flight.
-     */
-    async function _SessionToolRunner_applyVerdict2(ev, verdict) {
-      const wasHeld = __classPrivateFieldGet(this, _SessionToolRunner_awaitingConfirmation, "f").delete(ev.id);
-      if (verdict === "allow") {
-        __classPrivateFieldGet(this, _SessionToolRunner_logger, "f").info("tool call confirmed", {
+      __classPrivateFieldSet(this, _SessionToolRunner_idleTimer, setTimeout(() => {
+        __classPrivateFieldGet(this, _SessionToolRunner_logger, "f").info("session idle after end_turn; stopping", {
           component: "session-tool-runner",
           session_id: this.sessionId,
-          tool: ev.name,
-          tool_use_id: ev.id
+          max_idle_ms: this.maxIdleMs
         });
-        if (!wasHeld)
-          __classPrivateFieldGet(this, _SessionToolRunner_idleClock, "f").block(ev.id);
-        try {
-          await __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_execute).call(this, ev, "allow");
-        } finally {
-          __classPrivateFieldGet(this, _SessionToolRunner_idleClock, "f").unblock(ev.id);
-        }
-        return;
+        __classPrivateFieldGet(this, _SessionToolRunner_controller, "f").abort();
+      }, this.maxIdleMs), "f");
+    }, _SessionToolRunner_disarmIdleTimer = function _SessionToolRunner_disarmIdleTimer2() {
+      if (__classPrivateFieldGet(this, _SessionToolRunner_idleTimer, "f") !== void 0) {
+        clearTimeout(__classPrivateFieldGet(this, _SessionToolRunner_idleTimer, "f"));
+        __classPrivateFieldSet(this, _SessionToolRunner_idleTimer, void 0, "f");
       }
-      if (wasHeld)
-        __classPrivateFieldGet(this, _SessionToolRunner_idleClock, "f").unblock(ev.id);
-      __classPrivateFieldGet(this, _SessionToolRunner_answered, "f").add(ev.id);
-      __classPrivateFieldGet(this, _SessionToolRunner_logger, "f").info("tool call denied; not executing", {
-        component: "session-tool-runner",
-        session_id: this.sessionId,
-        tool: ev.name,
-        tool_use_id: ev.id
-      });
-      __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_surfaceCall).call(this, {
-        event: ev,
-        toolUseId: ev.id,
-        name: ev.name,
-        isError: false,
-        posted: false,
-        confirmation: "deny"
-      });
-    }, _SessionToolRunner_surfaceCall = function _SessionToolRunner_surfaceCall2(call) {
-      __classPrivateFieldGet(this, _SessionToolRunner_results, "f").push(call);
     }, _SessionToolRunner_execute = // ===== tool execution =====
-    async function _SessionToolRunner_execute2(ev, confirmation) {
+    async function _SessionToolRunner_execute2(ev) {
       var _a2, _b;
       if (__classPrivateFieldGet(this, _SessionToolRunner_answered, "f").has(ev.id))
         return;
@@ -5617,14 +5218,7 @@ var init_SessionToolRunner = __esm({
             tool: ev.name,
             tool_use_id: ev.id
           });
-          __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_surfaceCall).call(this, {
-            event: ev,
-            toolUseId: ev.id,
-            name: ev.name,
-            isError: false,
-            posted: false,
-            confirmation
-          });
+          __classPrivateFieldGet(this, _SessionToolRunner_results, "f").push({ event: ev, toolUseId: ev.id, name: ev.name, isError: false, posted: false });
           return;
         }
         let content;
@@ -5646,14 +5240,13 @@ var init_SessionToolRunner = __esm({
         }
         const result = buildResultEvent(ev, isError, toSessionContent(content));
         const posted = await __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_sendResult).call(this, result, ev.id);
-        __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_surfaceCall).call(this, {
+        __classPrivateFieldGet(this, _SessionToolRunner_results, "f").push({
           event: ev,
           result,
           toolUseId: ev.id,
           name: ev.name,
           isError,
-          posted,
-          confirmation
+          posted
         });
       } finally {
         __classPrivateFieldSet(this, _SessionToolRunner_inFlightCount, (_b = __classPrivateFieldGet(this, _SessionToolRunner_inFlightCount, "f"), _b--, _b), "f");
@@ -5662,11 +5255,8 @@ var init_SessionToolRunner = __esm({
       }
     }, _SessionToolRunner_sendResult = async function _SessionToolRunner_sendResult2(result, toolUseId) {
       const ctrl = __classPrivateFieldGet(this, _SessionToolRunner_controller, "f");
-      const start = Date.now();
       let lastErr;
-      let attempt = 0;
-      while (true) {
-        attempt++;
+      for (let i = 0; i < SEND_RETRIES; i++) {
         ctrl.signal.throwIfAborted();
         try {
           await this.client.beta.sessions.events.send(this.sessionId, { events: [result] }, __classPrivateFieldGet(this, _SessionToolRunner_instances, "m", _SessionToolRunner_requestOptions).call(this));
@@ -5676,22 +5266,12 @@ var init_SessionToolRunner = __esm({
           lastErr = e;
           if (isFatal4xx(e))
             break;
-          const remainingMs = __classPrivateFieldGet(this, _SessionToolRunner_sendRetryWindowMs, "f") - (Date.now() - start);
-          if (remainingMs <= 0)
-            break;
-          const waitMs = Math.min(applyJitter(backoff(attempt - 1, SEND_BACKOFF_START_MS, SEND_BACKOFF_CAP_MS)), remainingMs);
-          __classPrivateFieldGet(this, _SessionToolRunner_logger, "f").warn("tool result send failed; retrying", {
-            tool_use_id: toolUseId,
-            attempt,
-            backoff_ms: waitMs,
-            error: String(e)
-          });
-          await sleep(waitMs, ctrl.signal);
+          if (i < SEND_RETRIES - 1)
+            await sleep((i + 1) * 1e3, ctrl.signal);
         }
       }
       __classPrivateFieldGet(this, _SessionToolRunner_logger, "f").error("failed to send tool result", {
         tool_use_id: toolUseId,
-        attempts: attempt,
         error: String(lastErr)
       });
       return false;
@@ -5708,33 +5288,16 @@ var init_SessionToolRunner = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/tools/agent-toolset/sync-interval.mjs
-function checkMemorySyncInterval(ms, option) {
-  if (!(ms >= MIN_MEMORY_SYNC_INTERVAL_MS)) {
-    throw new AnthropicError(`${option} must be at least ${MIN_MEMORY_SYNC_INTERVAL_MS}ms (got ${ms}); to run without memory sync, pass \`memorySyncIntervalMs: null\` to the worker instead`);
-  }
-}
-var DEFAULT_MEMORY_SYNC_INTERVAL_MS, MIN_MEMORY_SYNC_INTERVAL_MS;
-var init_sync_interval = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/tools/agent-toolset/sync-interval.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_error();
-    DEFAULT_MEMORY_SYNC_INTERVAL_MS = 15e3;
-    MIN_MEMORY_SYNC_INTERVAL_MS = 5e3;
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs
 var init_transform_json_schema = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs"() {
     "use strict";
     init_esm_shims();
     init_utils2();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/helpers/beta/json-schema.mjs
+// ../../node_modules/@anthropic-ai/sdk/helpers/beta/json-schema.mjs
 function betaTool(options) {
   if (options.inputSchema.type !== "object") {
     throw new Error(`JSON schema for tool "${options.name}" must be an object, but got ${options.inputSchema.type}`);
@@ -5750,7 +5313,7 @@ function betaTool(options) {
   };
 }
 var init_json_schema = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/helpers/beta/json-schema.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/helpers/beta/json-schema.mjs"() {
     "use strict";
     init_esm_shims();
     init_sdk();
@@ -5758,41 +5321,33 @@ var init_json_schema = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/utils/promise.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/utils/promise.mjs
 function promiseWithResolvers() {
-  let resolve5;
+  let resolve4;
   let reject;
   const promise = new Promise((res, rej) => {
-    resolve5 = res;
+    resolve4 = res;
     reject = rej;
   });
-  return { promise, resolve: resolve5, reject };
+  return { promise, resolve: resolve4, reject };
 }
 var init_promise = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/utils/promise.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/utils/promise.mjs"() {
     "use strict";
     init_esm_shims();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/tools/agent-toolset/fs-util.mjs
+// ../../node_modules/@anthropic-ai/sdk/tools/agent-toolset/fs-util.mjs
 import * as fs2 from "fs/promises";
 import * as path9 from "path";
 import { randomUUID } from "crypto";
-function isWithin(root, p) {
-  const rel = path9.relative(root, p);
-  return rel === "" || !rel.startsWith(".." + path9.sep) && rel !== ".." && !path9.isAbsolute(rel);
-}
-async function containingRoot(roots, target) {
-  for (const root of roots) {
-    if (isWithin(await canonicalize(path9.resolve(root)), target))
-      return root;
+async function realpathOrSelf(p) {
+  try {
+    return await fs2.realpath(p);
+  } catch {
+    return p;
   }
-  return void 0;
-}
-function errnoCode(err) {
-  const code = err?.code;
-  return typeof code === "string" ? code : void 0;
 }
 async function canonicalize(abs) {
   const tail = [];
@@ -5802,46 +5357,40 @@ async function canonicalize(abs) {
     let real;
     try {
       real = await fs2.realpath(prefix);
-    } catch (realpathErr) {
-      let isLink;
+    } catch {
+      let isLink = false;
       try {
         isLink = (await fs2.lstat(prefix)).isSymbolicLink();
-      } catch (lstatErr) {
-        const code = errnoCode(lstatErr);
-        if (code !== "ENOENT" && code !== "ENOTDIR")
-          throw lstatErr;
-        const parent = path9.dirname(prefix);
-        if (parent === prefix)
-          throw lstatErr;
-        tail.push(path9.basename(prefix));
-        prefix = parent;
+      } catch {
+      }
+      if (isLink) {
+        if (++hops > 40) {
+          throw new ToolError(`path ${JSON.stringify(abs)} has too many levels of symbolic links`);
+        }
+        prefix = path9.resolve(path9.dirname(prefix), await fs2.readlink(prefix));
         continue;
       }
-      if (!isLink)
-        throw realpathErr;
-      if (++hops > MAX_SYMLINK_HOPS) {
-        throw Object.assign(new Error("too many levels of symbolic links"), { code: "ELOOP" });
-      }
-      prefix = path9.resolve(path9.dirname(prefix), await fs2.readlink(prefix));
+      const parent = path9.dirname(prefix);
+      if (parent === prefix)
+        return abs;
+      tail.push(path9.basename(prefix));
+      prefix = parent;
       continue;
     }
     return tail.length ? path9.join(real, ...tail.reverse()) : real;
   }
 }
 async function confineToRoot(root, p, opts) {
-  const allowedRoots = opts?.allowedRoots ?? [];
-  const realRoot = await canonicalize(path9.resolve(root));
-  let real;
-  try {
-    real = await canonicalize(path9.resolve(realRoot, p));
-  } catch (err) {
-    throw new ToolError(fsErrorMessage(err, `path ${JSON.stringify(p)}`));
+  const allowOutside = opts?.allowOutside ?? false;
+  const realRoot = await realpathOrSelf(path9.resolve(root));
+  const abs = path9.resolve(realRoot, p);
+  if (allowOutside)
+    return abs;
+  const real = await canonicalize(abs);
+  if (real !== realRoot && !real.startsWith(realRoot + path9.sep)) {
+    throw new ToolError(`path ${JSON.stringify(p)} escapes workdir`);
   }
-  if (isWithin(realRoot, real) || await containingRoot(allowedRoots, real) !== void 0) {
-    return real;
-  }
-  const permitted = allowedRoots.length ? "the session's working directory and its other permitted directories" : "the session's working directory";
-  throw new ToolError(`path ${JSON.stringify(p)} is outside ${permitted}`);
+  return real;
 }
 async function atomicWriteFile(targetPath, content) {
   const dir = path9.dirname(targetPath);
@@ -5864,7 +5413,7 @@ async function atomicWriteFile(targetPath, content) {
   }
 }
 function fsErrorMessage(err, file) {
-  const code = errnoCode(err);
+  const code = err?.code;
   switch (code) {
     case "ENOENT":
       return `${file}: no such file or directory`;
@@ -5885,22 +5434,21 @@ function fsErrorMessage(err, file) {
     case "ENFILE":
       return `${file}: too many open files`;
     default:
-      return `${file}: ${code !== void 0 ? `i/o error (${code})` : "i/o error"}`;
+      return `${file}: ${err instanceof Error ? err.message : String(err)}`;
   }
 }
-var DIR_CREATE_MODE, FILE_CREATE_MODE, MAX_SYMLINK_HOPS;
+var DIR_CREATE_MODE, FILE_CREATE_MODE;
 var init_fs_util = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/tools/agent-toolset/fs-util.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/tools/agent-toolset/fs-util.mjs"() {
     "use strict";
     init_esm_shims();
     init_ToolError();
     DIR_CREATE_MODE = 493;
     FILE_CREATE_MODE = 420;
-    MAX_SYMLINK_HOPS = 40;
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs
+// ../../node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs
 import * as fs3 from "fs/promises";
 import * as fssync from "fs";
 import * as path10 from "path";
@@ -5910,27 +5458,21 @@ import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 async function setupSkills(ctx) {
   const { client, sessionId } = ctx;
-  if (!client)
+  if (!client || !sessionId)
     return async () => {
     };
   const log = loggerFor(client);
-  let session = ctx.session;
-  if (!session) {
-    if (sessionId === void 0)
-      return async () => {
-      };
-    log.warn("AgentToolContext.sessionId is deprecated and costs an extra session fetch; fetch the session once and set `session` instead", { component: "agent-tool-context" });
-    session = await client.beta.sessions.retrieve(sessionId);
-  }
+  const session = await client.beta.sessions.retrieve(sessionId);
   const skillsRoot = path10.resolve(ctx.workdir, "skills");
   const created = [];
   for (const skill of session.agent.skills) {
     try {
-      const version2 = await client.beta.skills.versions.retrieve(skill.version, { skill_id: skill.skill_id });
-      let dirname8 = path10.basename(version2.name.trim());
-      if (dirname8 === "" || dirname8 === "." || dirname8 === "..")
-        dirname8 = skill.skill_id;
-      const dest = path10.resolve(skillsRoot, dirname8);
+      const versionId = await resolveSkillVersion(client, skill.skill_id, skill.version);
+      const version2 = await client.beta.skills.versions.retrieve(versionId, { skill_id: skill.skill_id });
+      let dirname7 = path10.basename(version2.name.trim());
+      if (dirname7 === "" || dirname7 === "." || dirname7 === "..")
+        dirname7 = skill.skill_id;
+      const dest = path10.resolve(skillsRoot, dirname7);
       if (dest !== skillsRoot && !dest.startsWith(skillsRoot + path10.sep)) {
         log.warn("skill name escapes the skills dir; skipping", {
           component: "agent-tool-context",
@@ -5938,7 +5480,7 @@ async function setupSkills(ctx) {
         });
         continue;
       }
-      const resp = await client.beta.skills.versions.download(version2.id, { skill_id: skill.skill_id });
+      const resp = await client.beta.skills.versions.download(versionId, { skill_id: skill.skill_id });
       await fs3.rm(dest, { recursive: true, force: true });
       await fs3.mkdir(dest, { recursive: true, mode: DIR_CREATE_MODE });
       created.push(dest);
@@ -5946,7 +5488,7 @@ async function setupSkills(ctx) {
       log.info("downloaded skill", {
         component: "agent-tool-context",
         skill_id: skill.skill_id,
-        version: version2.id,
+        version: versionId,
         dest
       });
     } catch (e) {
@@ -5965,8 +5507,22 @@ async function setupSkills(ctx) {
     }
   };
 }
+async function resolveSkillVersion(client, skillId, version2) {
+  if (/^\d+$/.test(version2))
+    return version2;
+  let newest;
+  for await (const v of client.beta.skills.versions.list(skillId)) {
+    if (/^\d+$/.test(v.version) && (newest === void 0 || BigInt(v.version) > BigInt(newest))) {
+      newest = v.version;
+    }
+  }
+  if (newest === void 0) {
+    throw new AnthropicError(`skill ${JSON.stringify(skillId)} has no concrete version to resolve ${JSON.stringify(version2)} against`);
+  }
+  return newest;
+}
 function assertSafeMemberNames(names) {
-  for (const raw of names) {
+  for (const raw of names.split("\n")) {
     const entry = raw.trim();
     if (!entry)
       continue;
@@ -5975,40 +5531,12 @@ function assertSafeMemberNames(names) {
     }
   }
 }
-function listingLines(listing) {
-  const lines = listing.split("\n");
-  if (lines[lines.length - 1] === "")
-    lines.pop();
-  return lines;
-}
-function canExcludeVerbatim(cmd, name) {
-  return /^[\x20-\x7E]+$/.test(name) && !/[\\^#]/.test(name) && !(cmd === "unzip" && name.startsWith("-"));
-}
-function classifyArchiveListing(cmd, names, typed) {
-  const nameLines = listingLines(names);
-  const typedLines = listingLines(typed);
-  if (nameLines.length !== typedLines.length)
-    throw new AnthropicError(INCONSISTENT_LISTING);
-  const plain = [];
-  const special = [];
-  nameLines.forEach((name, i) => {
-    if (PLAIN_TYPE_CHARS[cmd].has(typedLines[i].charAt(0))) {
-      plain.push(name);
-      return;
+function assertNoSpecialMembers(verboseListing) {
+  for (const line of verboseListing.split("\n")) {
+    const type = line.trimStart()[0];
+    if (type === "l" || type === "h" || type === "b" || type === "c" || type === "p" || type === "s") {
+      throw new AnthropicError("refusing to extract archive with symlink/hardlink/device member");
     }
-    if (!canExcludeVerbatim(cmd, name)) {
-      throw new AnthropicError(`refusing to extract archive: cannot safely exclude member ${JSON.stringify(name)}`);
-    }
-    special.push(name);
-  });
-  return { plain, special };
-}
-async function assertOnlyPlainEntries(dir) {
-  for (const entry of await fs3.readdir(dir, { withFileTypes: true })) {
-    if (entry.isDirectory())
-      await assertOnlyPlainEntries(path10.join(dir, entry.name));
-    else if (!entry.isFile())
-      throw new AnthropicError(INCONSISTENT_LISTING);
   }
 }
 async function runArchiveTool(cmd, args) {
@@ -6016,16 +5544,16 @@ async function runArchiveTool(cmd, args) {
     const { stdout } = await execFileAsync(cmd, args);
     return stdout;
   } catch (e) {
-    if (errnoCode(e) === "ENOENT") {
+    if (e != null && typeof e === "object" && e.code === "ENOENT") {
       throw new AnthropicError(`skill extraction requires the \`${cmd}\` command, but it was not found on PATH`);
     }
     throw e;
   }
 }
-function archiveTopDir(names) {
+function archiveTopDir(listing) {
   let top;
   let nested = false;
-  for (const raw of names) {
+  for (const raw of listing.split("\n")) {
     const parts = raw.trim().split("/").filter((p) => p !== "" && p !== ".");
     if (parts.length === 0)
       continue;
@@ -6046,43 +5574,24 @@ async function extractSkillArchive(resp, dest) {
   }
   await pipeline(Readable.fromWeb(resp.body), fssync.createWriteStream(tmp));
   const stage = path10.join(path10.dirname(dest), `.skill-stage-${process.pid}-${Date.now()}`);
-  const excludeFile = path10.join(path10.dirname(dest), `.skill-exclude-${process.pid}-${Date.now()}`);
   try {
     const head = await readHead(tmp, 4);
     const isZip = head.length >= 4 && head[0] === 80 && head[1] === 75 && head[2] === 3 && head[3] === 4;
     const archiveCmd = isZip ? "unzip" : "tar";
-    const names = await runArchiveTool(archiveCmd, isZip ? ["-Z1", tmp] : ["-tf", tmp]);
-    const typed = await runArchiveTool(archiveCmd, isZip ? ["-Z", "--h", "--t", tmp] : ["-tvf", tmp]);
-    const { plain, special } = classifyArchiveListing(archiveCmd, names, typed);
-    assertSafeMemberNames([...plain, ...special]);
-    const top = archiveTopDir(plain);
+    const listing = await runArchiveTool(archiveCmd, isZip ? ["-Z1", tmp] : ["-tf", tmp]);
+    assertSafeMemberNames(listing);
+    assertNoSpecialMembers(await runArchiveTool(archiveCmd, isZip ? ["-Z", tmp] : ["-tvf", tmp]));
+    const top = archiveTopDir(listing);
     await fs3.mkdir(stage, { recursive: true, mode: DIR_CREATE_MODE });
-    if (plain.length > 0) {
-      await runArchiveTool(archiveCmd, await extractArgs(archiveCmd, tmp, stage, special, excludeFile));
-    }
-    await assertOnlyPlainEntries(stage);
+    await runArchiveTool(archiveCmd, isZip ? ["-oq", tmp, "-d", stage] : ["-xf", tmp, "-C", stage]);
     const srcRoot = top ? path10.join(stage, top) : stage;
-    const entries = await fs3.readdir(srcRoot).catch((e) => {
-      throw errnoCode(e) === "ENOENT" ? new AnthropicError(INCONSISTENT_LISTING) : e;
-    });
-    for (const entry of entries) {
+    for (const entry of await fs3.readdir(srcRoot)) {
       await fs3.rename(path10.join(srcRoot, entry), path10.join(dest, entry));
     }
   } finally {
     await fs3.rm(tmp, { force: true });
-    await fs3.rm(excludeFile, { force: true });
     await fs3.rm(stage, { recursive: true, force: true });
   }
-}
-async function extractArgs(cmd, archive, stage, special, excludeFile) {
-  const patterns = special.map((name) => name.replace(/[*?[\\]/g, "\\$&"));
-  if (cmd === "unzip") {
-    return ["-oq", archive, "-d", stage, ...patterns.length > 0 ? ["-x", ...patterns] : []];
-  }
-  if (patterns.length === 0)
-    return ["-xf", archive, "-C", stage];
-  await fs3.writeFile(excludeFile, patterns.join("\n") + "\n", { flag: "wx", mode: 384 });
-  return ["-xf", archive, "-C", stage, "-X", excludeFile];
 }
 async function readHead(file, n) {
   const handle = await fs3.open(file, "r");
@@ -6094,1193 +5603,22 @@ async function readHead(file, n) {
     await handle.close();
   }
 }
-var execFileAsync, INCONSISTENT_LISTING, PLAIN_TYPE_CHARS;
+var execFileAsync;
 var init_skills = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
     init_log();
     init_fs_util();
     execFileAsync = promisify4(execFile4);
-    INCONSISTENT_LISTING = "skill archive listing is inconsistent; refusing to extract";
-    PLAIN_TYPE_CHARS = { unzip: /* @__PURE__ */ new Set(["-", "d", "?"]), tar: /* @__PURE__ */ new Set(["-", "d", "C"]) };
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/file-store.mjs
-import * as fsp from "fs/promises";
-import * as path11 from "path";
-import { constants as C } from "fs";
-import { createHash, randomBytes } from "crypto";
-function isPathLegal(p) {
-  return p.startsWith("/") && !p.split("/").includes("..");
-}
-function platformSupported() {
-  return O_NOFOLLOW !== 0;
-}
-async function makeDirAndAncestors(dir) {
-  const missing = [];
-  let current = dir;
-  for (; ; ) {
-    try {
-      await fsp.stat(current);
-      break;
-    } catch (e) {
-      const code = e.code;
-      if (code !== "ENOENT" && code !== "ENOTDIR" && code !== "ELOOP")
-        throw e;
-    }
-    missing.push(current);
-    const parent = path11.dirname(current);
-    if (parent === current)
-      break;
-    current = parent;
-  }
-  for (const directory of missing.reverse()) {
-    try {
-      await fsp.mkdir(directory, { mode: OWNER_ONLY_DIR_MODE });
-    } catch (e) {
-      if (e.code !== "EEXIST")
-        throw e;
-    }
-  }
-}
-async function makeDirsBelowRoot(root, dir) {
-  const below = path11.relative(root, dir);
-  if (below === "")
-    return;
-  let current = root;
-  for (const part of below.split(path11.sep)) {
-    current = path11.join(current, part);
-    try {
-      await fsp.mkdir(current, { mode: OWNER_ONLY_DIR_MODE });
-    } catch (e) {
-      if (e.code !== "EEXIST")
-        throw e;
-    }
-  }
-}
-async function replaceViaTemp(dest, data, isExecutable2) {
-  const mode = isExecutable2 ? OWNER_ONLY_EXEC_MODE : OWNER_ONLY_FILE_MODE;
-  const tmp = path11.join(path11.dirname(dest), `.fs-${randomBytes(8).toString("hex")}.tmp`);
-  let handle;
-  try {
-    handle = await fsp.open(tmp, C.O_WRONLY | C.O_CREAT | C.O_EXCL | O_NOFOLLOW, mode);
-    await handle.writeFile(data);
-    await handle.close();
-    handle = void 0;
-    await fsp.rename(tmp, dest);
-  } catch (err) {
-    if (handle)
-      await handle.close().catch(() => {
-      });
-    await fsp.unlink(tmp).catch(() => {
-    });
-    throw err;
-  }
-}
-async function openRegularFile(relPath, dest) {
-  let handle;
-  try {
-    handle = await fsp.open(dest, C.O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
-  } catch (e) {
-    const code = e.code;
-    if (code === "ELOOP" || code === "EMLINK") {
-      throw new FileStoreError(FileStoreError.IS_A_SYMLINK, relPath);
-    }
-    throw e;
-  }
-  try {
-    const st = await handle.stat();
-    if (!st.isFile())
-      throw new FileStoreError(FileStoreError.NOT_A_FILE, relPath);
-  } catch (e) {
-    await handle.close().catch(() => {
-    });
-    throw e;
-  }
-  return handle;
-}
-async function hashFile(full) {
-  const digest = createHash("sha256");
-  const handle = await openRegularFile(path11.basename(full), full);
-  const buf = new Uint8Array(1024 * 1024);
-  try {
-    for (; ; ) {
-      const { bytesRead } = await handle.read(buf, 0, buf.length);
-      if (bytesRead === 0)
-        break;
-      digest.update(buf.subarray(0, bytesRead));
-    }
-  } finally {
-    await handle.close();
-  }
-  return digest.digest("hex");
-}
-async function filenamesInDir(root, under, base) {
-  if (!await requireDir(under, base))
-    return [];
-  const out = [];
-  await walk(base, (full, entry) => {
-    if (entry.isFile())
-      out.push([path11.relative(root, full).split(path11.sep).join("/"), full]);
-  });
-  out.sort();
-  return out;
-}
-async function symlinksInDir(root, under, base) {
-  const relOf = (full) => path11.relative(root, full).split(path11.sep).join("/");
-  let st;
-  try {
-    st = await fsp.lstat(base, { bigint: true });
-  } catch (e) {
-    const code = e.code;
-    if (code === "ENOENT" || code === "ENOTDIR")
-      return /* @__PURE__ */ new Set();
-    throw e;
-  }
-  if (st.isSymbolicLink())
-    return /* @__PURE__ */ new Set([relOf(base)]);
-  if (!st.isDirectory())
-    throw new FileStoreError(FileStoreError.NOT_A_DIRECTORY, under);
-  const out = /* @__PURE__ */ new Set();
-  await walk(base, (full, entry) => {
-    if (entry.isSymbolicLink())
-      out.add(relOf(full));
-  });
-  return out;
-}
-async function requireDir(under, base) {
-  let st;
-  try {
-    st = await fsp.lstat(base, { bigint: true });
-  } catch (e) {
-    const code = e.code;
-    if (code === "ENOENT" || code === "ENOTDIR")
-      return false;
-    throw e;
-  }
-  if (!st.isDirectory())
-    throw new FileStoreError(FileStoreError.NOT_A_DIRECTORY, under);
-  return true;
-}
-async function walk(base, visit) {
-  const stack = [base];
-  while (stack.length) {
-    const dir = stack.pop();
-    let entries;
-    try {
-      entries = await fsp.readdir(dir, { withFileTypes: true });
-    } catch (e) {
-      if (e.code === "ENOENT")
-        continue;
-      throw e;
-    }
-    for (const entry of entries) {
-      const full = path11.join(dir, entry.name);
-      visit(full, entry);
-      if (entry.isDirectory() && !entry.isSymbolicLink())
-        stack.push(full);
-    }
-  }
-}
-function unchangedSinceHashed(cached, st) {
-  return st.mtimeNs === cached.mtimeNs && st.ctimeNs === cached.ctimeNs && st.size === cached.size;
-}
-function oldEnoughToCache(st, walkStartNs) {
-  const newestNs = st.mtimeNs > st.ctimeNs ? st.mtimeNs : st.ctimeNs;
-  return newestNs < walkStartNs - _internals.timestampTrustMarginNs;
-}
-var OWNER_ONLY_DIR_MODE, OWNER_ONLY_FILE_MODE, OWNER_ONLY_EXEC_MODE, O_NOFOLLOW, O_NONBLOCK, FileStoreError, FileStore, TIMESTAMP_TRUST_MARGIN_NS, _internals, LocalFileStore, asyncDispose;
-var init_file_store = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/file-store.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_bytes();
-    OWNER_ONLY_DIR_MODE = 448;
-    OWNER_ONLY_FILE_MODE = 384;
-    OWNER_ONLY_EXEC_MODE = 448;
-    O_NOFOLLOW = C.O_NOFOLLOW ?? 0;
-    O_NONBLOCK = C.O_NONBLOCK ?? 0;
-    FileStoreError = class extends Error {
-      constructor(reason, relPath) {
-        super(`path ${JSON.stringify(relPath)} ${reason}`);
-        this.name = "FileStoreError";
-        this.reason = reason;
-        this.relPath = relPath;
-      }
-    };
-    FileStoreError.ESCAPES_ROOT = "escapes the store root";
-    FileStoreError.IS_A_SYMLINK = "is a symlink";
-    FileStoreError.NOT_A_FILE = "is not a regular file";
-    FileStoreError.NOT_A_DIRECTORY = "is not a directory";
-    FileStoreError.NOT_UTF8 = "is not valid utf-8";
-    FileStoreError.MOVE_DESTINATION_EXISTS = "already exists";
-    FileStore = class _FileStore {
-      /** @internal — use {@link FileStore.open} / {@link openFileStore}. */
-      constructor(root, removedOnDispose, utf8Only = false) {
-        this.hashes = /* @__PURE__ */ new Map();
-        this.rootPath = root;
-        this.removedOnDispose = removedOnDispose;
-        this.decoder = utf8Only ? new TextDecoder("utf-8", { fatal: true }) : void 0;
-      }
-      /** Resolve `root`; creates nothing — only {@link createRoot} makes the folder. */
-      static async open(root, opts) {
-        if (!platformSupported()) {
-          throw new Error("FileStore requires O_NOFOLLOW support on this platform");
-        }
-        let removedOnDispose = false;
-        try {
-          await fsp.lstat(root);
-        } catch (e) {
-          if (e.code !== "ENOENT")
-            throw e;
-          removedOnDispose = true;
-        }
-        return new _FileStore(path11.resolve(root), removedOnDispose, opts?.utf8 ?? false);
-      }
-      /** Create the root directory and any missing ancestors; already existing is fine. */
-      async createRoot() {
-        await makeDirAndAncestors(this.rootPath);
-      }
-      /** The resolved root, and what {@link dispose} will do to it. */
-      root() {
-        return { path: this.rootPath, removedOnDispose: this.removedOnDispose };
-      }
-      /**
-       * Remove the root iff `open` created it; pre-existing roots are kept.
-       *
-       * Wired to `Symbol.asyncDispose` at runtime when the host provides it, so
-       * `await using` works on engines with explicit resource management.
-       */
-      async dispose() {
-        if (!this.removedOnDispose)
-          return;
-        await fsp.rm(this.rootPath, { recursive: true, force: true });
-      }
-      /**
-       * Write `data` (`string` UTF-8 or bytes) atomically to the file at `relPath`.
-       *
-       * Missing directories below the root are created; a missing root is not —
-       * the write fails with `ENOENT`.
-       */
-      async put(relPath, data, opts) {
-        const tail = relPath.replace(/\\/g, "/");
-        if (tail.endsWith("/") || tail.endsWith("/.") || tail === "" || tail === ".") {
-          throw new FileStoreError(FileStoreError.NOT_A_FILE, relPath);
-        }
-        const dest = this.resolveUnderRoot(relPath);
-        const payload = typeof data === "string" ? encodeUTF8(data) : data;
-        this.requireUtf8(relPath, payload);
-        await makeDirsBelowRoot(this.rootPath, path11.dirname(dest));
-        await replaceViaTemp(dest, payload, opts?.executable ?? false);
-      }
-      /** The file's bytes; `null` when absent. */
-      async get(relPath) {
-        const dest = this.resolveUnderRoot(relPath);
-        let handle;
-        try {
-          handle = await openRegularFile(relPath, dest);
-        } catch (e) {
-          if (e.code === "ENOENT")
-            return null;
-          throw e;
-        }
-        let data;
-        try {
-          const buf = await handle.readFile();
-          data = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
-        } finally {
-          await handle.close();
-        }
-        this.requireUtf8(relPath, data);
-        return data;
-      }
-      /** The relative path of every file under the directory `under`. */
-      async ls(under = "/") {
-        const base = this.resolveUnderRoot(under);
-        return new Set((await filenamesInDir(this.rootPath, under, base)).map(([rel]) => rel));
-      }
-      /**
-       * Every symlink under `under` — listings skip them and reads refuse them,
-       * so a caller that must know they exist asks here.
-       */
-      async findSymlinks(under = "/") {
-        const base = this.resolveUnderRoot(under);
-        return symlinksInDir(this.rootPath, under, base);
-      }
-      /**
-       * `{relPath: sha256Hex}` of every file under the directory `under`.
-       *
-       * Unchanged files — same size, mtime, and ctime since the last call —
-       * reuse their recorded hash instead of being re-read.
-       */
-      async hashtree(under = "/") {
-        const base = this.resolveUnderRoot(under);
-        const walkStartNs = _internals.nowNs();
-        const out = /* @__PURE__ */ Object.create(null);
-        for (const [rel, full] of await filenamesInDir(this.rootPath, under, base)) {
-          const sha = await this.hashViaCache(rel, full, walkStartNs);
-          if (sha !== null)
-            out[rel] = sha;
-        }
-        return out;
-      }
-      /** One file's sha256; `null` when absent. Shares {@link hashtree}'s cache. */
-      async hashFile(relPath) {
-        const dest = this.resolveUnderRoot(relPath);
-        let st;
-        try {
-          st = await fsp.lstat(dest, { bigint: true });
-        } catch (e) {
-          if (e.code === "ENOENT")
-            return null;
-          throw e;
-        }
-        if (st.isSymbolicLink())
-          throw new FileStoreError(FileStoreError.IS_A_SYMLINK, relPath);
-        if (!st.isFile())
-          throw new FileStoreError(FileStoreError.NOT_A_FILE, relPath);
-        const rel = path11.relative(this.rootPath, dest).split(path11.sep).join("/");
-        return this.hashViaCache(rel, dest, _internals.nowNs());
-      }
-      /**
-       * Rename `src` to `dst`; an existing `dst` is refused. The banned store
-       * root as either end does nothing.
-       */
-      async move(src, dst) {
-        const s = this.resolveUnderRoot(src);
-        const d = this.resolveUnderRoot(dst);
-        if (s === this.rootPath || d === this.rootPath)
-          return;
-        const dstExists = await fsp.stat(d).then(() => true, () => false);
-        if (dstExists)
-          throw new FileStoreError(FileStoreError.MOVE_DESTINATION_EXISTS, dst);
-        await makeDirsBelowRoot(this.rootPath, path11.dirname(d));
-        await fsp.rename(s, d);
-      }
-      /** Delete a file or subtree; absent — and the banned store root — do nothing. */
-      async remove(relPath) {
-        const dest = this.resolveUnderRoot(relPath);
-        if (dest === this.rootPath)
-          return;
-        let st;
-        try {
-          st = await fsp.lstat(dest, { bigint: true });
-        } catch (e) {
-          if (e.code === "ENOENT")
-            return;
-          throw e;
-        }
-        if (st.isDirectory()) {
-          await fsp.rm(dest, { recursive: true, force: true });
-        } else {
-          try {
-            await fsp.unlink(dest);
-          } catch (e) {
-            if (e.code !== "ENOENT")
-              throw e;
-          }
-        }
-      }
-      resolveUnderRoot(relPath) {
-        const norm = relPath.replace(/\\/g, "/").replace(/^\/+/, "");
-        const parts = norm.split("/").filter((p) => p !== "" && p !== ".");
-        if (path11.posix.isAbsolute(norm) || parts.includes("..")) {
-          throw new FileStoreError(FileStoreError.ESCAPES_ROOT, relPath);
-        }
-        return parts.length === 0 ? this.rootPath : path11.join(this.rootPath, ...parts);
-      }
-      requireUtf8(relPath, data) {
-        if (!this.decoder)
-          return;
-        try {
-          this.decoder.decode(data);
-        } catch {
-          throw new FileStoreError(FileStoreError.NOT_UTF8, relPath);
-        }
-      }
-      async hashViaCache(rel, full, walkStartNs) {
-        let st;
-        try {
-          st = await fsp.lstat(full, { bigint: true });
-        } catch (e) {
-          if (e.code === "ENOENT")
-            return null;
-          throw e;
-        }
-        if (!st.isFile())
-          return null;
-        const cached = this.hashes.get(rel);
-        let sha;
-        if (cached !== void 0 && unchangedSinceHashed(cached, st)) {
-          sha = cached.sha;
-        } else {
-          try {
-            sha = await _internals.hashFile(full);
-          } catch (e) {
-            const code = e.code;
-            if (code === "ENOENT" || e instanceof FileStoreError)
-              return null;
-            if (code === "ELOOP" || code === "EMLINK")
-              return null;
-            throw e;
-          }
-        }
-        if (oldEnoughToCache(st, walkStartNs)) {
-          this.hashes.set(rel, { mtimeNs: st.mtimeNs, ctimeNs: st.ctimeNs, size: st.size, sha });
-        }
-        return sha;
-      }
-    };
-    FileStore.isPathLegal = isPathLegal;
-    TIMESTAMP_TRUST_MARGIN_NS = 2000000000n;
-    _internals = {
-      hashFile,
-      timestampTrustMarginNs: TIMESTAMP_TRUST_MARGIN_NS,
-      nowNs: () => BigInt(Date.now()) * 1000000n
-    };
-    LocalFileStore = FileStore;
-    asyncDispose = Symbol.asyncDispose;
-    if (asyncDispose) {
-      Object.defineProperty(FileStore.prototype, asyncDispose, {
-        value: FileStore.prototype.dispose,
-        configurable: true,
-        writable: true
-      });
-    }
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/tools/agent-toolset/memories.mjs
-import * as path12 from "path";
-import { createHash as createHash2 } from "crypto";
-function markerSha(memoryStoreId) {
-  return createHash2("sha256").update(`version ${MARKER_VERSION}
-${memoryStoreId}`, "utf-8").digest("hex");
-}
-function isErrno(e) {
-  return typeof e === "object" && e !== null && typeof e.code === "string";
-}
-async function settledOrAborted(p, signal) {
-  if (!signal) {
-    await p;
-    return;
-  }
-  let onAbort;
-  const aborted = new Promise((resolve5) => {
-    onAbort = resolve5;
-    if (signal.aborted)
-      resolve5();
-  });
-  signal.addEventListener("abort", onAbort, { once: true });
-  try {
-    await Promise.race([p, aborted]);
-  } finally {
-    signal.removeEventListener("abort", onAbort);
-  }
-}
-var _SessionMemoryStores_instances, _SessionMemoryStores_client, _SessionMemoryStores_workdir, _SessionMemoryStores_syncIntervalMs, _SessionMemoryStores_syncDeletions, _SessionMemoryStores_log, _SessionMemoryStores_lastSyncAt, _SessionMemoryStores_finished, _SessionMemoryStores_stores, _SessionMemoryStores_storeRoot, _SessionMemoryStores_scanMarker, _SessionMemoryStores_syncStore, _SessionMemoryStores_flushStore, _SessionMemoryStores_recover, _SessionMemoryStores_stampAndPull, _SessionMemoryStores_syncPath, _SessionMemoryStores_removeLocal, _SessionMemoryStores_write, _SessionMemoryStores_pullAll, _SessionMemoryStores_uploadAll, _SessionMemoryStores_listMemories, _SessionMemoryStores_upload, _SessionMemoryStores_corroboratedDelete, _SessionMemoryStores_deleteRemote, MEMORY_FLUSH_TIMEOUT_MS, MARKER_PATH, MARKER_VERSION, DELETE_CORROBORATION_MS, LIST_PAGE_SIZE, FULL_LIST_PAGE_SIZE, FETCH_CONCURRENCY, UPLOAD_CONCURRENCY, DELETE_CAP_FLOOR, DELETE_CAP_CEILING, SessionMemoryError, DeletePass, SessionMemoryStores;
-var init_memories = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/tools/agent-toolset/memories.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_tslib();
-    init_error();
-    init_log();
-    init_bytes();
-    init_backoff();
-    init_file_store();
-    init_sync_interval();
-    init_sync_interval();
-    MEMORY_FLUSH_TIMEOUT_MS = 3e4;
-    MARKER_PATH = ".anthropic-memory-store";
-    MARKER_VERSION = 1;
-    DELETE_CORROBORATION_MS = 3e4;
-    LIST_PAGE_SIZE = 100;
-    FULL_LIST_PAGE_SIZE = 20;
-    FETCH_CONCURRENCY = 16;
-    UPLOAD_CONCURRENCY = 32;
-    DELETE_CAP_FLOOR = 8;
-    DELETE_CAP_CEILING = 50;
-    SessionMemoryError = class extends AnthropicError {
-      constructor(message, cause) {
-        super(message);
-        this.name = "SessionMemoryError";
-        if (cause !== void 0)
-          this.cause = cause;
-      }
-    };
-    DeletePass = class {
-      constructor(mode, cap, waiveWindow) {
-        this.mode = mode;
-        this.cap = cap;
-        this.waiveWindow = waiveWindow;
-        this.attempted = 0;
-        this.capped = 0;
-        this.suppressed = 0;
-      }
-      takeSlot() {
-        if (this.attempted >= this.cap) {
-          this.capped++;
-          return false;
-        }
-        this.attempted++;
-        return true;
-      }
-    };
-    SessionMemoryStores = class {
-      constructor(client, opts) {
-        _SessionMemoryStores_instances.add(this);
-        _SessionMemoryStores_client.set(this, void 0);
-        _SessionMemoryStores_workdir.set(this, void 0);
-        _SessionMemoryStores_syncIntervalMs.set(this, void 0);
-        _SessionMemoryStores_syncDeletions.set(this, void 0);
-        _SessionMemoryStores_log.set(this, void 0);
-        _SessionMemoryStores_lastSyncAt.set(this, void 0);
-        _SessionMemoryStores_finished.set(this, false);
-        _SessionMemoryStores_stores.set(this, []);
-        __classPrivateFieldSet(this, _SessionMemoryStores_client, client, "f");
-        __classPrivateFieldSet(this, _SessionMemoryStores_workdir, opts.workdir, "f");
-        __classPrivateFieldSet(this, _SessionMemoryStores_syncIntervalMs, opts.syncIntervalMs ?? DEFAULT_MEMORY_SYNC_INTERVAL_MS, "f");
-        checkMemorySyncInterval(__classPrivateFieldGet(this, _SessionMemoryStores_syncIntervalMs, "f"), "syncIntervalMs");
-        __classPrivateFieldSet(this, _SessionMemoryStores_syncDeletions, opts.syncDeletions ?? "enabled", "f");
-        __classPrivateFieldSet(this, _SessionMemoryStores_log, loggerFor(client), "f");
-        __classPrivateFieldSet(this, _SessionMemoryStores_lastSyncAt, Date.now(), "f");
-      }
-      /**
-       * Every attached store's root directory.
-       *
-       * The worker lists these as the file tools' allowed roots so a store
-       * mounted outside the workdir stays reachable.
-       */
-      get roots() {
-        return __classPrivateFieldGet(this, _SessionMemoryStores_stores, "f").map((s) => s.files.root().path);
-      }
-      /**
-       * Root directories of stores attached read-only.
-       *
-       * The file tools consult this to refuse writes into read-only stores.
-       */
-      get readOnlyRoots() {
-        return __classPrivateFieldGet(this, _SessionMemoryStores_stores, "f").filter((s) => s.readOnly).map((s) => s.files.root().path);
-      }
-      /**
-       * Download every attached store's memories to disk.
-       *
-       * `session` arrives already fetched — one snapshot shared with the skills
-       * download, so the two cannot disagree about the resources.
-       */
-      async download(session) {
-        for (const resource of session.resources) {
-          if (resource.type !== "memory_store")
-            continue;
-          const root = __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_storeRoot).call(this, resource);
-          let store;
-          try {
-            store = {
-              memoryStoreId: resource.memory_store_id,
-              // utf8: a binary file is refused at put/get, not mid-sync.
-              files: await LocalFileStore.open(root, { utf8: true }),
-              readOnly: resource.access === "read_only",
-              baseline: /* @__PURE__ */ new Map(),
-              refusedShas: /* @__PURE__ */ new Map(),
-              pendingDeletes: /* @__PURE__ */ new Map()
-            };
-            if (!store.files.root().removedOnDispose) {
-              throw new SessionMemoryError(`something already exists at the memory store's path: ${root} (memory_store_id=${resource.memory_store_id}); it must not exist when the session starts`);
-            }
-            try {
-              await store.files.createRoot();
-            } catch (e) {
-              if (!isErrno(e))
-                throw e;
-              throw new SessionMemoryError(`cannot create the memory store's folder: ${root} (memory_store_id=${resource.memory_store_id}): ${e}; the worker host must make this mount path writable`, e);
-            }
-            await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_stampAndPull).call(this, store);
-            __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").info("downloaded memories", {
-              count: store.baseline.size,
-              memory_store_id: store.memoryStoreId,
-              dest: store.files.root().path
-            });
-            __classPrivateFieldGet(this, _SessionMemoryStores_stores, "f").push(store);
-          } catch (e) {
-            if (store)
-              await store.files.dispose().catch(() => {
-              });
-            if (e instanceof SessionMemoryError)
-              throw e;
-            throw new SessionMemoryError(`failed to download memory store memory_store_id=${resource.memory_store_id}: ${e}`, e);
-          }
-        }
-        __classPrivateFieldSet(this, _SessionMemoryStores_lastSyncAt, Date.now(), "f");
-      }
-      /**
-       * The session's last sync — skips the delete wait, so calling it twice
-       * would undo the protection; it throws instead.
-       */
-      async finish() {
-        if (__classPrivateFieldGet(this, _SessionMemoryStores_finished, "f")) {
-          throw new AnthropicError("finish() was already called: it is the session's last sync and runs once");
-        }
-        __classPrivateFieldSet(this, _SessionMemoryStores_finished, true, "f");
-        await this.syncAll(true);
-      }
-      /** @internal — reconcile every store once; the tests' deterministic driver */
-      async syncAll(final) {
-        await Promise.all(__classPrivateFieldGet(this, _SessionMemoryStores_stores, "f").map((store) => __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_syncStore).call(this, store, final)));
-        __classPrivateFieldSet(this, _SessionMemoryStores_lastSyncAt, Date.now(), "f");
-      }
-      /** Sync when `syncIntervalMs` has elapsed since the last one. Never throws. */
-      async syncIfDue() {
-        if (Date.now() - __classPrivateFieldGet(this, _SessionMemoryStores_lastSyncAt, "f") < __classPrivateFieldGet(this, _SessionMemoryStores_syncIntervalMs, "f"))
-          return;
-        await this.syncAll(false);
-      }
-      /**
-       * Upload new and changed files; send no deletes and pull nothing.
-       *
-       * The push-only rescue pass for a session ending on an error or
-       * cancel — best-effort, bounded by the caller: once `signal` aborts no
-       * further upload starts, each store cut off part-way logs how many
-       * changed files it had not finished uploading, and this resolves without
-       * waiting for requests already in flight. Each store uploads up to
-       * {@link UPLOAD_CONCURRENCY} files at a time. Skips read-only stores,
-       * refused files, files the server already holds, and folders that fail
-       * the marker check. Never throws.
-       */
-      async flushWrites(signal) {
-        await Promise.all(__classPrivateFieldGet(this, _SessionMemoryStores_stores, "f").map((store) => __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_flushStore).call(this, store, signal)));
-      }
-      /**
-       * Remove every store directory that {@link SessionMemoryStores.download}
-       * created. Pre-existing directories are left alone — that is
-       * {@link FileStore.dispose}'s own rule. A folder that fails the marker
-       * check is kept too — sync left it as found, so must dispose.
-       */
-      async dispose() {
-        for (const store of __classPrivateFieldGet(this, _SessionMemoryStores_stores, "f")) {
-          const root = store.files.root();
-          try {
-            const scan = await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_scanMarker).call(this, store);
-            if (!scan.markerOk && Object.keys(scan.files).length > 0) {
-              __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn(`${scan.distrustReason}; leaving the memory store folder on disk`, {
-                root: root.path,
-                memory_store_id: store.memoryStoreId
-              });
-              continue;
-            }
-            await store.files.dispose();
-          } catch (e) {
-            if (!(e instanceof FileStoreError) && !isErrno(e))
-              throw e;
-            __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("failed to remove the memory store folder", {
-              root: store.files.root().path,
-              memory_store_id: store.memoryStoreId,
-              error: String(e)
-            });
-            continue;
-          }
-          if (root.removedOnDispose) {
-            __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").info("removed memory store dir", {
-              dest: root.path,
-              memory_store_id: store.memoryStoreId
-            });
-          }
-        }
-      }
-    };
-    _SessionMemoryStores_client = /* @__PURE__ */ new WeakMap(), _SessionMemoryStores_workdir = /* @__PURE__ */ new WeakMap(), _SessionMemoryStores_syncIntervalMs = /* @__PURE__ */ new WeakMap(), _SessionMemoryStores_syncDeletions = /* @__PURE__ */ new WeakMap(), _SessionMemoryStores_log = /* @__PURE__ */ new WeakMap(), _SessionMemoryStores_lastSyncAt = /* @__PURE__ */ new WeakMap(), _SessionMemoryStores_finished = /* @__PURE__ */ new WeakMap(), _SessionMemoryStores_stores = /* @__PURE__ */ new WeakMap(), _SessionMemoryStores_instances = /* @__PURE__ */ new WeakSet(), _SessionMemoryStores_storeRoot = function _SessionMemoryStores_storeRoot2(resource) {
-      if (resource.mount_path) {
-        if (!isPathLegal(resource.mount_path)) {
-          throw new SessionMemoryError(`memory store mount_path is not a clean absolute path: ${JSON.stringify(resource.mount_path)} (memory_store_id=${resource.memory_store_id})`);
-        }
-        return resource.mount_path;
-      }
-      return path12.join(__classPrivateFieldGet(this, _SessionMemoryStores_workdir, "f"), "memory", resource.name || resource.memory_store_id);
-    }, _SessionMemoryStores_scanMarker = async function _SessionMemoryStores_scanMarker2(store) {
-      const local = await store.files.hashtree();
-      const marker = local[MARKER_PATH];
-      delete local[MARKER_PATH];
-      if (marker === markerSha(store.memoryStoreId)) {
-        return { files: local, markerOk: true, distrustReason: null };
-      }
-      return {
-        files: local,
-        markerOk: false,
-        distrustReason: marker !== void 0 ? "the marker file does not match this store" : "the marker file is gone"
-      };
-    }, _SessionMemoryStores_syncStore = async function _SessionMemoryStores_syncStore2(store, final) {
-      try {
-        const scan = await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_scanMarker).call(this, store);
-        const local = scan.files;
-        if (!scan.markerOk) {
-          if (Object.keys(local).length > 0) {
-            __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn(`${scan.distrustReason}; leaving the memory store folder as found and not syncing`, {
-              root: store.files.root().path,
-              memory_store_id: store.memoryStoreId
-            });
-            return;
-          }
-          await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_recover).call(this, store, "the folder or its marker is gone");
-          return;
-        }
-        if (Object.keys(local).length === 0 && store.baseline.size > 1) {
-          await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_recover).call(this, store, "every memory file is gone at once");
-          return;
-        }
-        const remote = /* @__PURE__ */ new Map();
-        for await (const [rel, item] of __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_listMemories).call(this, store.memoryStoreId)) {
-          remote.set(rel, item);
-        }
-        const deletes = new DeletePass(__classPrivateFieldGet(this, _SessionMemoryStores_syncDeletions, "f"), Math.max(DELETE_CAP_FLOOR, Math.min(DELETE_CAP_CEILING, Math.floor(store.baseline.size / 4))), final);
-        const pulls = [];
-        const baseline = /* @__PURE__ */ new Map();
-        const paths = [.../* @__PURE__ */ new Set([...remote.keys(), ...Object.keys(local), ...store.baseline.keys()])].sort();
-        for (const rel of paths) {
-          const remoteItem = remote.get(rel);
-          const localSha = local[rel];
-          const baseSha = store.baseline.get(rel);
-          let sha;
-          if (localSha === void 0 && baseSha !== void 0 && remoteItem !== void 0 && remoteItem.content_sha256 === baseSha && !store.readOnly) {
-            sha = await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_corroboratedDelete).call(this, store, rel, remoteItem, baseSha, deletes);
-          } else {
-            sha = await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_syncPath).call(this, store, rel, remoteItem, localSha, pulls);
-          }
-          if (sha !== void 0)
-            baseline.set(rel, sha);
-        }
-        store.baseline = baseline;
-        await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_pullAll).call(this, store, pulls);
-        if (deletes.suppressed > 0) {
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").debug("remote deletes are disabled; locally deleted memories stay on the server", {
-            count: deletes.suppressed,
-            memory_store_id: store.memoryStoreId
-          });
-        }
-        if (deletes.capped > 0) {
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn(`delete cap reached: ${deletes.mode === "log_only" ? "would send" : "sent"} ${deletes.attempted} deletes, held ${deletes.capped} for later syncs`, { memory_store_id: store.memoryStoreId });
-        }
-      } catch (e) {
-        __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("memory sync failed", { memory_store_id: store.memoryStoreId, error: String(e) });
-      }
-    }, _SessionMemoryStores_flushStore = async function _SessionMemoryStores_flushStore2(store, signal) {
-      const dirty = /* @__PURE__ */ new Map();
-      const unsent = /* @__PURE__ */ new Set();
-      const push2 = async () => {
-        if (store.readOnly)
-          return;
-        const scan = await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_scanMarker).call(this, store);
-        if (!scan.markerOk) {
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn(`${scan.distrustReason}; not uploading anything from the memory store folder`, {
-            root: store.files.root().path,
-            memory_store_id: store.memoryStoreId
-          });
-          return;
-        }
-        for (const [rel, sha] of Object.entries(scan.files)) {
-          if (sha !== store.baseline.get(rel) && store.refusedShas.get(rel) !== sha) {
-            dirty.set(rel, sha);
-            unsent.add(rel);
-          }
-        }
-        if (dirty.size === 0 || signal?.aborted)
-          return;
-        const remote = /* @__PURE__ */ new Map();
-        for await (const [rel, item] of __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_listMemories).call(this, store.memoryStoreId)) {
-          if (signal?.aborted)
-            return;
-          remote.set(rel, item);
-        }
-        const uploads = [];
-        for (const rel of [...dirty.keys()].sort()) {
-          const localSha = dirty.get(rel);
-          const baseSha = store.baseline.get(rel);
-          const existing = remote.get(rel);
-          if (existing !== void 0 && existing.content_sha256 === localSha) {
-            store.baseline.set(rel, existing.content_sha256);
-            unsent.delete(rel);
-            continue;
-          }
-          if (existing !== void 0 && existing.content_sha256 !== baseSha) {
-            __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("memory changed both locally and remotely; the flush leaves the remote version", {
-              path: rel,
-              memory_store_id: store.memoryStoreId
-            });
-            unsent.delete(rel);
-            continue;
-          }
-          uploads.push([rel, localSha, existing]);
-        }
-        await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_uploadAll).call(this, store, uploads, unsent, signal);
-      };
-      try {
-        await settledOrAborted(push2(), signal);
-        if (signal?.aborted && unsent.size > 0) {
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn(`memory flush cut off part-way; ${unsent.size} of ${dirty.size} changed files had not finished uploading`, { memory_store_id: store.memoryStoreId });
-        }
-      } catch (e) {
-        __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("memory flush failed", { memory_store_id: store.memoryStoreId, error: String(e) });
-      }
-    }, _SessionMemoryStores_recover = /** Rebuild a destroyed folder from the server; sends no deletes, no uploads. */
-    async function _SessionMemoryStores_recover2(store, reason) {
-      __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn(`${reason}; re-downloading the memory store folder instead of syncing`, {
-        root: store.files.root().path,
-        memory_store_id: store.memoryStoreId
-      });
-      await store.files.createRoot();
-      await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_stampAndPull).call(this, store);
-    }, _SessionMemoryStores_stampAndPull = /**
-     * Write the marker, then pull every remote memory. Baseline is cleared
-     * first so a failed write never leaves an entry whose file is not on disk.
-     * Every memory is needed here, so the listing carries the content — pages
-     * cost far fewer round-trips than a request per memory.
-     */
-    async function _SessionMemoryStores_stampAndPull2(store) {
-      store.baseline = /* @__PURE__ */ new Map();
-      store.pendingDeletes.clear();
-      await store.files.put(MARKER_PATH, `version ${MARKER_VERSION}
-${store.memoryStoreId}`);
-      for await (const [rel, item] of __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_listMemories).call(this, store.memoryStoreId, "full")) {
-        if (await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_write).call(this, store, rel, item.content ?? "")) {
-          store.baseline.set(rel, item.content_sha256);
-        }
-      }
-    }, _SessionMemoryStores_syncPath = /**
-     * Reconcile one path. Returns the sha to record in the baseline, or
-     * `undefined` to drop the path from it.
-     *
-     * `pulls` is an output: when the remote version should be written to disk,
-     * this appends `[rel, remote]` to it instead of writing — `rel` is the
-     * file to write, `remote` the listed memory whose content `#pullAll` will
-     * fetch and write there.
-     */
-    async function _SessionMemoryStores_syncPath2(store, rel, remote, localSha, pulls) {
-      const baseSha = store.baseline.get(rel);
-      if (localSha !== void 0) {
-        store.pendingDeletes.delete(rel);
-      }
-      if (!remote) {
-        if (localSha === void 0) {
-          store.pendingDeletes.delete(rel);
-          return void 0;
-        }
-        if (baseSha !== void 0) {
-          if (localSha === baseSha) {
-            const fresh = await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_removeLocal).call(this, store, rel, baseSha);
-            if (fresh === void 0)
-              return void 0;
-            if (fresh === baseSha)
-              return baseSha;
-            localSha = fresh;
-          }
-          if (store.readOnly) {
-            __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("memory deleted remotely but edited locally; keeping the file, which a read-only store cannot push", { path: rel, memory_store_id: store.memoryStoreId });
-          } else if (store.refusedShas.get(rel) !== localSha) {
-            __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").info("memory deleted remotely but edited locally; re-creating it from the file", {
-              path: rel,
-              memory_store_id: store.memoryStoreId
-            });
-          }
-        }
-        if (store.readOnly)
-          return void 0;
-        if (store.refusedShas.get(rel) === localSha)
-          return void 0;
-        return await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_upload).call(this, store, rel, localSha, void 0);
-      }
-      const remoteSha = remote.content_sha256;
-      const remoteChanged = remoteSha !== baseSha;
-      const locallyEdited = localSha !== void 0 && localSha !== baseSha && localSha !== remoteSha;
-      const localChanged = !store.readOnly && locallyEdited;
-      if (localSha === void 0 && baseSha !== void 0) {
-        if (remoteChanged) {
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("memory deleted locally but changed remotely; restoring the remote version", {
-            path: rel,
-            memory_store_id: store.memoryStoreId
-          });
-          store.pendingDeletes.delete(rel);
-          pulls.push([rel, remote]);
-        }
-        return baseSha;
-      }
-      if (remoteChanged) {
-        if (localSha === remoteSha)
-          return remoteSha;
-        if (locallyEdited) {
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("memory changed both locally and remotely; keeping the remote version", {
-            path: rel,
-            memory_store_id: store.memoryStoreId
-          });
-        }
-        pulls.push([rel, remote]);
-        return baseSha;
-      }
-      if (localChanged) {
-        if (store.refusedShas.get(rel) === localSha)
-          return remoteSha;
-        return await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_upload).call(this, store, rel, localSha, remote) ?? remoteSha;
-      }
-      return remoteSha;
-    }, _SessionMemoryStores_removeLocal = /**
-     * Remove the file for a memory the server no longer has, if it still holds
-     * `expectSha`. Returns `undefined` when the file is gone from disk,
-     * `expectSha` when it must stay in the baseline (I/O error), or the file's
-     * fresh sha when it was edited since the scan.
-     */
-    async function _SessionMemoryStores_removeLocal2(store, rel, expectSha) {
-      let freshSha;
-      try {
-        freshSha = await store.files.hashFile(rel);
-      } catch (e) {
-        if (!(e instanceof FileStoreError) && !isErrno(e))
-          throw e;
-        return expectSha;
-      }
-      if (freshSha === null)
-        return void 0;
-      if (freshSha !== expectSha)
-        return freshSha;
-      try {
-        await store.files.remove(rel);
-      } catch (e) {
-        if (!(e instanceof FileStoreError) && !isErrno(e))
-          throw e;
-        __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("failed to remove memory deleted remotely", {
-          path: rel,
-          memory_store_id: store.memoryStoreId,
-          error: String(e)
-        });
-        return expectSha;
-      }
-      return void 0;
-    }, _SessionMemoryStores_write = /**
-     * Write a memory's content to disk; `false` (and a warning) on failure.
-     *
-     * A `..` component in the wire path reaches here as {@link FileStoreError} —
-     * that is the escape guard.
-     */
-    async function _SessionMemoryStores_write2(store, rel, content) {
-      try {
-        await store.files.put(rel, content);
-      } catch (e) {
-        if (!(e instanceof FileStoreError) && !isErrno(e))
-          throw e;
-        __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("failed to write memory", {
-          path: rel,
-          memory_store_id: store.memoryStoreId,
-          error: String(e)
-        });
-        return false;
-      }
-      return true;
-    }, _SessionMemoryStores_pullAll = /**
-     * Fetch and write the given memories, {@link FETCH_CONCURRENCY} at a time.
-     *
-     * The sync's content pass: the listing carried no content, so each memory
-     * is fetched individually and written as it arrives. On success the path's
-     * baseline advances; on a failed fetch or write the old entry stays and the
-     * next sync retries. A 404 means the memory was deleted after the listing —
-     * the next sync reconciles it.
-     */
-    async function _SessionMemoryStores_pullAll2(store, pulls) {
-      if (pulls.length === 0)
-        return;
-      const pullOne = async (rel, listed) => {
-        let item;
-        try {
-          item = await __classPrivateFieldGet(this, _SessionMemoryStores_client, "f").beta.memoryStores.memories.retrieve(listed.id, {
-            memory_store_id: store.memoryStoreId,
-            view: "full"
-          });
-        } catch (e) {
-          if (isStatus(e, 404))
-            return;
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("failed to fetch memory content", {
-            path: rel,
-            memory_store_id: store.memoryStoreId,
-            error: String(e)
-          });
-          return;
-        }
-        if (await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_write).call(this, store, rel, item.content ?? "")) {
-          store.baseline.set(rel, item.content_sha256);
-        }
-      };
-      const queue = pulls[Symbol.iterator]();
-      const worker = async () => {
-        for (const [rel, listed] of queue)
-          await pullOne(rel, listed);
-      };
-      await Promise.all(Array.from({ length: Math.min(FETCH_CONCURRENCY, pulls.length) }, worker));
-    }, _SessionMemoryStores_uploadAll = /**
-     * Upload the given files, {@link UPLOAD_CONCURRENCY} at a time, taking each
-     * path off `unsent` as its upload returns. No upload starts once `signal`
-     * aborts; the ones already in flight run to completion.
-     */
-    async function _SessionMemoryStores_uploadAll2(store, uploads, unsent, signal) {
-      const queue = uploads[Symbol.iterator]();
-      const worker = async () => {
-        for (const [rel, localSha, existing] of queue) {
-          if (signal?.aborted)
-            return;
-          const sha = await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_upload).call(this, store, rel, localSha, existing);
-          unsent.delete(rel);
-          if (sha !== void 0)
-            store.baseline.set(rel, sha);
-        }
-      };
-      await Promise.all(Array.from({ length: Math.min(UPLOAD_CONCURRENCY, uploads.length) }, worker));
-    }, _SessionMemoryStores_listMemories = /**
-     * The store's memories keyed by relative path (the wire path's leading `/`
-     * stripped — `#upload` re-prefixes it) — `basic` view (shas, no content) at
-     * {@link LIST_PAGE_SIZE} per page unless the caller needs `full` pages.
-     * `memory_prefix` rollups and the reserved marker path are skipped.
-     */
-    async function* _SessionMemoryStores_listMemories2(memoryStoreId, view = "basic") {
-      const limit2 = view === "basic" ? LIST_PAGE_SIZE : FULL_LIST_PAGE_SIZE;
-      for await (const item of __classPrivateFieldGet(this, _SessionMemoryStores_client, "f").beta.memoryStores.memories.list(memoryStoreId, { view, limit: limit2 })) {
-        if (item.type !== "memory")
-          continue;
-        const rel = item.path.replace(/^\/+/, "");
-        if (rel === MARKER_PATH) {
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("the server listed the reserved marker path; skipping", {
-            path: item.path,
-            memory_store_id: memoryStoreId
-          });
-          continue;
-        }
-        yield [rel, item];
-      }
-    }, _SessionMemoryStores_upload = /**
-     * Push one local file; `undefined` keeps the old baseline so the next pass retries.
-     *
-     * A refusal the server would repeat (400/413, the utf-8 gate) enters
-     * `refusedShas`: warned once, retried only after the file changes.
-     */
-    async function _SessionMemoryStores_upload2(store, rel, localSha, existing) {
-      try {
-        const data = await store.files.get(rel);
-        if (data === null)
-          return void 0;
-        const content = decodeUTF8(data);
-        const item = existing ? await __classPrivateFieldGet(this, _SessionMemoryStores_client, "f").beta.memoryStores.memories.update(existing.id, {
-          memory_store_id: store.memoryStoreId,
-          content,
-          precondition: { type: "content_sha256", content_sha256: existing.content_sha256 }
-        }) : await __classPrivateFieldGet(this, _SessionMemoryStores_client, "f").beta.memoryStores.memories.create(store.memoryStoreId, {
-          path: "/" + rel,
-          content
-        });
-        store.refusedShas.delete(rel);
-        return item.content_sha256;
-      } catch (e) {
-        if (existing && isStatus(e, 404)) {
-          return await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_upload2).call(this, store, rel, localSha, void 0);
-        }
-        const permanent = e instanceof FileStoreError || isStatus(e, 400) || isStatus(e, 413);
-        if (existing && isStatus(e, 409)) {
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("memory changed both locally and remotely; the upload was refused and the local edit loses", {
-            path: rel,
-            memory_store_id: store.memoryStoreId
-          });
-        } else if (permanent && localSha !== void 0) {
-          store.refusedShas.set(rel, localSha);
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("the server rejected this memory file, so it stays un-synced until its content changes", { path: rel, memory_store_id: store.memoryStoreId, rejection: String(e) });
-        } else {
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("failed to upload memory", {
-            path: rel,
-            memory_store_id: store.memoryStoreId,
-            error: String(e)
-          });
-        }
-        return void 0;
-      }
-    }, _SessionMemoryStores_corroboratedDelete = /** Send the server delete only after the wait, the cap, and a fresh re-check all clear. */
-    async function _SessionMemoryStores_corroboratedDelete2(store, rel, remote, baseSha, deletes) {
-      if (deletes.mode === "disabled") {
-        deletes.suppressed++;
-        return baseSha;
-      }
-      let firstAbsent = store.pendingDeletes.get(rel);
-      if (firstAbsent === void 0) {
-        firstAbsent = Date.now();
-        store.pendingDeletes.set(rel, firstAbsent);
-      }
-      if (!deletes.waiveWindow && Date.now() - firstAbsent < DELETE_CORROBORATION_MS) {
-        return baseSha;
-      }
-      let markerOk;
-      let stillAbsent;
-      try {
-        markerOk = await store.files.hashFile(MARKER_PATH) === markerSha(store.memoryStoreId);
-        stillAbsent = await store.files.hashFile(rel) === null;
-      } catch (e) {
-        if (!(e instanceof FileStoreError) && !isErrno(e))
-          throw e;
-        markerOk = stillAbsent = false;
-      }
-      if (!markerOk)
-        return baseSha;
-      if (!stillAbsent) {
-        store.pendingDeletes.delete(rel);
-        return baseSha;
-      }
-      if (!deletes.takeSlot())
-        return baseSha;
-      if (deletes.mode === "log_only") {
-        __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").info("log-only: sync would delete this memory on the server", {
-          path: rel,
-          memory_store_id: store.memoryStoreId
-        });
-        return baseSha;
-      }
-      const sha = await __classPrivateFieldGet(this, _SessionMemoryStores_instances, "m", _SessionMemoryStores_deleteRemote).call(this, store, rel, remote, baseSha);
-      if (sha === void 0) {
-        store.pendingDeletes.delete(rel);
-      }
-      return sha;
-    }, _SessionMemoryStores_deleteRemote = async function _SessionMemoryStores_deleteRemote2(store, rel, remote, baseSha) {
-      try {
-        await __classPrivateFieldGet(this, _SessionMemoryStores_client, "f").beta.memoryStores.memories.delete(remote.id, {
-          memory_store_id: store.memoryStoreId,
-          expected_content_sha256: baseSha
-        });
-      } catch (e) {
-        if (isStatus(e, 404))
-          return void 0;
-        if (isStatus(e, 409) || isStatus(e, 412)) {
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("memory deleted locally but changed remotely; keeping the remote version", {
-            path: rel,
-            memory_store_id: store.memoryStoreId
-          });
-        } else {
-          __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").warn("failed to delete memory", {
-            path: rel,
-            memory_store_id: store.memoryStoreId,
-            error: String(e)
-          });
-        }
-        return baseSha;
-      }
-      __classPrivateFieldGet(this, _SessionMemoryStores_log, "f").info("propagated local deletion", { path: rel, memory_store_id: store.memoryStoreId });
-      return void 0;
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs
+// ../../node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs
 var node_exports = {};
 __export(node_exports, {
   BashSession: () => BashSession,
-  BashTimeoutError: () => BashTimeoutError,
-  DEFAULT_MEMORY_SYNC_INTERVAL_MS: () => DEFAULT_MEMORY_SYNC_INTERVAL_MS,
-  MARKER_PATH: () => MARKER_PATH,
-  MEMORY_FLUSH_TIMEOUT_MS: () => MEMORY_FLUSH_TIMEOUT_MS,
-  MIN_MEMORY_SYNC_INTERVAL_MS: () => MIN_MEMORY_SYNC_INTERVAL_MS,
-  SessionMemoryError: () => SessionMemoryError,
-  SessionMemoryStores: () => SessionMemoryStores,
   betaAgentToolset20260401: () => betaAgentToolset20260401,
   betaBashTool: () => betaBashTool,
   betaEditTool: () => betaEditTool,
@@ -7290,21 +5628,17 @@ __export(node_exports, {
   betaWriteTool: () => betaWriteTool,
   extractSkillArchive: () => extractSkillArchive,
   resolvePath: () => resolvePath,
+  resolveSkillVersion: () => resolveSkillVersion,
   setupSkills: () => setupSkills
 });
 import * as fs4 from "fs/promises";
 import * as fssync2 from "fs";
-import * as path13 from "path";
+import * as path11 from "path";
 import * as cp from "child_process";
 import * as crypto from "crypto";
 import * as readline from "readline";
 function resolveMaxBytes(configured) {
   return configured === void 0 ? DEFAULT_MAX_FILE_BYTES : configured;
-}
-function rejectUnrestrictedPaths(value) {
-  if (value === void 0)
-    return;
-  throw new AnthropicError("The `unrestrictedPaths` option you passed to the agent toolset (AgentToolContext) is no longer supported. The toolset's file tools (read, write, edit, glob, grep) are now always confined to the working directory plus the directories listed in `allowedRoots`. Remove `unrestrictedPaths` from your context; to let the file tools reach any other directory, add it to `allowedRoots`.");
 }
 function betaAgentToolset20260401(ctx) {
   return [
@@ -7316,12 +5650,8 @@ function betaAgentToolset20260401(ctx) {
     betaGrepTool(ctx)
   ];
 }
-async function resolvePath(ctx, p) {
-  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
-  return confineToRoot(ctx.workdir, p, { allowedRoots: ctx.allowedRoots ?? [] });
-}
-function readOnlyRootFor(ctx, target) {
-  return containingRoot(ctx.readOnlyRoots ?? [], target);
+function resolvePath(ctx, p) {
+  return confineToRoot(ctx.workdir, p, { allowOutside: ctx.unrestrictedPaths ?? false });
 }
 function scrubbedShellEnv() {
   const env = {};
@@ -7333,7 +5663,6 @@ function scrubbedShellEnv() {
   return env;
 }
 function betaBashTool(ctx) {
-  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
   let session;
   let tail = Promise.resolve();
   return betaTool({
@@ -7392,7 +5721,6 @@ function betaBashTool(ctx) {
   });
 }
 function betaReadTool(ctx) {
-  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
   return betaTool({
     name: "read",
     description: "Read a UTF-8 text file relative to the workdir.",
@@ -7412,9 +5740,6 @@ function betaReadTool(ctx) {
       if (!file_path)
         throw new ToolError("read: file_path is required");
       const abs = await resolvePath(ctx, file_path);
-      if (view_range?.length && view_range.length !== 2) {
-        throw new ToolError("read: view_range must be [start_line, end_line]");
-      }
       let data;
       try {
         const st = await fs4.stat(abs);
@@ -7423,11 +5748,7 @@ function betaReadTool(ctx) {
         }
         const limit2 = resolveMaxBytes(ctx.maxFileBytes);
         if (limit2 !== null && st.size > limit2) {
-          if (!view_range?.length) {
-            throw new ToolError(`read: ${file_path} is ${st.size} bytes, exceeds ${limit2}-byte limit. Use the view_range parameter to read specific line ranges, e.g. view_range: [1, 500].`);
-          }
-          const [startLine2, endLine2] = view_range;
-          return await readRangeStreaming(abs, file_path, startLine2, endLine2, limit2);
+          throw new ToolError(`read: ${file_path} is ${st.size} bytes, exceeds ${limit2}-byte limit. Use bash (head/tail/sed) to read a slice.`);
         }
         data = await fs4.readFile(abs, "utf8");
       } catch (e) {
@@ -7435,8 +5756,10 @@ function betaReadTool(ctx) {
           throw e;
         throw new ToolError(`read: ${fsErrorMessage(e, file_path)}`);
       }
-      if (!view_range?.length)
+      if (!view_range)
         return data;
+      if (view_range.length !== 2)
+        throw new ToolError("read: view_range must be [start_line, end_line]");
       const [startLine, endLine] = view_range;
       const lines = data.split("\n");
       const start = Math.max(0, startLine - 1);
@@ -7445,24 +5768,7 @@ function betaReadTool(ctx) {
     }
   });
 }
-async function readRangeStreaming(abs, filePath, startLine, endLine, limit2) {
-  const lines = new LineRangeCollector(filePath, startLine, endLine, limit2);
-  if (lines.rangeIsEmpty())
-    return "";
-  const stream = fssync2.createReadStream(abs, { highWaterMark: READ_STREAM_CHUNK_BYTES });
-  try {
-    for await (const chunk of stream) {
-      lines.collectFrom(chunk);
-      if (lines.rangeIsCollected())
-        break;
-    }
-  } finally {
-    stream.destroy();
-  }
-  return lines.text();
-}
 function betaWriteTool(ctx) {
-  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
   return betaTool({
     name: "write",
     description: "Write a UTF-8 text file relative to the workdir, creating parent directories as needed.",
@@ -7475,12 +5781,8 @@ function betaWriteTool(ctx) {
       if (!file_path)
         throw new ToolError("write: file_path is required");
       const abs = await resolvePath(ctx, file_path);
-      const ro = await readOnlyRootFor(ctx, abs);
-      if (ro !== void 0) {
-        throw new ToolError(`write: ${file_path} is inside read-only directory ${ro}`);
-      }
       try {
-        await fs4.mkdir(path13.dirname(abs), { recursive: true, mode: DIR_CREATE_MODE });
+        await fs4.mkdir(path11.dirname(abs), { recursive: true, mode: DIR_CREATE_MODE });
         await atomicWriteFile(abs, content ?? "");
       } catch (e) {
         throw new ToolError(`write: ${fsErrorMessage(e, file_path)}`);
@@ -7490,7 +5792,6 @@ function betaWriteTool(ctx) {
   });
 }
 function betaEditTool(ctx) {
-  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
   return betaTool({
     name: "edit",
     description: "Replace old_string with new_string in a file. old_string must be unique unless replace_all.",
@@ -7510,10 +5811,6 @@ function betaEditTool(ctx) {
       if (!old_string)
         throw new ToolError("edit: old_string is required");
       const abs = await resolvePath(ctx, file_path);
-      const ro = await readOnlyRootFor(ctx, abs);
-      if (ro !== void 0) {
-        throw new ToolError(`edit: ${file_path} is inside read-only directory ${ro}`);
-      }
       let data;
       try {
         const st = await fs4.stat(abs);
@@ -7522,7 +5819,7 @@ function betaEditTool(ctx) {
         }
         const limit2 = resolveMaxBytes(ctx.maxFileBytes);
         if (limit2 !== null && st.size > limit2) {
-          throw new ToolError(`edit: ${file_path} is ${st.size} bytes, exceeds ${limit2}-byte limit. The edit tool loads the whole file and cannot modify a file this large.`);
+          throw new ToolError(`edit: ${file_path} is ${st.size} bytes, exceeds ${limit2}-byte limit. Use bash (sed/awk) to edit a large file.`);
         }
         data = await fs4.readFile(abs, "utf8");
       } catch (e) {
@@ -7550,11 +5847,7 @@ function betaEditTool(ctx) {
     }
   });
 }
-function patternCanAscend(pattern) {
-  return pattern.split(/[\\/{},]/).includes("..");
-}
 function betaGlobTool(ctx) {
-  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
   return betaTool({
     name: "glob",
     description: "Match files under the workdir against a glob pattern. Results are mtime-sorted, newest first.",
@@ -7569,35 +5862,40 @@ function betaGlobTool(ctx) {
     run: async ({ pattern, path: searchPath }) => {
       if (!pattern)
         throw new ToolError("glob: pattern is required");
-      if (path13.isAbsolute(pattern)) {
-        throw new ToolError("glob: absolute pattern not permitted; pass a relative pattern (and optionally path)");
+      let root = path11.resolve(ctx.workdir);
+      let pat = pattern;
+      if (path11.isAbsolute(pattern)) {
+        if (!ctx.unrestrictedPaths)
+          throw new ToolError("glob: absolute pattern not permitted");
+        root = path11.parse(pattern).root;
+        pat = path11.relative(root, pattern);
+      } else if (searchPath) {
+        root = await resolvePath(ctx, searchPath);
       }
-      if (patternCanAscend(pattern)) {
+      if (!ctx.unrestrictedPaths && pat.split(/[\\/]/).includes("..")) {
         throw new ToolError('glob: ".." is not permitted in the pattern');
       }
-      const root = searchPath ? await resolvePath(ctx, searchPath) : path13.resolve(ctx.workdir);
-      const realRoot = searchPath ? root : await canonicalize(root);
+      const realRoot = ctx.unrestrictedPaths ? root : await fs4.realpath(root).catch(() => root);
       const matches = [];
-      let remaining = WALK_MAX_ENTRIES;
       try {
-        for await (const entry of fsGlob(pattern, {
+        for await (const entry of fsGlob(pat, {
           cwd: root,
           withFileTypes: true,
           exclude: (d) => d.name === ".git" || d.name === "node_modules"
         })) {
-          if (remaining-- <= 0)
-            break;
           if (!entry.isFile())
             continue;
-          const full = path13.join(entry.parentPath, entry.name);
-          let real;
-          try {
-            real = await fs4.realpath(full);
-          } catch {
-            continue;
+          const full = path11.join(entry.parentPath, entry.name);
+          if (!ctx.unrestrictedPaths) {
+            let real;
+            try {
+              real = await fs4.realpath(full);
+            } catch {
+              continue;
+            }
+            if (!isWithin(realRoot, real))
+              continue;
           }
-          if (!isWithin(realRoot, real))
-            continue;
           let mtime = 0;
           try {
             mtime = (await fs4.stat(full)).mtimeMs;
@@ -7616,7 +5914,6 @@ function betaGlobTool(ctx) {
   });
 }
 function betaGrepTool(ctx) {
-  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
   return betaTool({
     name: "grep",
     description: "Search file contents for a regex. Uses ripgrep if available, otherwise a built-in walker.",
@@ -7628,7 +5925,7 @@ function betaGrepTool(ctx) {
     run: async ({ pattern, path: p }, context) => {
       if (!pattern)
         throw new ToolError("grep: pattern is required");
-      let searchPath = path13.resolve(ctx.workdir);
+      let searchPath = path11.resolve(ctx.workdir);
       if (p)
         searchPath = await resolvePath(ctx, p);
       const rg = await findRg();
@@ -7637,7 +5934,7 @@ function betaGrepTool(ctx) {
   });
 }
 function runRipgrep(rg, pattern, searchPath, signal) {
-  return new Promise((resolve5, reject) => {
+  return new Promise((resolve4, reject) => {
     const proc = cp.spawn(rg, ["-n", "--no-heading", "-e", pattern, "--", searchPath], {
       ...signal ? { signal } : {}
     });
@@ -7659,12 +5956,12 @@ function runRipgrep(rg, pattern, searchPath, signal) {
       if (signal?.aborted)
         return reject(new ToolError("grep: aborted"));
       if (truncated)
-        return resolve5(out + `
+        return resolve4(out + `
 [output truncated at ${GREP_OUTPUT_LIMIT} bytes]`);
       if (code === 0)
-        return resolve5(out);
+        return resolve4(out);
       if (code === 1)
-        return resolve5("no matches");
+        return resolve4("no matches");
       reject(new ToolError(`grep: rg failed: ${errOut || `exit ${code}`}`));
     });
     proc.on("error", (e) => {
@@ -7692,11 +5989,11 @@ async function runWalkGrep(pattern, root, signal) {
     hits.push(line);
     return true;
   };
-  const stat3 = await fs4.stat(root).catch(() => null);
-  if (stat3?.isFile()) {
+  const stat2 = await fs4.stat(root).catch(() => null);
+  if (stat2?.isFile()) {
     await grepFile(root, re, push2);
   } else {
-    await walk2(root, "", (rel) => grepFile(path13.join(root, rel), re, push2), signal);
+    await walk(root, "", (rel) => grepFile(path11.join(root, rel), re, push2), signal);
   }
   if (signal?.aborted)
     throw new ToolError("grep: aborted");
@@ -7722,7 +6019,11 @@ async function grepFile(file, re, push2) {
   }
   return true;
 }
-async function walk2(root, rel, fn, signal) {
+function isWithin(root, p) {
+  const rel = path11.relative(root, p);
+  return rel === "" || !rel.startsWith(".." + path11.sep) && rel !== ".." && !path11.isAbsolute(rel);
+}
+async function walk(root, rel, fn, signal) {
   let remaining = WALK_MAX_ENTRIES;
   async function inner(rel2, depth) {
     if (depth > WALK_MAX_DEPTH)
@@ -7731,7 +6032,7 @@ async function walk2(root, rel, fn, signal) {
       return false;
     let entries;
     try {
-      entries = await fs4.readdir(path13.join(root, rel2), { withFileTypes: true });
+      entries = await fs4.readdir(path11.join(root, rel2), { withFileTypes: true });
     } catch {
       return true;
     }
@@ -7742,7 +6043,7 @@ async function walk2(root, rel, fn, signal) {
         return false;
       if (signal?.aborted)
         return false;
-      const childRel = rel2 ? path13.join(rel2, e.name) : e.name;
+      const childRel = rel2 ? path11.join(rel2, e.name) : e.name;
       if (e.isDirectory()) {
         if (!await inner(childRel, depth + 1))
           return false;
@@ -7756,9 +6057,9 @@ async function walk2(root, rel, fn, signal) {
   await inner(rel, 0);
 }
 async function findRg() {
-  const dirs = (process.env["PATH"] ?? "").split(path13.delimiter);
+  const dirs = (process.env["PATH"] ?? "").split(path11.delimiter);
   for (const d of dirs) {
-    const candidate = path13.join(d, "rg");
+    const candidate = path11.join(d, "rg");
     try {
       await fs4.access(candidate, fssync2.constants.X_OK);
       return candidate;
@@ -7767,9 +6068,9 @@ async function findRg() {
   }
   return null;
 }
-var _BashSession_instances, _BashSession_proc, _BashSession_buf, _BashSession_truncated, _BashSession_closed, _BashSession_waiting, _BashSession_append, _LineRangeCollector_instances, _LineRangeCollector_filePath, _LineRangeCollector_startLine, _LineRangeCollector_endLine, _LineRangeCollector_start, _LineRangeCollector_end, _LineRangeCollector_limit, _LineRangeCollector_line, _LineRangeCollector_collected, _LineRangeCollector_collectedBytes, _LineRangeCollector_collect, _LineRangeCollector_overLimitError, BASH_OUTPUT_LIMIT, BASH_DEFAULT_TIMEOUT_MS, DEFAULT_MAX_FILE_BYTES, READ_STREAM_CHUNK_BYTES, NEWLINE, GREP_OUTPUT_LIMIT, GREP_MAX_LINE_LENGTH, GLOB_RESULT_LIMIT, BashTimeoutError, ANSI_RE, fsGlob, BashSession, LineRangeCollector, WALK_MAX_DEPTH, WALK_MAX_ENTRIES;
+var _BashSession_instances, _BashSession_proc, _BashSession_buf, _BashSession_truncated, _BashSession_closed, _BashSession_waiting, _BashSession_append, BASH_OUTPUT_LIMIT, BASH_DEFAULT_TIMEOUT_MS, DEFAULT_MAX_FILE_BYTES, GREP_OUTPUT_LIMIT, GREP_MAX_LINE_LENGTH, GLOB_RESULT_LIMIT, ANSI_RE, fsGlob, BashSession, WALK_MAX_DEPTH, WALK_MAX_ENTRIES;
 var init_node = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
@@ -7779,22 +6080,12 @@ var init_node = __esm({
     init_promise();
     init_fs_util();
     init_skills();
-    init_memories();
     BASH_OUTPUT_LIMIT = 100 * 1024;
     BASH_DEFAULT_TIMEOUT_MS = 12e4;
     DEFAULT_MAX_FILE_BYTES = 256 * 1024;
-    READ_STREAM_CHUNK_BYTES = 64 * 1024;
-    NEWLINE = Buffer.from("\n");
     GREP_OUTPUT_LIMIT = 100 * 1024;
     GREP_MAX_LINE_LENGTH = 2e3;
     GLOB_RESULT_LIMIT = 200;
-    BashTimeoutError = class extends AnthropicError {
-      constructor(timeoutMs) {
-        super(`bash command timed out after ${timeoutMs}ms`);
-        this.name = "BashTimeoutError";
-        this.timeoutMs = timeoutMs;
-      }
-    };
     ANSI_RE = /\x1b\[[0-9;?]*[ -/]*[@-~]/g;
     fsGlob = fs4.glob;
     BashSession = class {
@@ -7837,7 +6128,9 @@ var init_node = __esm({
         }
         const timeoutMs = opts.timeoutMs ?? BASH_DEFAULT_TIMEOUT_MS;
         const signal = opts.signal;
-        signal?.throwIfAborted();
+        if (signal?.aborted) {
+          throw new AnthropicError("bash command aborted");
+        }
         __classPrivateFieldSet(this, _BashSession_buf, "", "f");
         __classPrivateFieldSet(this, _BashSession_truncated, false, "f");
         const sentinel2 = `__ANT_CMD_${crypto.randomUUID()}_DONE__`;
@@ -7847,20 +6140,20 @@ var init_node = __esm({
 `;
         __classPrivateFieldGet(this, _BashSession_proc, "f").stdin.write(wrapped);
         if (__classPrivateFieldGet(this, _BashSession_buf, "f").indexOf(sentinel2) < 0) {
-          const { promise: sentinelSeen, resolve: resolve5 } = promiseWithResolvers();
-          __classPrivateFieldSet(this, _BashSession_waiting, { sentinel: sentinel2, resolve: resolve5 }, "f");
+          const { promise: sentinelSeen, resolve: resolve4 } = promiseWithResolvers();
+          __classPrivateFieldSet(this, _BashSession_waiting, { sentinel: sentinel2, resolve: resolve4 }, "f");
           let timer;
           let onAbort;
           try {
             await Promise.race([
               sentinelSeen,
               new Promise((_, reject) => {
-                timer = setTimeout(() => reject(new BashTimeoutError(timeoutMs)), timeoutMs);
+                timer = setTimeout(() => reject(new AnthropicError(`bash command timed out after ${timeoutMs}ms`)), timeoutMs);
               }),
               new Promise((_, reject) => {
                 if (!signal)
                   return;
-                onAbort = () => reject(signal.reason);
+                onAbort = () => reject(new AnthropicError("bash command aborted"));
                 signal.addEventListener("abort", onAbort, { once: true });
               })
             ]);
@@ -7916,104 +6209,12 @@ ${out}`;
         w.resolve();
       }
     };
-    LineRangeCollector = class {
-      constructor(filePath, startLine, endLine, limit2) {
-        _LineRangeCollector_instances.add(this);
-        _LineRangeCollector_filePath.set(this, void 0);
-        _LineRangeCollector_startLine.set(this, void 0);
-        _LineRangeCollector_endLine.set(this, void 0);
-        _LineRangeCollector_start.set(this, void 0);
-        _LineRangeCollector_end.set(this, void 0);
-        _LineRangeCollector_limit.set(this, void 0);
-        _LineRangeCollector_line.set(this, 0);
-        _LineRangeCollector_collected.set(this, []);
-        _LineRangeCollector_collectedBytes.set(this, 0);
-        __classPrivateFieldSet(this, _LineRangeCollector_filePath, filePath, "f");
-        __classPrivateFieldSet(this, _LineRangeCollector_startLine, startLine, "f");
-        __classPrivateFieldSet(this, _LineRangeCollector_endLine, endLine, "f");
-        __classPrivateFieldSet(this, _LineRangeCollector_start, Math.max(0, startLine - 1), "f");
-        __classPrivateFieldSet(this, _LineRangeCollector_end, endLine > 0 ? endLine : Infinity, "f");
-        __classPrivateFieldSet(this, _LineRangeCollector_limit, limit2, "f");
-      }
-      rangeIsEmpty() {
-        return __classPrivateFieldGet(this, _LineRangeCollector_end, "f") <= __classPrivateFieldGet(this, _LineRangeCollector_start, "f");
-      }
-      rangeIsCollected() {
-        return __classPrivateFieldGet(this, _LineRangeCollector_line, "f") >= __classPrivateFieldGet(this, _LineRangeCollector_end, "f");
-      }
-      collectFrom(chunk) {
-        var _a2;
-        let lineStart = 0;
-        while (lineStart < chunk.length && !this.rangeIsCollected()) {
-          const newline = chunk.indexOf(10, lineStart);
-          const lineEnd = newline < 0 ? chunk.length : newline;
-          if (__classPrivateFieldGet(this, _LineRangeCollector_line, "f") >= __classPrivateFieldGet(this, _LineRangeCollector_start, "f")) {
-            __classPrivateFieldGet(this, _LineRangeCollector_instances, "m", _LineRangeCollector_collect).call(this, chunk.subarray(lineStart, lineEnd), newline >= 0);
-          }
-          if (newline < 0)
-            break;
-          __classPrivateFieldSet(this, _LineRangeCollector_line, (_a2 = __classPrivateFieldGet(this, _LineRangeCollector_line, "f"), _a2++, _a2), "f");
-          lineStart = newline + 1;
-        }
-      }
-      text() {
-        return Buffer.concat(__classPrivateFieldGet(this, _LineRangeCollector_collected, "f"), __classPrivateFieldGet(this, _LineRangeCollector_collectedBytes, "f")).toString("utf8");
-      }
-    };
-    _LineRangeCollector_filePath = /* @__PURE__ */ new WeakMap(), _LineRangeCollector_startLine = /* @__PURE__ */ new WeakMap(), _LineRangeCollector_endLine = /* @__PURE__ */ new WeakMap(), _LineRangeCollector_start = /* @__PURE__ */ new WeakMap(), _LineRangeCollector_end = /* @__PURE__ */ new WeakMap(), _LineRangeCollector_limit = /* @__PURE__ */ new WeakMap(), _LineRangeCollector_line = /* @__PURE__ */ new WeakMap(), _LineRangeCollector_collected = /* @__PURE__ */ new WeakMap(), _LineRangeCollector_collectedBytes = /* @__PURE__ */ new WeakMap(), _LineRangeCollector_instances = /* @__PURE__ */ new WeakSet(), _LineRangeCollector_collect = function _LineRangeCollector_collect2(lineBytes, newlineTerminated) {
-      __classPrivateFieldGet(this, _LineRangeCollector_collected, "f").push(lineBytes);
-      __classPrivateFieldSet(this, _LineRangeCollector_collectedBytes, __classPrivateFieldGet(this, _LineRangeCollector_collectedBytes, "f") + lineBytes.length, "f");
-      if (newlineTerminated && __classPrivateFieldGet(this, _LineRangeCollector_line, "f") + 1 < __classPrivateFieldGet(this, _LineRangeCollector_end, "f")) {
-        __classPrivateFieldGet(this, _LineRangeCollector_collected, "f").push(NEWLINE);
-        __classPrivateFieldSet(this, _LineRangeCollector_collectedBytes, __classPrivateFieldGet(this, _LineRangeCollector_collectedBytes, "f") + NEWLINE.length, "f");
-      }
-      if (__classPrivateFieldGet(this, _LineRangeCollector_collectedBytes, "f") > __classPrivateFieldGet(this, _LineRangeCollector_limit, "f"))
-        throw __classPrivateFieldGet(this, _LineRangeCollector_instances, "m", _LineRangeCollector_overLimitError).call(this);
-    }, _LineRangeCollector_overLimitError = function _LineRangeCollector_overLimitError2() {
-      if (__classPrivateFieldGet(this, _LineRangeCollector_end, "f") - __classPrivateFieldGet(this, _LineRangeCollector_start, "f") === 1) {
-        return new ToolError(`read: line ${__classPrivateFieldGet(this, _LineRangeCollector_start, "f") + 1} of ${__classPrivateFieldGet(this, _LineRangeCollector_filePath, "f")} alone exceeds ${__classPrivateFieldGet(this, _LineRangeCollector_limit, "f")}-byte limit. The read tool cannot return part of a line, so view_range cannot narrow this further.`);
-      }
-      return new ToolError(`read: view_range [${__classPrivateFieldGet(this, _LineRangeCollector_startLine, "f")}, ${__classPrivateFieldGet(this, _LineRangeCollector_endLine, "f")}] of ${__classPrivateFieldGet(this, _LineRangeCollector_filePath, "f")} exceeds ${__classPrivateFieldGet(this, _LineRangeCollector_limit, "f")}-byte limit. Narrow the view_range to read a smaller portion.`);
-    };
     WALK_MAX_DEPTH = 40;
     WALK_MAX_ENTRIES = 5e4;
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs
-function hasMemoryStore(session) {
-  return session.resources.some((r) => r.type === "memory_store");
-}
-function sessionsTokenFromSecret(secret) {
-  if (!secret)
-    return null;
-  let parsed;
-  try {
-    const normalized = secret.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-    parsed = JSON.parse(decodeUTF8(fromBase64(padded)));
-  } catch {
-    return null;
-  }
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed))
-    return null;
-  const token = parsed.sessions_token;
-  return typeof token === "string" && token !== "" ? token : null;
-}
-async function withTimeout(p, ms) {
-  let timer;
-  try {
-    return await Promise.race([
-      p.then(() => false, () => false),
-      new Promise((resolve5) => {
-        timer = setTimeout(() => resolve5(true), ms);
-      })
-    ]);
-  } finally {
-    if (timer !== void 0)
-      clearTimeout(timer);
-  }
-}
+// ../../node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs
 async function forceStop(client, work, log, requestOptions) {
   try {
     await client.beta.environments.work.stop(
@@ -8030,123 +6231,71 @@ async function forceStop(client, work, log, requestOptions) {
     }
   }
 }
-function serverLeaseState(e) {
-  let node = e instanceof APIError ? e.error : void 0;
-  for (const key of ["error", "details", "current_state"]) {
-    if (!isObj(node))
-      return {};
-    node = node[key];
-  }
-  return isObj(node) ? node : {};
-}
-async function heartbeatLoop(client, work, lease, logger, requestOptions, onLeaseTtl) {
+async function heartbeatLoop(client, work, ctrl, logger, requestOptions) {
   let intervalMs = HEARTBEAT_DEFAULT_MS;
-  let ttlMs = HEARTBEAT_TTL_DEFAULT_MS;
-  let lastSuccessMs = Date.now();
   let last = NO_HEARTBEAT_SENTINEL;
   const beat = async () => {
-    const beatCtrl = new AbortController();
-    const detach = linkAbort(lease.signal, beatCtrl);
-    const cutoff = setTimeout(() => beatCtrl.abort(), intervalMs);
     try {
-      const resp = await client.beta.environments.work.heartbeat(work.id, { environment_id: work.environment_id, expected_last_heartbeat: last }, { ...requestOptions, headers: buildHeaders([requestOptions?.headers]), signal: beatCtrl.signal });
-      lastSuccessMs = Date.now();
+      const resp = await client.beta.environments.work.heartbeat(work.id, { environment_id: work.environment_id, expected_last_heartbeat: last }, { ...requestOptions, headers: buildHeaders([requestOptions?.headers]), signal: ctrl.signal });
       last = resp.last_heartbeat;
       if (resp.ttl_seconds > 0) {
-        ttlMs = resp.ttl_seconds * 1e3;
-        intervalMs = Math.max(1e3, Math.min(ttlMs / 2, HEARTBEAT_DEFAULT_MS));
-        onLeaseTtl?.(ttlMs);
+        intervalMs = Math.max(1e3, Math.min(resp.ttl_seconds * 1e3 / 2, HEARTBEAT_DEFAULT_MS));
       }
       if (resp.state === "stopping" || resp.state === "stopped") {
         logger.info("heartbeat signals shutdown", { work_id: work.id, state: resp.state });
-        lease.finish("control_plane_stop");
+        ctrl.abort();
       }
       if (!resp.lease_extended) {
         logger.warn("lease not extended, shutting down", { work_id: work.id });
-        lease.finish("control_plane_stop");
+        ctrl.abort();
       }
     } catch (e) {
-      lease.signal.throwIfAborted();
-      if (isStatus(e, 412)) {
-        const server = serverLeaseState(e);
-        logger.error("lease lost: heartbeat precondition failed", {
-          work_id: work.id,
-          server_state: server["state"],
-          server_ttl_seconds: server["ttl_seconds"],
-          server_last_heartbeat: server["last_heartbeat"]
-        });
-        lease.finish("lease_lost");
-        return;
-      }
+      ctrl.signal.throwIfAborted();
       if (isFatal4xx(e)) {
         logger.error("permanent heartbeat failure", { work_id: work.id, error: String(e) });
-        lease.finish("heartbeat_rejected");
+        ctrl.abort();
         throw e;
       }
-      if (Date.now() - lastSuccessMs > ttlMs) {
-        logger.error("lease assumed lost: no successful heartbeat in ttl", {
-          work_id: work.id,
-          ttl_ms: ttlMs,
-          error: String(e)
-        });
-        lease.finish("assumed_lost");
-        return;
-      }
       logger.warn("transient heartbeat failure", { work_id: work.id, error: String(e) });
-    } finally {
-      clearTimeout(cutoff);
-      detach();
     }
   };
   await beat();
-  while (!lease.signal.aborted) {
-    await sleep(intervalMs, lease.signal);
-    lease.signal.throwIfAborted();
+  while (!ctrl.signal.aborted) {
+    await sleep(intervalMs, ctrl.signal);
+    ctrl.signal.throwIfAborted();
     await beat();
   }
 }
-var _EnvironmentWorker_instances, _EnvironmentWorker_signal, _EnvironmentWorker_handleItem, _Lease_ctrl, _Lease_endReason, HEARTBEAT_DEFAULT_MS, HEARTBEAT_TTL_DEFAULT_MS, NO_HEARTBEAT_SENTINEL, EnvironmentWorker, Lease;
+var _EnvironmentWorker_instances, _EnvironmentWorker_signal, _EnvironmentWorker_handleItem, HEARTBEAT_DEFAULT_MS, NO_HEARTBEAT_SENTINEL, EnvironmentWorker;
 var init_worker = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
     init_error();
     init_log();
-    init_base64();
-    init_bytes();
     init_env();
     init_sleep();
     init_backoff();
     init_abort();
-    init_values();
     init_headers();
     init_SessionToolRunner();
     init_poller();
     init_helper_client();
-    init_sync_interval();
     HEARTBEAT_DEFAULT_MS = 3e4;
-    HEARTBEAT_TTL_DEFAULT_MS = 9e4;
     NO_HEARTBEAT_SENTINEL = "NO_HEARTBEAT";
     EnvironmentWorker = class {
       constructor(opts) {
         _EnvironmentWorker_instances.add(this);
         _EnvironmentWorker_signal.set(this, void 0);
-        if (opts.unrestrictedPaths !== void 0) {
-          throw new AnthropicError("The `unrestrictedPaths` option you passed to EnvironmentWorker (or client.beta.environments.work.worker()) is no longer supported. The worker's file tools (read, write, edit, glob, grep) are now always confined to `workdir` plus the session's memory folders. Remove `unrestrictedPaths` from your options; to let the file tools reach any other directory, add it to `AgentToolContext.allowedRoots` from a `tools` factory.");
-        }
         this.client = opts.client;
         this.environmentId = opts.environmentId;
         this.environmentKey = opts.environmentKey;
         this.tools = opts.tools;
         this.workdir = opts.workdir ?? process.cwd();
+        this.unrestrictedPaths = opts.unrestrictedPaths;
         this.maxFileBytes = opts.maxFileBytes;
         this.maxIdleMs = opts.maxIdleMs;
-        if (opts.memorySyncIntervalMs != null) {
-          checkMemorySyncInterval(opts.memorySyncIntervalMs, "memorySyncIntervalMs");
-        }
-        this.memorySyncIntervalMs = opts.memorySyncIntervalMs;
-        this.memorySyncDeletions = opts.memorySyncDeletions ?? "enabled";
         this.workerId = opts.workerId;
         this.requestOptions = opts.requestOptions;
         __classPrivateFieldSet(this, _EnvironmentWorker_signal, opts.signal, "f");
@@ -8169,19 +6318,12 @@ var init_worker = __esm({
           ...this.workerId !== void 0 ? { workerId: this.workerId } : {},
           ...externalSignal ? { signal: externalSignal } : {},
           ...this.requestOptions !== void 0 ? { requestOptions: this.requestOptions } : {},
-          // The per-item handler stops or releases every work item on exit; let it
-          // be the single owner of `work.stop` rather than double-posting from the
-          // poller.
+          // The per-item handler force-stops every work item on exit; let it be the
+          // single owner of `work.stop` rather than double-posting from the poller.
           autoStop: false
         });
         for await (const work of poller) {
-          try {
-            await __classPrivateFieldGet(this, _EnvironmentWorker_instances, "m", _EnvironmentWorker_handleItem).call(this, work, environmentKey, poller.signal);
-          } catch (e) {
-            if (poller.signal?.aborted)
-              throw e;
-            loggerFor(this.client).error("work item failed", { work_id: work.id, error: String(e) });
-          }
+          await __classPrivateFieldGet(this, _EnvironmentWorker_instances, "m", _EnvironmentWorker_handleItem).call(this, work, environmentKey, poller.signal);
         }
       }
       /**
@@ -8189,10 +6331,8 @@ var init_worker = __esm({
        * per-session {@link AgentToolContext} (workdir from this worker's options),
        * download the session agent's skills (`setupSkills`), run a
        * {@link SessionToolRunner} for the session while heartbeating the work-item
-       * lease, and force-stop the work item on exit (whether the runner finishes
-       * normally, throws, or the control plane signals shutdown). The one
-       * exception is a lost lease: the item then belongs to the queue or another
-       * worker and is left alone.
+       * lease in parallel, and force-stop the work item on exit (whether the runner
+       * finishes normally, throws, or the heartbeat loop signals shutdown).
        *
        * Use this when something else does the claiming — e.g. a `worker poll
        * --on-work` script that hands an already-claimed item to a fresh process. The
@@ -8202,23 +6342,13 @@ var init_worker = __esm({
        * option, then the worker's own `environmentKey`, then
        * `ANTHROPIC_ENVIRONMENT_KEY`. With no arguments inside that command it just
        * works. Throws a clear error naming the first of the four required values
-       * still missing after resolution. Throws `SessionMemoryError` when the
-       * session has memory stores attached but they cannot be mounted — the work
-       * item carried no sessions token (unless `memorySyncIntervalMs` turned
-       * memory off), or a store failed to download.
-       *
-       * `workSecret` is the work item's per-item `secret` payload from the poll
-       * response, falling back to `ANTHROPIC_WORK_SECRET`; unlike the others it is
-       * optional — when present, the sessions token extracted from it is preferred
-       * as the Bearer credential for this item's heartbeat / force-stop / session
-       * calls; when absent (or undecodable) those calls use the environment key.
+       * still missing after resolution.
        */
       async handleItem(opts) {
         const workId = opts?.workId ?? readEnv("ANTHROPIC_WORK_ID");
         const environmentId = opts?.environmentId ?? readEnv("ANTHROPIC_ENVIRONMENT_ID");
         const sessionId = opts?.sessionId ?? readEnv("ANTHROPIC_SESSION_ID");
         const environmentKey = opts?.environmentKey ?? this.environmentKey ?? readEnv("ANTHROPIC_ENVIRONMENT_KEY");
-        const workSecret = opts?.workSecret || readEnv("ANTHROPIC_WORK_SECRET") || null;
         if (!workId) {
           throw new AnthropicError("handleItem: workId is required \u2014 pass it or set ANTHROPIC_WORK_ID");
         }
@@ -8234,7 +6364,6 @@ var init_worker = __esm({
         const work = {
           id: workId,
           environment_id: environmentId,
-          secret: workSecret,
           data: { type: "session", id: sessionId }
         };
         await __classPrivateFieldGet(this, _EnvironmentWorker_instances, "m", _EnvironmentWorker_handleItem).call(this, work, environmentKey, opts?.signal ?? __classPrivateFieldGet(this, _EnvironmentWorker_signal, "f"));
@@ -8243,160 +6372,66 @@ var init_worker = __esm({
     _EnvironmentWorker_signal = /* @__PURE__ */ new WeakMap(), _EnvironmentWorker_instances = /* @__PURE__ */ new WeakSet(), _EnvironmentWorker_handleItem = /**
      * The per-item body shared by {@link EnvironmentWorker.run}'s poll loop and
      * {@link EnvironmentWorker.handleItem}: run a {@link SessionToolRunner} for the
-     * work item's session while heartbeating its lease, force-stopping on exit
-     * unless the lease was lost. Non-session work items are ignored.
-     *
-     * When the poll response carried a per-item `secret` (a short-lived payload
-     * scoped to this work item), the sessions token extracted from it is
-     * preferred over `environmentKey` as the Bearer credential for those
-     * per-item calls; a missing/undecodable secret falls back to
-     * `environmentKey` unchanged.
+     * work item's session while heartbeating its lease, force-stopping on exit.
+     * Non-session work items are ignored.
      */
     async function _EnvironmentWorker_handleItem2(work, environmentKey, externalSignal) {
       const log = loggerFor(this.client);
-      const sessionsToken = sessionsTokenFromSecret(work.secret);
-      if (work.secret && sessionsToken === null) {
-        log.warn("work item carried a secret payload but no sessions token could be extracted; falling back to the environment key", { work_id: work.id });
-      }
-      const itemCredential = sessionsToken ?? environmentKey;
       const sessionClient = copyClientForHelper(this.client, {
-        authToken: itemCredential,
+        authToken: environmentKey,
         helper: "environments-worker"
       });
       const sessionId = work.data.id;
+      const ctx = {
+        workdir: this.workdir,
+        client: this.client,
+        sessionId,
+        ...this.unrestrictedPaths !== void 0 ? { unrestrictedPaths: this.unrestrictedPaths } : {},
+        ...this.maxFileBytes !== void 0 ? { maxFileBytes: this.maxFileBytes } : {}
+      };
+      const agentToolset = await Promise.resolve().then(() => (init_node(), node_exports));
+      let cleanupSkills = async () => {
+      };
+      try {
+        cleanupSkills = await agentToolset.setupSkills(ctx);
+      } catch (e) {
+        log.warn("skill setup failed", { session_id: sessionId, work_id: work.id, error: String(e) });
+      }
+      const tools = typeof this.tools === "function" ? this.tools(ctx) : this.tools ?? agentToolset.betaAgentToolset20260401(ctx);
       const ctrl = new AbortController();
       const detachExternal = linkAbort(externalSignal, ctrl);
-      const lease = new Lease(ctrl);
-      const agentToolset = await Promise.resolve().then(() => (init_node(), node_exports));
-      let leaseTtlMs;
-      let runner;
-      const heartbeatPromise = heartbeatLoop(sessionClient, work, lease, log, this.requestOptions, (ttlMs) => {
-        leaseTtlMs = ttlMs;
-        runner?._setSendRetryWindow(ttlMs);
-      }).catch((e) => {
+      const heartbeatPromise = heartbeatLoop(sessionClient, work, ctrl, log, this.requestOptions).catch((e) => {
         if (!ctrl.signal.aborted)
           log.error("heartbeat loop failed", { work_id: work.id, error: String(e) });
         ctrl.abort();
       });
-      let cleanupSkills = async () => {
-      };
-      let stores;
-      let cleanEnd = false;
       try {
-        if (work.data.type !== "session") {
-          log.debug("skipping non-session work item", { work_id: work.id, type: work.data.type });
-          return;
-        }
-        const session = await sessionClient.beta.sessions.retrieve(sessionId);
-        if (sessionsToken === null && this.memorySyncIntervalMs !== null && hasMemoryStore(session)) {
-          throw new agentToolset.SessionMemoryError(`cannot mount the session's memories: the work item carried no sessions token (work_id=${work.id}, session_id=${sessionId}); the memory endpoints reject the environment key, so the poller must issue a per-item \`secret\` carrying \`sessions_token\`, or set \`memorySyncIntervalMs: null\` to run without memory`);
-        }
-        const ctx = {
-          workdir: this.workdir,
-          // The scoped sub-client, not the parent: the skill download
-          // `setupSkills` performs for this session rides the same per-item
-          // credential as every other per-item call.
-          client: sessionClient,
-          session,
-          ...this.maxFileBytes !== void 0 ? { maxFileBytes: this.maxFileBytes } : {}
-        };
-        try {
-          cleanupSkills = await agentToolset.setupSkills(ctx);
-        } catch (e) {
-          log.warn("skill setup failed", { session_id: sessionId, work_id: work.id, error: String(e) });
-        }
-        if (sessionsToken !== null && this.memorySyncIntervalMs !== null) {
-          stores = new agentToolset.SessionMemoryStores(sessionClient, {
-            workdir: this.workdir,
-            ...this.memorySyncIntervalMs !== void 0 ? { syncIntervalMs: this.memorySyncIntervalMs } : {},
-            syncDeletions: this.memorySyncDeletions
-          });
-          await stores.download(session);
-          ctx.allowedRoots = stores.roots;
-          ctx.readOnlyRoots = stores.readOnlyRoots;
-        } else {
-          log.debug("memory stores disabled for this item", { work_id: work.id });
-        }
-        const tools = typeof this.tools === "function" ? this.tools(ctx) : this.tools ?? agentToolset.betaAgentToolset20260401(ctx);
-        runner = new SessionToolRunner(sessionId, {
+        const runner = new SessionToolRunner(sessionId, {
           client: sessionClient,
           tools,
           ...this.maxIdleMs !== void 0 ? { maxIdleMs: this.maxIdleMs } : {},
           ...this.requestOptions !== void 0 ? { requestOptions: this.requestOptions } : {},
           signal: ctrl.signal
         });
-        if (leaseTtlMs !== void 0)
-          runner._setSendRetryWindow(leaseTtlMs);
         for await (const _ of runner) {
-          if (stores)
-            await stores.syncIfDue();
         }
-        cleanEnd = !ctrl.signal.aborted;
       } finally {
-        try {
-          await cleanupSkills().catch((e) => {
-            log.warn("skill cleanup failed", { session_id: sessionId, work_id: work.id, error: String(e) });
-          });
-        } finally {
-          if (stores) {
-            const boundMs = agentToolset.MEMORY_FLUSH_TIMEOUT_MS;
-            if (cleanEnd) {
-              const finishCutOff = await withTimeout(stores.finish(), boundMs);
-              if (finishCutOff) {
-                log.warn(`final memory sync cut off after ${boundMs}ms; the flush that follows still uploads changed files`, { session_id: sessionId, work_id: work.id });
-              }
-            }
-            const flushBound = new AbortController();
-            const flushCutOff = await withTimeout(stores.flushWrites(flushBound.signal), boundMs);
-            if (flushCutOff) {
-              flushBound.abort();
-              log.warn(`memory flush cut off after ${boundMs}ms; changed files it had not uploaded yet are not saved`, { session_id: sessionId, work_id: work.id });
-            }
-            await stores.dispose().catch((e) => {
-              log.warn("memory store cleanup failed", {
-                session_id: sessionId,
-                work_id: work.id,
-                error: String(e)
-              });
-            });
-          }
-        }
-        lease.finish("runner_done");
+        ctrl.abort();
         detachExternal();
         await heartbeatPromise;
-        if (lease.lost) {
-          log.info("lease lost; released without stopping it", { session_id: sessionId, work_id: work.id });
-        } else {
-          await forceStop(sessionClient, work, log, this.requestOptions);
-        }
+        await cleanupSkills().catch((e) => {
+          log.warn("skill cleanup failed", { session_id: sessionId, work_id: work.id, error: String(e) });
+        });
+        await forceStop(sessionClient, work, log, this.requestOptions);
       }
     };
-    Lease = class {
-      constructor(ctrl) {
-        _Lease_ctrl.set(this, void 0);
-        _Lease_endReason.set(this, void 0);
-        __classPrivateFieldSet(this, _Lease_ctrl, ctrl, "f");
-      }
-      get signal() {
-        return __classPrivateFieldGet(this, _Lease_ctrl, "f").signal;
-      }
-      finish(reason) {
-        __classPrivateFieldSet(this, _Lease_endReason, __classPrivateFieldGet(this, _Lease_endReason, "f") ?? reason, "f");
-        __classPrivateFieldGet(this, _Lease_ctrl, "f").abort();
-      }
-      /** True once the item belongs to the queue or another worker. */
-      get lost() {
-        return __classPrivateFieldGet(this, _Lease_endReason, "f") === "lease_lost" || __classPrivateFieldGet(this, _Lease_endReason, "f") === "assumed_lost";
-      }
-    };
-    _Lease_ctrl = /* @__PURE__ */ new WeakMap(), _Lease_endReason = /* @__PURE__ */ new WeakMap();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/environments/work.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/environments/work.mjs
 var Work;
 var init_work = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/environments/work.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/environments/work.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -8642,6 +6677,23 @@ var init_work = __esm({
       poller(opts) {
         return new WorkPoller({ ...opts, client: this._client });
       }
+      /**
+       * The self-hosted environment runner: poll for work, and for each claimed
+       * session set up the workdir, download the agent's skills, run the tools while
+       * heartbeating the lease, and force-stop on exit.
+       *
+       * @example
+       * ```ts
+       * // Long-running daemon — poll, serve each session, loop:
+       * await client.beta.environments.work
+       *   .worker({ environmentId, environmentKey, workdir: '/workspace' })
+       *   .run();
+       *
+       * // Or service one already-claimed work item (e.g. inside a sandbox spawned
+       * // by `ant worker poll --on-work`) — handleItem() reads the ANTHROPIC_* env vars:
+       * await client.beta.environments.work.worker({ workdir: '/workspace' }).handleItem();
+       * ```
+       */
       worker(opts) {
         return new EnvironmentWorker({ ...opts, client: this._client });
       }
@@ -8651,10 +6703,10 @@ var init_work = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/environments/environments.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/environments/environments.mjs
 var Environments;
 var init_environments = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/environments/environments.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/environments/environments.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -8803,10 +6855,10 @@ var init_environments = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memories.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memories.mjs
 var Memories;
-var init_memories2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memories.mjs"() {
+var init_memories = __esm({
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memories.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -8833,7 +6885,7 @@ var init_memories2 = __esm({
           body,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -8856,7 +6908,7 @@ var init_memories2 = __esm({
           query,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -8880,7 +6932,7 @@ var init_memories2 = __esm({
           body,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -8904,7 +6956,7 @@ var init_memories2 = __esm({
           query,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -8927,7 +6979,7 @@ var init_memories2 = __esm({
           query: { expected_content_sha256 },
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -8936,10 +6988,10 @@ var init_memories2 = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions.mjs
 var MemoryVersions;
 var init_memory_versions = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -8965,7 +7017,7 @@ var init_memory_versions = __esm({
           query,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -8989,7 +7041,7 @@ var init_memory_versions = __esm({
           query,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -9011,7 +7063,7 @@ var init_memory_versions = __esm({
         return this._client.post(path8`/v1/memory_stores/${memory_store_id}/memory_versions/${memoryVersionID}/redact?beta=true`, {
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -9020,15 +7072,15 @@ var init_memory_versions = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores.mjs
 var MemoryStores;
 var init_memory_stores = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
-    init_memories2();
-    init_memories2();
+    init_memories();
+    init_memories();
     init_memory_versions();
     init_memory_versions();
     init_pagination();
@@ -9055,7 +7107,7 @@ var init_memory_stores = __esm({
           body,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -9076,7 +7128,7 @@ var init_memory_stores = __esm({
         return this._client.get(path8`/v1/memory_stores/${memoryStoreID}?beta=true`, {
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -9096,7 +7148,7 @@ var init_memory_stores = __esm({
           body,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -9118,7 +7170,7 @@ var init_memory_stores = __esm({
           query,
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -9137,7 +7189,7 @@ var init_memory_stores = __esm({
         return this._client.delete(path8`/v1/memory_stores/${memoryStoreID}?beta=true`, {
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -9156,7 +7208,7 @@ var init_memory_stores = __esm({
         return this._client.post(path8`/v1/memory_stores/${memoryStoreID}/archive?beta=true`, {
           ...options,
           headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "agent-memory-2026-07-22"].toString() },
+            { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
             options?.headers
           ])
         });
@@ -9167,19 +7219,19 @@ var init_memory_stores = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/error.mjs
+// ../../node_modules/@anthropic-ai/sdk/error.mjs
 var init_error2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/error.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/error.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs
 var JSONLDecoder;
 var init_jsonl = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
@@ -9218,10 +7270,10 @@ var init_jsonl = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs
 var Batches;
 var init_batches = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -9253,7 +7305,7 @@ var init_batches = __esm({
        *           messages: [
        *             { content: 'Hello, world', role: 'user' },
        *           ],
-       *           model: 'claude-opus-5',
+       *           model: 'claude-opus-4-6',
        *         },
        *       },
        *     ],
@@ -9426,21 +7478,26 @@ var init_batches = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/constants.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/constants.mjs
 var MODEL_NONSTREAMING_TOKENS;
 var init_constants = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/constants.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/constants.mjs"() {
     "use strict";
     init_esm_shims();
     MODEL_NONSTREAMING_TOKENS = {
+      "claude-opus-4-20250514": 8192,
+      "claude-opus-4-0": 8192,
+      "claude-4-opus-20250514": 8192,
+      "anthropic.claude-opus-4-20250514-v1:0": 8192,
       "claude-opus-4@20250514": 8192,
+      "claude-opus-4-1-20250805": 8192,
       "anthropic.claude-opus-4-1-20250805-v1:0": 8192,
       "claude-opus-4-1@20250805": 8192
     };
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/beta-parser.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/beta-parser.mjs
 function getOutputFormat(params) {
   return params?.output_format ?? params?.output_config?.format;
 }
@@ -9513,26 +7570,26 @@ function parseBetaOutputFormat(params, content) {
   }
 }
 var init_beta_parser = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/beta-parser.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/beta-parser.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/streaming.mjs
+// ../../node_modules/@anthropic-ai/sdk/streaming.mjs
 var init_streaming2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/streaming.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/streaming.mjs"() {
     "use strict";
     init_esm_shims();
     init_streaming();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs
+// ../../node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs
 var tokenize, strip, unstrip, generate, partialParse;
 var init_parser = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs"() {
     "use strict";
     init_esm_shims();
     tokenize = (input) => {
@@ -9758,7 +7815,7 @@ var init_parser = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs
+// ../../node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs
 function withLazyInput(prev, jsonBuf) {
   const next = {};
   for (const key of Object.keys(prev)) {
@@ -9783,7 +7840,7 @@ function withLazyInput(prev, jsonBuf) {
 }
 var JSON_BUF_PROPERTY;
 var init_message_stream_utils = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs"() {
     "use strict";
     init_esm_shims();
     init_parser();
@@ -9791,20 +7848,21 @@ var init_message_stream_utils = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs
 function tracksToolInput(content) {
   return content.type === "tool_use" || content.type === "server_tool_use" || content.type === "mcp_tool_use";
 }
-var _BetaMessageStream_instances, _BetaMessageStream_currentMessageSnapshot, _BetaMessageStream_params, _BetaMessageStream_connectedPromise, _BetaMessageStream_resolveConnectedPromise, _BetaMessageStream_rejectConnectedPromise, _BetaMessageStream_endPromise, _BetaMessageStream_resolveEndPromise, _BetaMessageStream_rejectEndPromise, _BetaMessageStream_listeners, _BetaMessageStream_ended, _BetaMessageStream_errored, _BetaMessageStream_aborted, _BetaMessageStream_catchingPromiseCreated, _BetaMessageStream_response, _BetaMessageStream_request_id, _BetaMessageStream_workspace_id, _BetaMessageStream_logger, _BetaMessageStream_getFinalMessage, _BetaMessageStream_getFinalText, _BetaMessageStream_handleError, _BetaMessageStream_beginRequest, _BetaMessageStream_addStreamEvent, _BetaMessageStream_endRequest, _BetaMessageStream_accumulateMessage, _BetaMessageStream_toolInputParseError, BetaMessageStream;
+function checkNever(x) {
+}
+var _BetaMessageStream_instances, _BetaMessageStream_currentMessageSnapshot, _BetaMessageStream_params, _BetaMessageStream_connectedPromise, _BetaMessageStream_resolveConnectedPromise, _BetaMessageStream_rejectConnectedPromise, _BetaMessageStream_endPromise, _BetaMessageStream_resolveEndPromise, _BetaMessageStream_rejectEndPromise, _BetaMessageStream_listeners, _BetaMessageStream_ended, _BetaMessageStream_errored, _BetaMessageStream_aborted, _BetaMessageStream_catchingPromiseCreated, _BetaMessageStream_response, _BetaMessageStream_request_id, _BetaMessageStream_logger, _BetaMessageStream_getFinalMessage, _BetaMessageStream_getFinalText, _BetaMessageStream_handleError, _BetaMessageStream_beginRequest, _BetaMessageStream_addStreamEvent, _BetaMessageStream_endRequest, _BetaMessageStream_accumulateMessage, _BetaMessageStream_toolInputParseError, BetaMessageStream;
 var init_BetaMessageStream = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
     init_stainless_helper_header();
     init_error2();
     init_errors();
-    init_values();
     init_streaming2();
     init_beta_parser();
     init_message_stream_utils();
@@ -9833,7 +7891,6 @@ var init_BetaMessageStream = __esm({
         _BetaMessageStream_catchingPromiseCreated.set(this, false);
         _BetaMessageStream_response.set(this, void 0);
         _BetaMessageStream_request_id.set(this, void 0);
-        _BetaMessageStream_workspace_id.set(this, void 0);
         _BetaMessageStream_logger.set(this, void 0);
         _BetaMessageStream_handleError.set(this, (error) => {
           __classPrivateFieldSet(this, _BetaMessageStream_errored, true, "f");
@@ -9854,12 +7911,12 @@ var init_BetaMessageStream = __esm({
           }
           return this._emit("error", new AnthropicError(String(error)));
         });
-        __classPrivateFieldSet(this, _BetaMessageStream_connectedPromise, new Promise((resolve5, reject) => {
-          __classPrivateFieldSet(this, _BetaMessageStream_resolveConnectedPromise, resolve5, "f");
+        __classPrivateFieldSet(this, _BetaMessageStream_connectedPromise, new Promise((resolve4, reject) => {
+          __classPrivateFieldSet(this, _BetaMessageStream_resolveConnectedPromise, resolve4, "f");
           __classPrivateFieldSet(this, _BetaMessageStream_rejectConnectedPromise, reject, "f");
         }), "f");
-        __classPrivateFieldSet(this, _BetaMessageStream_endPromise, new Promise((resolve5, reject) => {
-          __classPrivateFieldSet(this, _BetaMessageStream_resolveEndPromise, resolve5, "f");
+        __classPrivateFieldSet(this, _BetaMessageStream_endPromise, new Promise((resolve4, reject) => {
+          __classPrivateFieldSet(this, _BetaMessageStream_resolveEndPromise, resolve4, "f");
           __classPrivateFieldSet(this, _BetaMessageStream_rejectEndPromise, reject, "f");
         }), "f");
         __classPrivateFieldGet(this, _BetaMessageStream_connectedPromise, "f").catch(() => {
@@ -9874,9 +7931,6 @@ var init_BetaMessageStream = __esm({
       }
       get request_id() {
         return __classPrivateFieldGet(this, _BetaMessageStream_request_id, "f");
-      }
-      get workspace_id() {
-        return __classPrivateFieldGet(this, _BetaMessageStream_workspace_id, "f");
       }
       /**
        * Returns the `MessageStream` data, the raw `Response` instance and the ID of the request,
@@ -9897,8 +7951,7 @@ var init_BetaMessageStream = __esm({
         return {
           data: this,
           response,
-          request_id: response.headers.get("request-id"),
-          workspace_id: response.headers.get("anthropic-workspace-id")
+          request_id: response.headers.get("request-id")
         };
       }
       /**
@@ -9968,7 +8021,6 @@ var init_BetaMessageStream = __esm({
           return;
         __classPrivateFieldSet(this, _BetaMessageStream_response, response, "f");
         __classPrivateFieldSet(this, _BetaMessageStream_request_id, response?.headers.get("request-id"), "f");
-        __classPrivateFieldSet(this, _BetaMessageStream_workspace_id, response?.headers.get("anthropic-workspace-id"), "f");
         __classPrivateFieldGet(this, _BetaMessageStream_resolveConnectedPromise, "f").call(this, response);
         this._emit("connect");
       }
@@ -10034,11 +8086,11 @@ var init_BetaMessageStream = __esm({
        *   const message = await stream.emitted('message') // rejects if the stream errors
        */
       emitted(event) {
-        return new Promise((resolve5, reject) => {
+        return new Promise((resolve4, reject) => {
           __classPrivateFieldSet(this, _BetaMessageStream_catchingPromiseCreated, true, "f");
           if (event !== "error")
             this.once("error", reject);
-          this.once(event, resolve5);
+          this.once(event, resolve4);
         });
       }
       async done() {
@@ -10130,7 +8182,7 @@ var init_BetaMessageStream = __esm({
           }
         }
       }
-      [(_BetaMessageStream_currentMessageSnapshot = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_params = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_connectedPromise = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_resolveConnectedPromise = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_rejectConnectedPromise = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_endPromise = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_resolveEndPromise = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_rejectEndPromise = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_listeners = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_ended = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_errored = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_aborted = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_catchingPromiseCreated = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_response = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_request_id = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_workspace_id = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_logger = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_handleError = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_instances = /* @__PURE__ */ new WeakSet(), _BetaMessageStream_getFinalMessage = function _BetaMessageStream_getFinalMessage2() {
+      [(_BetaMessageStream_currentMessageSnapshot = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_params = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_connectedPromise = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_resolveConnectedPromise = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_rejectConnectedPromise = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_endPromise = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_resolveEndPromise = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_rejectEndPromise = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_listeners = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_ended = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_errored = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_aborted = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_catchingPromiseCreated = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_response = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_request_id = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_logger = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_handleError = /* @__PURE__ */ new WeakMap(), _BetaMessageStream_instances = /* @__PURE__ */ new WeakSet(), _BetaMessageStream_getFinalMessage = function _BetaMessageStream_getFinalMessage2() {
         if (this.receivedMessages.length === 0) {
           throw new AnthropicError("stream ended without producing a Message with role=assistant");
         }
@@ -10247,16 +8299,14 @@ var init_BetaMessageStream = __esm({
           case "message_stop":
             return snapshot;
           case "message_delta":
+            snapshot.container = event.delta.container;
             snapshot.stop_reason = event.delta.stop_reason;
             snapshot.stop_sequence = event.delta.stop_sequence;
-            snapshot.stop_details = event.delta.stop_details;
+            if (event.delta.stop_details != null) {
+              snapshot.stop_details = event.delta.stop_details;
+            }
             snapshot.usage.output_tokens = event.usage.output_tokens;
-            if (event.delta.container != null) {
-              snapshot.container = event.delta.container;
-            }
-            if (event.context_management != null) {
-              snapshot.context_management = event.context_management;
-            }
+            snapshot.context_management = event.context_management;
             if (event.usage.input_tokens != null) {
               snapshot.usage.input_tokens = event.usage.input_tokens;
             }
@@ -10271,12 +8321,6 @@ var init_BetaMessageStream = __esm({
             }
             if (event.usage.iterations != null) {
               snapshot.usage.iterations = event.usage.iterations;
-            }
-            if (event.usage.fallback_credit != null) {
-              snapshot.usage.fallback_credit = event.usage.fallback_credit;
-            }
-            if (event.usage.output_tokens_details != null) {
-              snapshot.usage.output_tokens_details = event.usage.output_tokens_details;
             }
             return snapshot;
           case "content_block_start":
@@ -10408,7 +8452,7 @@ var init_BetaMessageStream = __esm({
               if (done) {
                 return { value: void 0, done: true };
               }
-              return new Promise((resolve5, reject) => readQueue.push({ resolve: resolve5, reject })).then((chunk2) => chunk2 ? { value: chunk2, done: false } : { value: void 0, done: true });
+              return new Promise((resolve4, reject) => readQueue.push({ resolve: resolve4, reject })).then((chunk2) => chunk2 ? { value: chunk2, done: false } : { value: void 0, done: true });
             }
             const chunk = pushQueue.shift();
             return { value: chunk, done: false };
@@ -10427,10 +8471,10 @@ var init_BetaMessageStream = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/tools/CompactionControl.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/tools/CompactionControl.mjs
 var DEFAULT_TOKEN_THRESHOLD, DEFAULT_SUMMARY_PROMPT;
 var init_CompactionControl = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/tools/CompactionControl.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/tools/CompactionControl.mjs"() {
     "use strict";
     init_esm_shims();
     DEFAULT_TOKEN_THRESHOLD = 1e5;
@@ -10460,7 +8504,7 @@ Wrap your summary in <summary></summary> tags.`;
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/tools/BetaToolRunner.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/tools/BetaToolRunner.mjs
 async function generateToolResponse(params, lastMessage = params.messages.at(-1), requestOptions) {
   if (!lastMessage || lastMessage.role !== "assistant" || !lastMessage.content || typeof lastMessage.content === "string") {
     return null;
@@ -10469,11 +8513,15 @@ async function generateToolResponse(params, lastMessage = params.messages.at(-1)
   if (toolUseBlocks.length === 0) {
     return null;
   }
-  const available = availableToolNames(params);
   const toolResults = await Promise.all(toolUseBlocks.map(async (toolUse) => {
-    const tool = params.tools.find((t) => ("name" in t ? t.name : "mcp_server_name" in t ? t.mcp_server_name : t.type) === toolUse.name);
-    if (!tool || !("run" in tool) || !available.has(toolUse.name)) {
-      return toolNotFoundResult(toolUse);
+    const tool = params.tools.find((t) => ("name" in t ? t.name : t.mcp_server_name) === toolUse.name);
+    if (!tool || !("run" in tool)) {
+      return {
+        type: "tool_result",
+        tool_use_id: toolUse.id,
+        content: `Error: Tool '${toolUse.name}' not found`,
+        is_error: true
+      };
     }
     try {
       let input = toolUse.input;
@@ -10504,82 +8552,9 @@ async function generateToolResponse(params, lastMessage = params.messages.at(-1)
     content: toolResults
   };
 }
-function toolNotFoundResult(toolUse) {
-  return {
-    type: "tool_result",
-    tool_use_id: toolUse.id,
-    content: `Error: Tool '${toolUse.name}' not found`,
-    is_error: true
-  };
-}
-function availableToolNames(params) {
-  const available = /* @__PURE__ */ new Set();
-  for (const tool of params.tools) {
-    if ("run" in tool) {
-      available.add(tool.name);
-    }
-  }
-  for (const message of params.messages) {
-    if (message.role !== "system" || typeof message.content === "string") {
-      continue;
-    }
-    for (const block of message.content) {
-      applyToolChange(block, available);
-    }
-  }
-  return available;
-}
-function applyToolChange(block, available) {
-  switch (block.type) {
-    case "tool_removal":
-    case "tool_addition":
-      applyToolReference(block, available);
-      break;
-  }
-}
-function applyToolReference(block, available) {
-  const name = referencedToolName(block.tool);
-  if (name === void 0)
-    return;
-  if (block.type === "tool_removal") {
-    available.delete(name);
-  } else {
-    available.add(name);
-  }
-}
-function referencedToolName(ref) {
-  switch (ref.type) {
-    case "tool_reference":
-      return ref.name;
-    default:
-      return void 0;
-  }
-}
-function determineNextStepFromStopReason(stopReason) {
-  if (stopReason === null)
-    return "stop";
-  switch (stopReason) {
-    case "tool_use":
-      return "run_tools";
-    case "pause_turn":
-    // pause_after_compaction hands the turn back before the model answers; sending it back
-    // unchanged continues it.
-    case "compaction":
-      return "resume";
-    case "end_turn":
-    case "stop_sequence":
-    case "max_tokens":
-    case "model_context_window_exceeded":
-    case "refusal":
-      return "stop";
-    default:
-      checkNever(stopReason);
-      return "stop";
-  }
-}
 var _BetaToolRunner_instances, _BetaToolRunner_consumed, _BetaToolRunner_mutated, _BetaToolRunner_state, _BetaToolRunner_options, _BetaToolRunner_message, _BetaToolRunner_toolResponse, _BetaToolRunner_completion, _BetaToolRunner_iterationCount, _BetaToolRunner_checkAndCompact, _BetaToolRunner_generateToolResponse, BetaToolRunner;
 var init_BetaToolRunner = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/tools/BetaToolRunner.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/tools/BetaToolRunner.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
@@ -10587,7 +8562,6 @@ var init_BetaToolRunner = __esm({
     init_error();
     init_headers();
     init_promise();
-    init_values();
     init_CompactionControl();
     init_stainless_helper_header();
     BetaToolRunner = class {
@@ -10721,21 +8695,9 @@ var init_BetaToolRunner = __esm({
               if (!isCompacted) {
                 if (!__classPrivateFieldGet(this, _BetaToolRunner_mutated, "f")) {
                   const message = await __classPrivateFieldGet(this, _BetaToolRunner_message, "f");
-                  const nextStep = determineNextStepFromStopReason(message.stop_reason);
                   __classPrivateFieldGet(this, _BetaToolRunner_state, "f").params.messages.push({ role: message.role, content: message.content });
-                  const { container } = __classPrivateFieldGet(this, _BetaToolRunner_state, "f").params;
-                  if (message.container) {
-                    if (container == null) {
-                      __classPrivateFieldGet(this, _BetaToolRunner_state, "f").params.container = message.container.id;
-                    } else if (typeof container === "object" && container.id == null) {
-                      __classPrivateFieldGet(this, _BetaToolRunner_state, "f").params.container = { ...container, id: message.container.id };
-                    }
-                  }
-                  if (nextStep === "stop") {
+                  if (message.stop_reason === "refusal") {
                     break;
-                  }
-                  if (nextStep === "resume") {
-                    continue;
                   }
                 }
                 const toolMessage = await __classPrivateFieldGet(this, _BetaToolRunner_instances, "m", _BetaToolRunner_generateToolResponse).call(this, __classPrivateFieldGet(this, _BetaToolRunner_state, "f").params.messages.at(-1));
@@ -10895,7 +8857,7 @@ var init_BetaToolRunner = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs
 function transformOutputFormat(params) {
   if (!params.output_format) {
     return params;
@@ -10914,7 +8876,7 @@ function transformOutputFormat(params) {
 }
 var DEPRECATED_MODELS, MODELS_TO_WARN_WITH_THINKING_ENABLED, Messages;
 var init_messages = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs"() {
     "use strict";
     init_esm_shims();
     init_error2();
@@ -10930,7 +8892,28 @@ var init_messages = __esm({
     init_batches();
     init_BetaToolRunner();
     init_ToolError();
-    DEPRECATED_MODELS = {};
+    DEPRECATED_MODELS = {
+      "claude-1.3": "November 6th, 2024",
+      "claude-1.3-100k": "November 6th, 2024",
+      "claude-instant-1.1": "November 6th, 2024",
+      "claude-instant-1.1-100k": "November 6th, 2024",
+      "claude-instant-1.2": "November 6th, 2024",
+      "claude-3-sonnet-20240229": "July 21st, 2025",
+      "claude-3-opus-20240229": "January 5th, 2026",
+      "claude-2.1": "July 21st, 2025",
+      "claude-2.0": "July 21st, 2025",
+      "claude-3-7-sonnet-latest": "February 19th, 2026",
+      "claude-3-7-sonnet-20250219": "February 19th, 2026",
+      "claude-3-5-haiku-latest": "February 19th, 2026",
+      "claude-3-5-haiku-20241022": "February 19th, 2026",
+      "claude-opus-4-0": "June 15th, 2026",
+      "claude-opus-4-20250514": "June 15th, 2026",
+      "claude-sonnet-4-0": "June 15th, 2026",
+      "claude-sonnet-4-20250514": "June 15th, 2026",
+      "claude-opus-4-1": "August 5th, 2026",
+      "claude-opus-4-1-20250805": "August 5th, 2026",
+      "claude-mythos-preview": "June 30th, 2026"
+    };
     MODELS_TO_WARN_WITH_THINKING_ENABLED = ["claude-mythos-preview", "claude-opus-4-6"];
     Messages = class extends APIResource {
       constructor() {
@@ -10947,7 +8930,7 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
         if (MODELS_TO_WARN_WITH_THINKING_ENABLED.includes(body.model) && body.thinking && body.thinking.type === "enabled") {
           console.warn(`Using Claude with ${body.model} and 'thinking.type=enabled' is deprecated. Use 'thinking.type=adaptive' instead which results in better model performance in our testing: https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking`);
         }
-        let timeout = options?.timeout ?? this._client._options.timeout;
+        let timeout = this._client._options.timeout;
         if (!body.stream && timeout == null) {
           const maxNonstreamingTokens = MODEL_NONSTREAMING_TOKENS[body.model] ?? void 0;
           timeout = this._client.calculateNonstreamingTimeout(body.max_tokens, maxNonstreamingTokens);
@@ -11014,7 +8997,7 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
        * const betaMessageTokensCount =
        *   await client.beta.messages.countTokens({
        *     messages: [{ content: 'Hello, world', role: 'user' }],
-       *     model: 'claude-opus-5',
+       *     model: 'claude-opus-4-6',
        *   });
        * ```
        */
@@ -11043,1698 +9026,10 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/api-keys.mjs
-var APIKeys;
-var init_api_keys = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/api-keys.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_path();
-    APIKeys = class extends APIResource {
-      /**
-       * Get API Key
-       *
-       * @example
-       * ```ts
-       * const betaAPIKey =
-       *   await client.beta.organization.apiKeys.retrieve(
-       *     'api_key_id',
-       *   );
-       * ```
-       */
-      retrieve(apiKeyID, options) {
-        return this._client.get(path8`/v1/organizations/api_keys/${apiKeyID}?beta=true`, options);
-      }
-      /**
-       * Update API Key
-       *
-       * @example
-       * ```ts
-       * const betaAPIKey =
-       *   await client.beta.organization.apiKeys.update(
-       *     'api_key_id',
-       *   );
-       * ```
-       */
-      update(apiKeyID, body, options) {
-        return this._client.post(path8`/v1/organizations/api_keys/${apiKeyID}?beta=true`, { body, ...options });
-      }
-      /**
-       * List API Keys
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaAPIKey of client.beta.organization.apiKeys.list()) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(query = {}, options) {
-        return this._client.getAPIList("/v1/organizations/api_keys?beta=true", Page, {
-          query,
-          ...options
-        });
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/external-keys.mjs
-var ExternalKeys;
-var init_external_keys = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/external-keys.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_path();
-    ExternalKeys = class extends APIResource {
-      /**
-       * Create an external key config owned by the caller's organization.
-       *
-       * @example
-       * ```ts
-       * const betaExternalKey =
-       *   await client.beta.organization.externalKeys.create({
-       *     provider_config: {
-       *       kms_arn:
-       *         'arn:aws:kms:us-east-1:111122223333:key/abcd1234-5678-90ab-cdef-000011112222',
-       *       type: 'aws',
-       *     },
-       *   });
-       * ```
-       */
-      create(body, options) {
-        return this._client.post("/v1/organizations/external_keys?beta=true", { body, ...options });
-      }
-      /**
-       * Retrieve a single external key config in the caller's organization by ID.
-       *
-       * @example
-       * ```ts
-       * const betaExternalKey =
-       *   await client.beta.organization.externalKeys.retrieve(
-       *     'external_key_id',
-       *   );
-       * ```
-       */
-      retrieve(externalKeyID, options) {
-        return this._client.get(path8`/v1/organizations/external_keys/${externalKeyID}?beta=true`, options);
-      }
-      /**
-       * Partially update an external key config. Omitted fields are left unchanged.
-       *
-       * `display_name` is always editable. `geo` and `provider_config` cannot be changed
-       * once any workspace references this config, because previously encrypted data
-       * requires the original key identity to decrypt.
-       *
-       * @example
-       * ```ts
-       * const betaExternalKey =
-       *   await client.beta.organization.externalKeys.update(
-       *     'external_key_id',
-       *   );
-       * ```
-       */
-      update(externalKeyID, body, options) {
-        return this._client.post(path8`/v1/organizations/external_keys/${externalKeyID}?beta=true`, {
-          body,
-          ...options
-        });
-      }
-      /**
-       * List external key configs in the caller's organization.
-       *
-       * Results are ordered by creation time (newest first). Use the `next_page` cursor
-       * from the response to fetch subsequent pages.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaExternalKey of client.beta.organization.externalKeys.list()) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(query = {}, options) {
-        return this._client.getAPIList("/v1/organizations/external_keys?beta=true", PageCursor, {
-          query,
-          ...options
-        });
-      }
-      /**
-       * Delete an external key config.
-       *
-       * The request is rejected if any workspace still references this config.
-       *
-       * @example
-       * ```ts
-       * const externalKey =
-       *   await client.beta.organization.externalKeys.delete(
-       *     'external_key_id',
-       *   );
-       * ```
-       */
-      delete(externalKeyID, options) {
-        return this._client.delete(path8`/v1/organizations/external_keys/${externalKeyID}?beta=true`, options);
-      }
-      /**
-       * Validate an external key config against the customer's KMS.
-       *
-       * Anthropic performs an encrypt/decrypt roundtrip against the configured KMS key
-       * and waits up to 30 seconds for the result. The response status is `success` if
-       * the roundtrip succeeded, or `failure` with an error message if it failed or
-       * timed out.
-       *
-       * @example
-       * ```ts
-       * const response =
-       *   await client.beta.organization.externalKeys.validate(
-       *     'external_key_id',
-       *   );
-       * ```
-       */
-      validate(externalKeyID, options) {
-        return this._client.post(path8`/v1/organizations/external_keys/${externalKeyID}/validate?beta=true`, options);
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/invites.mjs
-var Invites;
-var init_invites = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/invites.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_path();
-    Invites = class extends APIResource {
-      /**
-       * Invite a user to join the organization by email.
-       *
-       * On plans that draw members from a finite pool of purchased seats, the invite
-       * automatically consumes a seat from the lowest tier with availability; there is
-       * no seat-tier parameter. When no seat is free the request fails with a 400 error
-       * rather than purchasing a seat.
-       *
-       * @example
-       * ```ts
-       * const betaOrganizationInvite =
-       *   await client.beta.organization.invites.create({
-       *     email: 'user@emaildomain.com',
-       *     role: 'user',
-       *   });
-       * ```
-       */
-      create(body, options) {
-        return this._client.post("/v1/organizations/invites?beta=true", { body, ...options });
-      }
-      /**
-       * Retrieve an invite by ID.
-       *
-       * @example
-       * ```ts
-       * const betaOrganizationInvite =
-       *   await client.beta.organization.invites.retrieve(
-       *     'invite_id',
-       *   );
-       * ```
-       */
-      retrieve(inviteID, options) {
-        return this._client.get(path8`/v1/organizations/invites/${inviteID}?beta=true`, options);
-      }
-      /**
-       * List the organization's invites.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaOrganizationInvite of client.beta.organization.invites.list()) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(query = {}, options) {
-        return this._client.getAPIList("/v1/organizations/invites?beta=true", Page, {
-          query,
-          ...options
-        });
-      }
-      /**
-       * Delete a pending invite.
-       *
-       * @example
-       * ```ts
-       * const invite =
-       *   await client.beta.organization.invites.delete(
-       *     'invite_id',
-       *   );
-       * ```
-       */
-      delete(inviteID, options) {
-        return this._client.delete(path8`/v1/organizations/invites/${inviteID}?beta=true`, options);
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/rate-limits.mjs
-var RateLimits;
-var init_rate_limits = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/rate-limits.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    RateLimits = class extends APIResource {
-      /**
-       * List Messages API rate limits for your organization.
-       *
-       * Each entry corresponds to one rate-limit group (either a model family or an
-       * API-surface category such as the Files API or Message Batches) and contains the
-       * set of limiter values that apply to it.
-       *
-       * When `limit` is omitted, every matching entry is returned in a single page; when
-       * `limit` truncates the result, follow `next_page` to fetch the remaining entries.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaOrganizationRateLimit of client.beta.organization.rateLimits.list()) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(query = {}, options) {
-        return this._client.getAPIList("/v1/organizations/rate_limits?beta=true", PageCursor, { query, ...options });
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/users.mjs
-var Users;
-var init_users = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/users.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_path();
-    Users = class extends APIResource {
-      /**
-       * Retrieve a member of the organization by user ID.
-       *
-       * @example
-       * ```ts
-       * const betaOrganizationUser =
-       *   await client.beta.organization.users.retrieve('user_id');
-       * ```
-       */
-      retrieve(userID, options) {
-        return this._client.get(path8`/v1/organizations/users/${userID}?beta=true`, options);
-      }
-      /**
-       * Update a member's organization role.
-       *
-       * @example
-       * ```ts
-       * const betaOrganizationUser =
-       *   await client.beta.organization.users.update('user_id', {
-       *     role: 'user',
-       *   });
-       * ```
-       */
-      update(userID, body, options) {
-        return this._client.post(path8`/v1/organizations/users/${userID}?beta=true`, { body, ...options });
-      }
-      /**
-       * List the organization's members.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaOrganizationUser of client.beta.organization.users.list()) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(query = {}, options) {
-        return this._client.getAPIList("/v1/organizations/users?beta=true", Page, {
-          query,
-          ...options
-        });
-      }
-      /**
-       * Remove a member from the organization.
-       *
-       * @example
-       * ```ts
-       * const user = await client.beta.organization.users.remove(
-       *   'user_id',
-       * );
-       * ```
-       */
-      remove(userID, options) {
-        return this._client.delete(path8`/v1/organizations/users/${userID}?beta=true`, options);
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/federation/issuers.mjs
-var Issuers;
-var init_issuers = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/federation/issuers.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_headers();
-    init_path();
-    Issuers = class extends APIResource {
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Register an OIDC issuer that Anthropic will trust for workload identity
-       * federation in your organization.
-       *
-       * The `jwks` field controls how the issuer's signing keys are obtained and takes
-       * one of three shapes selected by `type`: `discovery` (resolve keys through OIDC
-       * discovery), `explicit_url` (fetch keys from a fixed JWKS URL), or `inline`
-       * (provide a static key set). When `jwks.type` is `discovery` and no
-       * `discovery_base` is set, the issuer URL must be publicly reachable over HTTPS so
-       * Anthropic can fetch the discovery document; for `explicit_url` and `inline`
-       * modes the issuer URL is only matched as the JWT's `iss` claim and is not
-       * fetched.
-       *
-       * @example
-       * ```ts
-       * const betaFederationIssuer =
-       *   await client.beta.organization.federation.issuers.create({
-       *     issuer_url: 'x',
-       *     name: 'x',
-       *   });
-       * ```
-       */
-      create(params, options) {
-        const { betas, ...body } = params;
-        return this._client.post("/v1/organizations/federation_issuers?beta=true", {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Retrieve a federation issuer by its ID (`fdis_...`).
-       *
-       * @example
-       * ```ts
-       * const betaFederationIssuer =
-       *   await client.beta.organization.federation.issuers.retrieve(
-       *     'federation_issuer_id',
-       *   );
-       * ```
-       */
-      retrieve(federationIssuerID, params = {}, options) {
-        const { betas } = params ?? {};
-        return this._client.get(path8`/v1/organizations/federation_issuers/${federationIssuerID}?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Partially update a federation issuer.
-       *
-       * Setting `jwks` replaces the full JWKS shape at once. Archived issuers cannot be
-       * updated; this returns 400. Create a new issuer instead.
-       *
-       * Updating an issuer that backs a rule with a scope outside `workspace:developer`
-       * or `workspace:inference` requires a Console session.
-       *
-       * @example
-       * ```ts
-       * const betaFederationIssuer =
-       *   await client.beta.organization.federation.issuers.update(
-       *     'federation_issuer_id',
-       *   );
-       * ```
-       */
-      update(federationIssuerID, params, options) {
-        const { betas, ...body } = params;
-        return this._client.post(path8`/v1/organizations/federation_issuers/${federationIssuerID}?beta=true`, {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * List federation issuers in your organization.
-       *
-       * Archived issuers are excluded unless `include_archived=true`.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaFederationIssuer of client.beta.organization.federation.issuers.list()) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(params = {}, options) {
-        const { betas, ...query } = params ?? {};
-        return this._client.getAPIList("/v1/organizations/federation_issuers?beta=true", PageCursor, {
-          query,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Archive a federation issuer.
-       *
-       * Idempotent; re-archiving returns the issuer with its original `archived_at`.
-       * Rejected with 400 if any live (non-archived) federation rule still references
-       * the issuer; archive those rules first (a rule's issuer cannot be changed), or
-       * recreate them against another issuer.
-       *
-       * @example
-       * ```ts
-       * const betaFederationIssuer =
-       *   await client.beta.organization.federation.issuers.archive(
-       *     'federation_issuer_id',
-       *   );
-       * ```
-       */
-      archive(federationIssuerID, params = {}, options) {
-        const { betas } = params ?? {};
-        return this._client.post(path8`/v1/organizations/federation_issuers/${federationIssuerID}/archive?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/federation/rules/workspaces.mjs
-var Workspaces;
-var init_workspaces = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/federation/rules/workspaces.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_headers();
-    init_path();
-    Workspaces = class extends APIResource {
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * List workspaces where this federation rule is enabled.
-       *
-       * Returns all workspace enablements in a single response; the `limit` and `page`
-       * parameters are accepted but have no effect, and `next_page` is always `null`.
-       * Returns explicit per-workspace enablements only; for rules with
-       * `applies_to_all_workspaces` or a legacy single `workspace_id`, check those
-       * fields on the rule itself.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaFederationRuleWorkspace of client.beta.organization.federation.rules.workspaces.list(
-       *   'federation_rule_id',
-       * )) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(federationRuleID, params = {}, options) {
-        const { betas, ...query } = params ?? {};
-        return this._client.getAPIList(path8`/v1/organizations/federation_rules/${federationRuleID}/workspaces?beta=true`, PageCursor, {
-          query,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Enable a federation rule for a workspace.
-       *
-       * Idempotent; re-enabling returns the existing enablement. The rule and workspace
-       * must both belong to your organization. Membership of the rule's target service
-       * account in this workspace is not checked at enablement: token exchange into this
-       * workspace is rejected unless the target is a member (it is implicitly a member
-       * of the default workspace). Archived rules are rejected with 400. OAuth callers
-       * may only manage rules whose `oauth_scope` is `workspace:developer` or
-       * `workspace:inference`; other scopes require a Console session.
-       *
-       * @example
-       * ```ts
-       * const betaFederationRuleWorkspace =
-       *   await client.beta.organization.federation.rules.workspaces.add(
-       *     'federation_rule_id',
-       *     { workspace_id: 'workspace_id' },
-       *   );
-       * ```
-       */
-      add(federationRuleID, params, options) {
-        const { betas, ...body } = params;
-        return this._client.post(path8`/v1/organizations/federation_rules/${federationRuleID}/workspaces?beta=true`, {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Disable a federation rule for a workspace.
-       *
-       * Idempotent; succeeds even if the enablement was already removed. OAuth callers
-       * may only manage rules whose `oauth_scope` is `workspace:developer` or
-       * `workspace:inference`; other scopes require a Console session.
-       *
-       * @example
-       * ```ts
-       * const workspace =
-       *   await client.beta.organization.federation.rules.workspaces.remove(
-       *     'workspace_id',
-       *     { federation_rule_id: 'federation_rule_id' },
-       *   );
-       * ```
-       */
-      remove(workspaceID, params, options) {
-        const { federation_rule_id, betas } = params;
-        return this._client.delete(path8`/v1/organizations/federation_rules/${federation_rule_id}/workspaces/${workspaceID}?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/federation/rules/rules.mjs
-var Rules;
-var init_rules = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/federation/rules/rules.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_workspaces();
-    init_workspaces();
-    init_pagination();
-    init_headers();
-    init_path();
-    Rules = class extends APIResource {
-      constructor() {
-        super(...arguments);
-        this.workspaces = new Workspaces(this._client);
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Create a federation rule owned by your organization.
-       *
-       * The referenced issuer and the target service account must already exist in the
-       * same organization; invalid references are rejected with a 400 error. The
-       * workspace reference is validated. Membership is not checked at rule creation:
-       * token exchange resolves a single enabled workspace per call and is rejected
-       * unless the target service account is a member of that workspace (it is
-       * implicitly a member of the default workspace). Rules on well-known shared
-       * issuers (GitHub Actions, GitLab, Buildkite, Terraform Cloud, Google) must
-       * constrain tenant identity via an identity-bearing claim, a tenant-pinning
-       * subject prefix (such as `repo:YOUR_ORG/...`), or a CEL condition referencing one
-       * of those identity claims (e.g. `claims.repository_owner`). OAuth callers may
-       * only manage rules whose `oauth_scope` is `workspace:developer` or
-       * `workspace:inference`; other scopes require a Console session.
-       *
-       * @example
-       * ```ts
-       * const betaFederationRule =
-       *   await client.beta.organization.federation.rules.create({
-       *     issuer_id: 'issuer_id',
-       *     match: {},
-       *     name: 'x',
-       *     oauth_scope: 'x',
-       *     target: {
-       *       service_account_id: 'svac_01SDCCSbTxrXDpWc1phhtcfK',
-       *       type: 'service_account',
-       *     },
-       *   });
-       * ```
-       */
-      create(params, options) {
-        const { betas, ...body } = params;
-        return this._client.post("/v1/organizations/federation_rules?beta=true", {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Retrieve a federation rule by its ID (`fdrl_...`).
-       *
-       * @example
-       * ```ts
-       * const betaFederationRule =
-       *   await client.beta.organization.federation.rules.retrieve(
-       *     'federation_rule_id',
-       *   );
-       * ```
-       */
-      retrieve(federationRuleID, params = {}, options) {
-        const { betas } = params ?? {};
-        return this._client.get(path8`/v1/organizations/federation_rules/${federationRuleID}?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Partially update a federation rule.
-       *
-       * `issuer_id` is immutable. `match` and `target` are replaced as whole objects
-       * when set. Referenced service accounts and workspaces must exist in your
-       * organization; invalid references are rejected with a 400 error. Archived rules
-       * cannot be updated; this returns 400. Create a new rule instead. Rules on
-       * well-known shared issuers (GitHub Actions, GitLab, Buildkite, Terraform Cloud,
-       * Google) must constrain tenant identity via an identity-bearing claim, a
-       * tenant-pinning subject prefix (such as `repo:YOUR_ORG/...`), or a CEL condition
-       * referencing one of those identity claims (e.g. `claims.repository_owner`). On
-       * these issuers the requirement is re-checked on every update; if an existing
-       * rule's stored match does not yet constrain tenant identity, any update (even a
-       * rename or description change) must also supply a conforming `match` in the same
-       * request. OAuth callers may only manage rules whose `oauth_scope` is
-       * `workspace:developer` or `workspace:inference`; other scopes require a Console
-       * session.
-       *
-       * @example
-       * ```ts
-       * const betaFederationRule =
-       *   await client.beta.organization.federation.rules.update(
-       *     'federation_rule_id',
-       *   );
-       * ```
-       */
-      update(federationRuleID, params, options) {
-        const { betas, ...body } = params;
-        return this._client.post(path8`/v1/organizations/federation_rules/${federationRuleID}?beta=true`, {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * List federation rules in your organization.
-       *
-       * Optionally filter by issuer with `issuer_id`. Archived rules are excluded unless
-       * `include_archived=true`.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaFederationRule of client.beta.organization.federation.rules.list()) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(params = {}, options) {
-        const { betas, ...query } = params ?? {};
-        return this._client.getAPIList("/v1/organizations/federation_rules?beta=true", PageCursor, {
-          query,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Archive a federation rule.
-       *
-       * Token exchange through this rule stops immediately. Idempotent; re-archiving
-       * returns the rule with its original `archived_at`. Archiving clears the rule's
-       * workspace targeting (`workspace_id` and `workspace_ids` are emptied). Tokens
-       * already minted before archive remain valid until they expire. OAuth callers may
-       * only manage rules whose `oauth_scope` is `workspace:developer` or
-       * `workspace:inference`; other scopes require a Console session.
-       *
-       * @example
-       * ```ts
-       * const betaFederationRule =
-       *   await client.beta.organization.federation.rules.archive(
-       *     'federation_rule_id',
-       *   );
-       * ```
-       */
-      archive(federationRuleID, params = {}, options) {
-        const { betas } = params ?? {};
-        return this._client.post(path8`/v1/organizations/federation_rules/${federationRuleID}/archive?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-    };
-    Rules.Workspaces = Workspaces;
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/federation/federation.mjs
-var Federation;
-var init_federation = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/federation/federation.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_issuers();
-    init_issuers();
-    init_rules();
-    init_rules();
-    Federation = class extends APIResource {
-      constructor() {
-        super(...arguments);
-        this.issuers = new Issuers(this._client);
-        this.rules = new Rules(this._client);
-      }
-    };
-    Federation.Issuers = Issuers;
-    Federation.Rules = Rules;
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/service-accounts/workspaces.mjs
-var Workspaces2;
-var init_workspaces2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/service-accounts/workspaces.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_headers();
-    init_path();
-    Workspaces2 = class extends APIResource {
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * List the workspaces a service account is a member of.
-       *
-       * Each entry includes the service account's `workspace_role` in that workspace.
-       * Use `limit` and the `next_page` cursor to paginate. When the service account has
-       * no explicit default-workspace membership, the implicit (`implicit: true`)
-       * membership is returned as the first entry on the first page; with `limit=1` the
-       * first page may return up to 2 entries (the implicit entry plus one explicit
-       * membership) so a pagination cursor can be derived. Memberships are returned only
-       * while the service account is active. Without a `page` cursor, an archived
-       * service account returns an empty list. A `page` cursor that does not match an
-       * active membership returns a 400 invalid-request error. A cursor stops matching
-       * when the membership is removed, the workspace is deleted, or the service account
-       * is archived. Restart pagination from the first page to recover.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaServiceAccountWorkspaceMember of client.beta.organization.serviceAccounts.workspaces.list(
-       *   'service_account_id',
-       * )) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(serviceAccountID, params = {}, options) {
-        const { betas, ...query } = params ?? {};
-        return this._client.getAPIList(path8`/v1/organizations/service_accounts/${serviceAccountID}/workspaces?beta=true`, PageCursor, {
-          query,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Add a service account to a workspace with the given `workspace_role`.
-       *
-       * Mirror of `POST /workspaces/{workspace_id}/service_accounts`, addressed from the
-       * service-account side; both create the same membership. If the service account is
-       * already an explicit member of the workspace, its `workspace_role` is replaced
-       * with the value supplied here. Archived workspaces return 400. Archived service
-       * accounts cannot be added and are rejected.
-       *
-       * @example
-       * ```ts
-       * const betaServiceAccountWorkspaceMember =
-       *   await client.beta.organization.serviceAccounts.workspaces.add(
-       *     'service_account_id',
-       *     {
-       *       workspace_id: 'workspace_id',
-       *       workspace_role: 'workspace_admin',
-       *     },
-       *   );
-       * ```
-       */
-      add(serviceAccountID, params, options) {
-        const { betas, ...body } = params;
-        return this._client.post(path8`/v1/organizations/service_accounts/${serviceAccountID}/workspaces?beta=true`, {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Remove a service account from a workspace.
-       *
-       * Mirror of
-       * `DELETE /workspaces/{workspace_id}/service_accounts/{service_account_id}`,
-       * addressed from the service-account side. Removal is idempotent (returns 200 even
-       * if the membership was already removed). A DELETE against the implicit
-       * default-workspace membership returns 200 but is a no-op and the membership
-       * persists; deleting an explicit default-workspace row reverts to the implicit
-       * `workspace_user` membership. Archived workspaces return 400.
-       *
-       * @example
-       * ```ts
-       * const workspace =
-       *   await client.beta.organization.serviceAccounts.workspaces.remove(
-       *     'workspace_id',
-       *     { service_account_id: 'service_account_id' },
-       *   );
-       * ```
-       */
-      remove(workspaceID, params, options) {
-        const { service_account_id, betas } = params;
-        return this._client.delete(path8`/v1/organizations/service_accounts/${service_account_id}/workspaces/${workspaceID}?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/service-accounts/service-accounts.mjs
-var ServiceAccounts;
-var init_service_accounts = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/service-accounts/service-accounts.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_workspaces2();
-    init_workspaces2();
-    init_pagination();
-    init_headers();
-    init_path();
-    ServiceAccounts = class extends APIResource {
-      constructor() {
-        super(...arguments);
-        this.workspaces = new Workspaces2(this._client);
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Create a service account.
-       *
-       * A service account is a named workload identity that federation rules target.
-       * `organization_role` is `developer` (default) or `admin`; a rule may only be
-       * created or retargeted to grant `org:admin` scope when the target's
-       * `organization_role` is `admin`. Creating an `admin`-role service account
-       * requires an interactive credential (a user OAuth token or a Console session) — a
-       * workload may only create `developer`-role service accounts.
-       *
-       * @example
-       * ```ts
-       * const betaServiceAccount =
-       *   await client.beta.organization.serviceAccounts.create({
-       *     name: 'ci-deploy-bot',
-       *   });
-       * ```
-       */
-      create(params, options) {
-        const { betas, ...body } = params;
-        return this._client.post("/v1/organizations/service_accounts?beta=true", {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Retrieve a service account by its ID (`svac_...`).
-       *
-       * @example
-       * ```ts
-       * const betaServiceAccount =
-       *   await client.beta.organization.serviceAccounts.retrieve(
-       *     'service_account_id',
-       *   );
-       * ```
-       */
-      retrieve(serviceAccountID, params = {}, options) {
-        const { betas } = params ?? {};
-        return this._client.get(path8`/v1/organizations/service_accounts/${serviceAccountID}?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Update a service account.
-       *
-       * Only `description` and `organization_role` are mutable; `name` cannot be
-       * changed. Archived service accounts cannot be updated; this returns 400. Setting
-       * `organization_role` to `admin` (even when unchanged) requires an interactive
-       * credential (a user OAuth token or a Console session).
-       *
-       * @example
-       * ```ts
-       * const betaServiceAccount =
-       *   await client.beta.organization.serviceAccounts.update(
-       *     'service_account_id',
-       *   );
-       * ```
-       */
-      update(serviceAccountID, params, options) {
-        const { betas, ...body } = params;
-        return this._client.post(path8`/v1/organizations/service_accounts/${serviceAccountID}?beta=true`, {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * List service accounts in the caller's organization.
-       *
-       * Results are ordered by creation time, newest first. Use `limit` and the
-       * `next_page` cursor to paginate; set `include_archived=true` to include archived
-       * service accounts.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaServiceAccount of client.beta.organization.serviceAccounts.list()) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(params = {}, options) {
-        const { betas, ...query } = params ?? {};
-        return this._client.getAPIList("/v1/organizations/service_accounts?beta=true", PageCursor, {
-          query,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Archive a service account.
-       *
-       * Idempotent; re-archiving returns the service account with its original
-       * `archived_at`. Rejected with 400 if any live (non-archived) federation rule
-       * still targets this service account, same as issuer archival; archive those rules
-       * first or change their target to another service account.
-       *
-       * @example
-       * ```ts
-       * const betaServiceAccount =
-       *   await client.beta.organization.serviceAccounts.archive(
-       *     'service_account_id',
-       *   );
-       * ```
-       */
-      archive(serviceAccountID, params = {}, options) {
-        const { betas } = params ?? {};
-        return this._client.post(path8`/v1/organizations/service_accounts/${serviceAccountID}/archive?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-    };
-    ServiceAccounts.Workspaces = Workspaces2;
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/workspaces/members.mjs
-var Members;
-var init_members = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/workspaces/members.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_path();
-    Members = class extends APIResource {
-      /**
-       * Get Workspace Member
-       *
-       * @example
-       * ```ts
-       * const betaWorkspaceMember =
-       *   await client.beta.organization.workspaces.members.retrieve(
-       *     'user_id',
-       *     { workspace_id: 'workspace_id' },
-       *   );
-       * ```
-       */
-      retrieve(userID, params, options) {
-        const { workspace_id } = params;
-        return this._client.get(path8`/v1/organizations/workspaces/${workspace_id}/members/${userID}?beta=true`, options);
-      }
-      /**
-       * Update Workspace Member
-       *
-       * @example
-       * ```ts
-       * const betaWorkspaceMember =
-       *   await client.beta.organization.workspaces.members.update(
-       *     'user_id',
-       *     {
-       *       workspace_id: 'workspace_id',
-       *       workspace_role: 'workspace_admin',
-       *     },
-       *   );
-       * ```
-       */
-      update(userID, params, options) {
-        const { workspace_id, ...body } = params;
-        return this._client.post(path8`/v1/organizations/workspaces/${workspace_id}/members/${userID}?beta=true`, {
-          body,
-          ...options
-        });
-      }
-      /**
-       * List Workspace Members
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaWorkspaceMember of client.beta.organization.workspaces.members.list(
-       *   'workspace_id',
-       * )) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(workspaceID, query = {}, options) {
-        return this._client.getAPIList(path8`/v1/organizations/workspaces/${workspaceID}/members?beta=true`, Page, { query, ...options });
-      }
-      /**
-       * Create Workspace Member
-       *
-       * @example
-       * ```ts
-       * const betaWorkspaceMember =
-       *   await client.beta.organization.workspaces.members.add(
-       *     'workspace_id',
-       *     {
-       *       user_id: 'user_01WCz1FkmYMm4gnmykNKUu3Q',
-       *       workspace_role: 'workspace_admin',
-       *     },
-       *   );
-       * ```
-       */
-      add(workspaceID, body, options) {
-        return this._client.post(path8`/v1/organizations/workspaces/${workspaceID}/members?beta=true`, {
-          body,
-          ...options
-        });
-      }
-      /**
-       * Delete Workspace Member
-       *
-       * @example
-       * ```ts
-       * const member =
-       *   await client.beta.organization.workspaces.members.remove(
-       *     'user_id',
-       *     { workspace_id: 'workspace_id' },
-       *   );
-       * ```
-       */
-      remove(userID, params, options) {
-        const { workspace_id } = params;
-        return this._client.delete(path8`/v1/organizations/workspaces/${workspace_id}/members/${userID}?beta=true`, options);
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/workspaces/rate-limits.mjs
-var RateLimits2;
-var init_rate_limits2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/workspaces/rate-limits.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_path();
-    RateLimits2 = class extends APIResource {
-      /**
-       * List rate-limit overrides configured for a workspace.
-       *
-       * Returns only the groups and limiter types that have a workspace-level override.
-       * Groups without overrides inherit the organization limits and are not listed; use
-       * `GET /v1/organizations/rate_limits` to see those.
-       *
-       * When `limit` is omitted, every matching entry is returned in a single page; when
-       * `limit` truncates the result, follow `next_page` to fetch the remaining entries.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaWorkspaceRateLimit of client.beta.organization.workspaces.rateLimits.list(
-       *   'workspace_id',
-       * )) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(workspaceID, query = {}, options) {
-        return this._client.getAPIList(path8`/v1/organizations/workspaces/${workspaceID}/rate_limits?beta=true`, PageCursor, { query, ...options });
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/workspaces/service-accounts.mjs
-var ServiceAccounts2;
-var init_service_accounts2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/workspaces/service-accounts.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_headers();
-    init_path();
-    ServiceAccounts2 = class extends APIResource {
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Retrieve a service account's membership in a workspace.
-       *
-       * Returns the membership record, including the service account's `workspace_role`
-       * in this workspace. Archived workspaces return 400. For the default workspace,
-       * returns the implicit (`implicit: true`) membership when no explicit membership
-       * exists; an explicitly added membership is returned with its assigned role. An
-       * archived service account returns 404.
-       *
-       * @example
-       * ```ts
-       * const betaServiceAccountWorkspaceMember =
-       *   await client.beta.organization.workspaces.serviceAccounts.retrieve(
-       *     'service_account_id',
-       *     { workspace_id: 'workspace_id' },
-       *   );
-       * ```
-       */
-      retrieve(serviceAccountID, params, options) {
-        const { workspace_id, betas } = params;
-        return this._client.get(path8`/v1/organizations/workspaces/${workspace_id}/service_accounts/${serviceAccountID}?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Change a service account's role in a workspace.
-       *
-       * The new `workspace_role` replaces the current one. Only explicit memberships can
-       * be updated; to set a role on the implicit default-workspace membership, add the
-       * service account explicitly with
-       * `POST /workspaces/{workspace_id}/service_accounts`. Archived workspaces
-       * return 400. Archived service accounts cannot be updated and are rejected.
-       *
-       * @example
-       * ```ts
-       * const betaServiceAccountWorkspaceMember =
-       *   await client.beta.organization.workspaces.serviceAccounts.update(
-       *     'service_account_id',
-       *     {
-       *       workspace_id: 'workspace_id',
-       *       workspace_role: 'workspace_admin',
-       *     },
-       *   );
-       * ```
-       */
-      update(serviceAccountID, params, options) {
-        const { workspace_id, betas, ...body } = params;
-        return this._client.post(path8`/v1/organizations/workspaces/${workspace_id}/service_accounts/${serviceAccountID}?beta=true`, {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * List the service accounts that are members of a workspace.
-       *
-       * Each entry includes the service account's `workspace_role`. Use `limit` and the
-       * `next_page` cursor to paginate. Archived workspaces return 400; use
-       * `GET /service_accounts/{id}/workspaces` to audit memberships of an archived
-       * workspace. The implicit default-workspace membership is not included in this
-       * list. Memberships of archived service accounts are omitted from the results.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaServiceAccountWorkspaceMember of client.beta.organization.workspaces.serviceAccounts.list(
-       *   'workspace_id',
-       * )) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(workspaceID, params = {}, options) {
-        const { betas, ...query } = params ?? {};
-        return this._client.getAPIList(path8`/v1/organizations/workspaces/${workspaceID}/service_accounts?beta=true`, PageCursor, {
-          query,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Add a service account to a workspace with the given `workspace_role`.
-       *
-       * The role determines what the service account can do in the workspace and which
-       * workspace-scoped permissions it can be granted when authenticating through
-       * federation. Every service account is already an implicit `workspace_user` member
-       * of the default workspace; adding it explicitly assigns a chosen role. If the
-       * service account is already an explicit member of the workspace, its
-       * `workspace_role` is replaced with the value supplied here. Archived workspaces
-       * return 400. Archived service accounts cannot be added and are rejected.
-       *
-       * @example
-       * ```ts
-       * const betaServiceAccountWorkspaceMember =
-       *   await client.beta.organization.workspaces.serviceAccounts.add(
-       *     'workspace_id',
-       *     {
-       *       service_account_id: 'service_account_id',
-       *       workspace_role: 'workspace_admin',
-       *     },
-       *   );
-       * ```
-       */
-      add(workspaceID, params, options) {
-        const { betas, ...body } = params;
-        return this._client.post(path8`/v1/organizations/workspaces/${workspaceID}/service_accounts?beta=true`, {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * **Requires an OAuth access token with the `org:admin` scope**, from
-       * `ant auth login --scope org:admin` or a workload identity federation rule; Admin
-       * API keys are not accepted. See
-       * [Manage WIF with the Admin API](/docs/en/manage-claude/wif-admin-api).
-       *
-       * Remove a service account from a workspace.
-       *
-       * Removal is idempotent (returns 200 even if the membership was already removed).
-       * A DELETE against the implicit default-workspace membership returns 200 but is a
-       * no-op and the membership persists; deleting an explicit default-workspace row
-       * reverts to the implicit `workspace_user` membership. Archived workspaces
-       * return 400.
-       *
-       * @example
-       * ```ts
-       * const serviceAccount =
-       *   await client.beta.organization.workspaces.serviceAccounts.remove(
-       *     'service_account_id',
-       *     { workspace_id: 'workspace_id' },
-       *   );
-       * ```
-       */
-      remove(serviceAccountID, params, options) {
-        const { workspace_id, betas } = params;
-        return this._client.delete(path8`/v1/organizations/workspaces/${workspace_id}/service_accounts/${serviceAccountID}?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/workspaces/workspaces.mjs
-var Workspaces3;
-var init_workspaces3 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/workspaces/workspaces.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_members();
-    init_members();
-    init_rate_limits2();
-    init_rate_limits2();
-    init_service_accounts2();
-    init_service_accounts2();
-    init_pagination();
-    init_headers();
-    init_path();
-    Workspaces3 = class extends APIResource {
-      constructor() {
-        super(...arguments);
-        this.rateLimits = new RateLimits2(this._client);
-        this.members = new Members(this._client);
-        this.serviceAccounts = new ServiceAccounts2(this._client);
-      }
-      /**
-       * Create Workspace
-       *
-       * @example
-       * ```ts
-       * const betaWorkspace =
-       *   await client.beta.organization.workspaces.create({
-       *     name: 'x',
-       *   });
-       * ```
-       */
-      create(params, options) {
-        const { betas, ...body } = params;
-        return this._client.post("/v1/organizations/workspaces?beta=true", {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * Get Workspace
-       *
-       * @example
-       * ```ts
-       * const betaWorkspace =
-       *   await client.beta.organization.workspaces.retrieve(
-       *     'workspace_id',
-       *   );
-       * ```
-       */
-      retrieve(workspaceID, options) {
-        return this._client.get(path8`/v1/organizations/workspaces/${workspaceID}?beta=true`, options);
-      }
-      /**
-       * Update Workspace
-       *
-       * @example
-       * ```ts
-       * const betaWorkspace =
-       *   await client.beta.organization.workspaces.update(
-       *     'workspace_id',
-       *   );
-       * ```
-       */
-      update(workspaceID, body, options) {
-        return this._client.post(path8`/v1/organizations/workspaces/${workspaceID}?beta=true`, {
-          body,
-          ...options
-        });
-      }
-      /**
-       * List Workspaces
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaWorkspace of client.beta.organization.workspaces.list()) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(query = {}, options) {
-        return this._client.getAPIList("/v1/organizations/workspaces?beta=true", Page, {
-          query,
-          ...options
-        });
-      }
-      /**
-       * Archive Workspace
-       *
-       * @example
-       * ```ts
-       * const betaWorkspace =
-       *   await client.beta.organization.workspaces.archive(
-       *     'workspace_id',
-       *   );
-       * ```
-       */
-      archive(workspaceID, options) {
-        return this._client.post(path8`/v1/organizations/workspaces/${workspaceID}/archive?beta=true`, options);
-      }
-    };
-    Workspaces3.RateLimits = RateLimits2;
-    Workspaces3.Members = Members;
-    Workspaces3.ServiceAccounts = ServiceAccounts2;
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/organization.mjs
-var Organization;
-var init_organization = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/organization/organization.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_api_keys();
-    init_api_keys();
-    init_external_keys();
-    init_external_keys();
-    init_invites();
-    init_invites();
-    init_rate_limits();
-    init_rate_limits();
-    init_users();
-    init_users();
-    init_federation();
-    init_federation();
-    init_service_accounts();
-    init_service_accounts();
-    init_workspaces3();
-    init_workspaces3();
-    Organization = class extends APIResource {
-      constructor() {
-        super(...arguments);
-        this.apiKeys = new APIKeys(this._client);
-        this.externalKeys = new ExternalKeys(this._client);
-        this.federation = new Federation(this._client);
-        this.invites = new Invites(this._client);
-        this.serviceAccounts = new ServiceAccounts(this._client);
-        this.users = new Users(this._client);
-        this.workspaces = new Workspaces3(this._client);
-        this.rateLimits = new RateLimits(this._client);
-      }
-      /**
-       * Retrieve information about the organization associated with the authenticated
-       * API key.
-       *
-       * @example
-       * ```ts
-       * const betaOrganization =
-       *   await client.beta.organization.retrieve();
-       * ```
-       */
-      retrieve(options) {
-        return this._client.get("/v1/organizations/me?beta=true", options);
-      }
-    };
-    Organization.APIKeys = APIKeys;
-    Organization.ExternalKeys = ExternalKeys;
-    Organization.Federation = Federation;
-    Organization.Invites = Invites;
-    Organization.ServiceAccounts = ServiceAccounts;
-    Organization.Users = Users;
-    Organization.Workspaces = Workspaces3;
-    Organization.RateLimits = RateLimits;
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/sessions/events.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/sessions/events.mjs
 var Events;
 var init_events = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/sessions/events.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/sessions/events.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -12853,10 +9148,10 @@ var init_events = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/sessions/resources.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/sessions/resources.mjs
 var Resources;
 var init_resources = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/sessions/resources.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/sessions/resources.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -12988,10 +9283,10 @@ var init_resources = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/events.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/events.mjs
 var Events2;
 var init_events2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/events.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/events.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -13037,9 +9332,8 @@ var init_events2 = __esm({
        * ```
        */
       stream(threadID, params, options) {
-        const { session_id, betas, ...query } = params;
+        const { session_id, betas } = params;
         return this._client.get(path8`/v1/sessions/${session_id}/threads/${threadID}/stream?beta=true`, {
-          query,
           ...options,
           headers: buildHeaders([
             { "anthropic-beta": [...betas ?? [], "managed-agents-2026-04-01"].toString() },
@@ -13052,10 +9346,10 @@ var init_events2 = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/threads.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/threads.mjs
 var Threads;
 var init_threads = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/threads.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/threads.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -13142,10 +9436,10 @@ var init_threads = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/sessions/sessions.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/sessions/sessions.mjs
 var Sessions;
 var init_sessions = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/sessions/sessions.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/sessions/sessions.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -13302,10 +9596,10 @@ var init_sessions = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/skills/versions.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/skills/versions.mjs
 var Versions2;
 var init_versions2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/skills/versions.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/skills/versions.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -13319,19 +9613,18 @@ var init_versions2 = __esm({
        *
        * @example
        * ```ts
-       * const betaSkillVersion =
-       *   await client.beta.skills.versions.create('skill_id', {
-       *     files: [fs.createReadStream('path/to/file')],
-       *   });
+       * const version = await client.beta.skills.versions.create(
+       *   'skill_id',
+       * );
        * ```
        */
-      create(skillID, params, options) {
-        const { betas, ...body } = params;
+      create(skillID, params = {}, options) {
+        const { betas, ...body } = params ?? {};
         return this._client.post(path8`/v1/skills/${skillID}/versions?beta=true`, multipartFormRequestOptions({
           body,
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
+            { "anthropic-beta": [...betas ?? [], "skills-2025-10-02"].toString() },
             options?.headers
           ])
         }, this._client, false));
@@ -13341,10 +9634,10 @@ var init_versions2 = __esm({
        *
        * @example
        * ```ts
-       * const betaSkillVersion =
-       *   await client.beta.skills.versions.retrieve('version', {
-       *     skill_id: 'skill_id',
-       *   });
+       * const version = await client.beta.skills.versions.retrieve(
+       *   'version',
+       *   { skill_id: 'skill_id' },
+       * );
        * ```
        */
       retrieve(version2, params, options) {
@@ -13352,7 +9645,7 @@ var init_versions2 = __esm({
         return this._client.get(path8`/v1/skills/${skill_id}/versions/${version2}?beta=true`, {
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
+            { "anthropic-beta": [...betas ?? [], "skills-2025-10-02"].toString() },
             options?.headers
           ])
         });
@@ -13363,7 +9656,7 @@ var init_versions2 = __esm({
        * @example
        * ```ts
        * // Automatically fetches more pages as needed.
-       * for await (const betaSkillVersion of client.beta.skills.versions.list(
+       * for await (const versionListResponse of client.beta.skills.versions.list(
        *   'skill_id',
        * )) {
        *   // ...
@@ -13376,7 +9669,7 @@ var init_versions2 = __esm({
           query,
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
+            { "anthropic-beta": [...betas ?? [], "skills-2025-10-02"].toString() },
             options?.headers
           ])
         });
@@ -13386,10 +9679,10 @@ var init_versions2 = __esm({
        *
        * @example
        * ```ts
-       * const betaDeletedSkillVersion =
-       *   await client.beta.skills.versions.delete('version', {
-       *     skill_id: 'skill_id',
-       *   });
+       * const version = await client.beta.skills.versions.delete(
+       *   'version',
+       *   { skill_id: 'skill_id' },
+       * );
        * ```
        */
       delete(version2, params, options) {
@@ -13397,7 +9690,7 @@ var init_versions2 = __esm({
         return this._client.delete(path8`/v1/skills/${skill_id}/versions/${version2}?beta=true`, {
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
+            { "anthropic-beta": [...betas ?? [], "skills-2025-10-02"].toString() },
             options?.headers
           ])
         });
@@ -13422,8 +9715,8 @@ var init_versions2 = __esm({
           ...options,
           headers: buildHeaders([
             {
-              Accept: "application/binary",
-              ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0
+              "anthropic-beta": [...betas ?? [], "skills-2025-10-02"].toString(),
+              Accept: "application/binary"
             },
             options?.headers
           ]),
@@ -13434,10 +9727,10 @@ var init_versions2 = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/skills/skills.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/skills/skills.mjs
 var Skills;
 var init_skills2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/skills/skills.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/skills/skills.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -13457,18 +9750,16 @@ var init_skills2 = __esm({
        *
        * @example
        * ```ts
-       * const betaSkill = await client.beta.skills.create({
-       *   files: [fs.createReadStream('path/to/file')],
-       * });
+       * const skill = await client.beta.skills.create();
        * ```
        */
-      create(params, options) {
-        const { betas, ...body } = params;
+      create(params = {}, options) {
+        const { betas, ...body } = params ?? {};
         return this._client.post("/v1/skills?beta=true", multipartFormRequestOptions({
           body,
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
+            { "anthropic-beta": [...betas ?? [], "skills-2025-10-02"].toString() },
             options?.headers
           ])
         }, this._client, false));
@@ -13478,9 +9769,7 @@ var init_skills2 = __esm({
        *
        * @example
        * ```ts
-       * const betaSkill = await client.beta.skills.retrieve(
-       *   'skill_id',
-       * );
+       * const skill = await client.beta.skills.retrieve('skill_id');
        * ```
        */
       retrieve(skillID, params = {}, options) {
@@ -13488,7 +9777,7 @@ var init_skills2 = __esm({
         return this._client.get(path8`/v1/skills/${skillID}?beta=true`, {
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
+            { "anthropic-beta": [...betas ?? [], "skills-2025-10-02"].toString() },
             options?.headers
           ])
         });
@@ -13499,7 +9788,7 @@ var init_skills2 = __esm({
        * @example
        * ```ts
        * // Automatically fetches more pages as needed.
-       * for await (const betaSkill of client.beta.skills.list()) {
+       * for await (const skillListResponse of client.beta.skills.list()) {
        *   // ...
        * }
        * ```
@@ -13510,7 +9799,7 @@ var init_skills2 = __esm({
           query,
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
+            { "anthropic-beta": [...betas ?? [], "skills-2025-10-02"].toString() },
             options?.headers
           ])
         });
@@ -13520,9 +9809,7 @@ var init_skills2 = __esm({
        *
        * @example
        * ```ts
-       * const betaDeletedSkill = await client.beta.skills.delete(
-       *   'skill_id',
-       * );
+       * const skill = await client.beta.skills.delete('skill_id');
        * ```
        */
       delete(skillID, params = {}, options) {
@@ -13530,7 +9817,7 @@ var init_skills2 = __esm({
         return this._client.delete(path8`/v1/skills/${skillID}?beta=true`, {
           ...options,
           headers: buildHeaders([
-            { ...betas?.toString() != null ? { "anthropic-beta": betas?.toString() } : void 0 },
+            { "anthropic-beta": [...betas ?? [], "skills-2025-10-02"].toString() },
             options?.headers
           ])
         });
@@ -13540,325 +9827,10 @@ var init_skills2 = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/tunnels/certificates.mjs
-var Certificates;
-var init_certificates = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/tunnels/certificates.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_headers();
-    init_path();
-    Certificates = class extends APIResource {
-      /**
-       * The Tunnels API is in research preview. It requires the
-       * `anthropic-beta: mcp-tunnels-2026-06-22` header and may change without a
-       * deprecation period. It supersedes the Admin API endpoints at
-       * `/v1/organizations/tunnels`, which remain available during a migration window.
-       *
-       * Registers a public CA certificate on a tunnel. Anthropic verifies the gateway's
-       * server certificate against this CA when it terminates the inner TLS session. A
-       * tunnel holds at most two non-archived certificates.
-       *
-       * @example
-       * ```ts
-       * const betaTunnelCertificate =
-       *   await client.beta.tunnels.certificates.create(
-       *     'tunnel_id',
-       *     { ca_certificate_pem: 'ca_certificate_pem' },
-       *   );
-       * ```
-       */
-      create(tunnelID, params, options) {
-        const { betas, ...body } = params;
-        return this._client.post(path8`/v1/tunnels/${tunnelID}/certificates?beta=true`, {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "mcp-tunnels-2026-06-22"].toString() },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * The Tunnels API is in research preview. It requires the
-       * `anthropic-beta: mcp-tunnels-2026-06-22` header and may change without a
-       * deprecation period. It supersedes the Admin API endpoints at
-       * `/v1/organizations/tunnels`, which remain available during a migration window.
-       *
-       * Fetches a tunnel certificate by ID.
-       *
-       * @example
-       * ```ts
-       * const betaTunnelCertificate =
-       *   await client.beta.tunnels.certificates.retrieve(
-       *     'certificate_id',
-       *     { tunnel_id: 'tunnel_id' },
-       *   );
-       * ```
-       */
-      retrieve(certificateID, params, options) {
-        const { tunnel_id, betas } = params;
-        return this._client.get(path8`/v1/tunnels/${tunnel_id}/certificates/${certificateID}?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "mcp-tunnels-2026-06-22"].toString() },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * The Tunnels API is in research preview. It requires the
-       * `anthropic-beta: mcp-tunnels-2026-06-22` header and may change without a
-       * deprecation period. It supersedes the Admin API endpoints at
-       * `/v1/organizations/tunnels`, which remain available during a migration window.
-       *
-       * Lists the certificates registered on a tunnel. Archived certificates are
-       * excluded unless include_archived is set.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaTunnelCertificate of client.beta.tunnels.certificates.list(
-       *   'tunnel_id',
-       * )) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(tunnelID, params = {}, options) {
-        const { betas, ...query } = params ?? {};
-        return this._client.getAPIList(path8`/v1/tunnels/${tunnelID}/certificates?beta=true`, PageCursor, {
-          query,
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "mcp-tunnels-2026-06-22"].toString() },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * The Tunnels API is in research preview. It requires the
-       * `anthropic-beta: mcp-tunnels-2026-06-22` header and may change without a
-       * deprecation period. It supersedes the Admin API endpoints at
-       * `/v1/organizations/tunnels`, which remain available during a migration window.
-       *
-       * Archives a tunnel certificate, removing it from the set Anthropic trusts for the
-       * tunnel. The certificate record is retained. Archiving the last non-archived
-       * certificate is permitted; the tunnel rejects MCP traffic until a new certificate
-       * is added.
-       *
-       * @example
-       * ```ts
-       * const betaTunnelCertificate =
-       *   await client.beta.tunnels.certificates.archive(
-       *     'certificate_id',
-       *     { tunnel_id: 'tunnel_id' },
-       *   );
-       * ```
-       */
-      archive(certificateID, params, options) {
-        const { tunnel_id, betas } = params;
-        return this._client.post(path8`/v1/tunnels/${tunnel_id}/certificates/${certificateID}/archive?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "mcp-tunnels-2026-06-22"].toString() },
-            options?.headers
-          ])
-        });
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/tunnels/tunnels.mjs
-var Tunnels;
-var init_tunnels = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/tunnels/tunnels.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_certificates();
-    init_certificates();
-    init_pagination();
-    init_headers();
-    init_path();
-    Tunnels = class extends APIResource {
-      constructor() {
-        super(...arguments);
-        this.certificates = new Certificates(this._client);
-      }
-      /**
-       * The Tunnels API is in research preview. It requires the
-       * `anthropic-beta: mcp-tunnels-2026-06-22` header and may change without a
-       * deprecation period. It supersedes the Admin API endpoints at
-       * `/v1/organizations/tunnels`, which remain available during a migration window.
-       *
-       * Creates a tunnel. Creation allocates a fresh hostname and provisions the tunnel;
-       * it is not idempotent. The new tunnel rejects MCP traffic until at least one CA
-       * certificate is added.
-       *
-       * @example
-       * ```ts
-       * const betaTunnel = await client.beta.tunnels.create();
-       * ```
-       */
-      create(params, options) {
-        const { betas, ...body } = params;
-        return this._client.post("/v1/tunnels?beta=true", {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "mcp-tunnels-2026-06-22"].toString() },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * The Tunnels API is in research preview. It requires the
-       * `anthropic-beta: mcp-tunnels-2026-06-22` header and may change without a
-       * deprecation period. It supersedes the Admin API endpoints at
-       * `/v1/organizations/tunnels`, which remain available during a migration window.
-       *
-       * Fetches a tunnel by ID.
-       *
-       * @example
-       * ```ts
-       * const betaTunnel = await client.beta.tunnels.retrieve(
-       *   'tunnel_id',
-       * );
-       * ```
-       */
-      retrieve(tunnelID, params = {}, options) {
-        const { betas } = params ?? {};
-        return this._client.get(path8`/v1/tunnels/${tunnelID}?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "mcp-tunnels-2026-06-22"].toString() },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * The Tunnels API is in research preview. It requires the
-       * `anthropic-beta: mcp-tunnels-2026-06-22` header and may change without a
-       * deprecation period. It supersedes the Admin API endpoints at
-       * `/v1/organizations/tunnels`, which remain available during a migration window.
-       *
-       * Lists tunnels. Results are ordered by creation time, newest first; archived
-       * tunnels are excluded unless include_archived is set.
-       *
-       * @example
-       * ```ts
-       * // Automatically fetches more pages as needed.
-       * for await (const betaTunnel of client.beta.tunnels.list()) {
-       *   // ...
-       * }
-       * ```
-       */
-      list(params = {}, options) {
-        const { betas, ...query } = params ?? {};
-        return this._client.getAPIList("/v1/tunnels?beta=true", PageCursor, {
-          query,
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "mcp-tunnels-2026-06-22"].toString() },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * The Tunnels API is in research preview. It requires the
-       * `anthropic-beta: mcp-tunnels-2026-06-22` header and may change without a
-       * deprecation period. It supersedes the Admin API endpoints at
-       * `/v1/organizations/tunnels`, which remain available during a migration window.
-       *
-       * Archives a tunnel. Archival is irreversible: every non-archived certificate on
-       * the tunnel is archived in the same operation, the hostname is retired and never
-       * re-allocated, and the tunnel token is invalidated. Retrying against an
-       * already-archived tunnel returns the existing record unchanged.
-       *
-       * @example
-       * ```ts
-       * const betaTunnel = await client.beta.tunnels.archive(
-       *   'tunnel_id',
-       * );
-       * ```
-       */
-      archive(tunnelID, params = {}, options) {
-        const { betas } = params ?? {};
-        return this._client.post(path8`/v1/tunnels/${tunnelID}/archive?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "mcp-tunnels-2026-06-22"].toString() },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * The Tunnels API is in research preview. It requires the
-       * `anthropic-beta: mcp-tunnels-2026-06-22` header and may change without a
-       * deprecation period. It supersedes the Admin API endpoints at
-       * `/v1/organizations/tunnels`, which remain available during a migration window.
-       *
-       * Reveals a tunnel's connector token. The value is fetched live on each call;
-       * Anthropic does not store it. Repeated calls return the same value until the
-       * token is rotated. Exposed as POST so the token does not appear in intermediary
-       * access logs.
-       *
-       * @example
-       * ```ts
-       * const betaTunnelToken =
-       *   await client.beta.tunnels.revealToken('tunnel_id');
-       * ```
-       */
-      revealToken(tunnelID, params = {}, options) {
-        const { betas } = params ?? {};
-        return this._client.post(path8`/v1/tunnels/${tunnelID}/reveal_token?beta=true`, {
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "mcp-tunnels-2026-06-22"].toString() },
-            options?.headers
-          ])
-        });
-      }
-      /**
-       * The Tunnels API is in research preview. It requires the
-       * `anthropic-beta: mcp-tunnels-2026-06-22` header and may change without a
-       * deprecation period. It supersedes the Admin API endpoints at
-       * `/v1/organizations/tunnels`, which remain available during a migration window.
-       *
-       * Rotates a tunnel's connector token. Rotation invalidates the current token for
-       * new connections and returns a fresh value; established connections are not
-       * severed. A connector restarted after rotation must use the new value.
-       *
-       * @example
-       * ```ts
-       * const betaTunnelToken =
-       *   await client.beta.tunnels.rotateToken('tunnel_id');
-       * ```
-       */
-      rotateToken(tunnelID, params, options) {
-        const { betas, ...body } = params;
-        return this._client.post(path8`/v1/tunnels/${tunnelID}/rotate_token?beta=true`, {
-          body,
-          ...options,
-          headers: buildHeaders([
-            { "anthropic-beta": [...betas ?? [], "mcp-tunnels-2026-06-22"].toString() },
-            options?.headers
-          ])
-        });
-      }
-    };
-    Tunnels.Certificates = Certificates;
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/vaults/credentials.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/vaults/credentials.mjs
 var Credentials;
 var init_credentials2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/vaults/credentials.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/vaults/credentials.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -14035,10 +10007,10 @@ var init_credentials2 = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/vaults/vaults.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/vaults/vaults.mjs
 var Vaults;
 var init_vaults = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/vaults/vaults.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/vaults/vaults.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -14186,10 +10158,10 @@ var init_vaults = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs
 var Beta;
 var init_beta = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -14197,8 +10169,6 @@ var init_beta = __esm({
     init_deployment_runs();
     init_deployments();
     init_deployments();
-    init_dreams();
-    init_dreams();
     init_files();
     init_files();
     init_models();
@@ -14215,14 +10185,10 @@ var init_beta = __esm({
     init_memory_stores();
     init_messages();
     init_messages();
-    init_organization();
-    init_organization();
     init_sessions();
     init_sessions();
     init_skills2();
     init_skills2();
-    init_tunnels();
-    init_tunnels();
     init_vaults();
     init_vaults();
     Beta = class extends APIResource {
@@ -14241,9 +10207,6 @@ var init_beta = __esm({
         this.skills = new Skills(this._client);
         this.webhooks = new Webhooks(this._client);
         this.userProfiles = new UserProfiles(this._client);
-        this.dreams = new Dreams(this._client);
-        this.tunnels = new Tunnels(this._client);
-        this.organization = new Organization(this._client);
       }
     };
     Beta.Models = Models;
@@ -14259,16 +10222,13 @@ var init_beta = __esm({
     Beta.Skills = Skills;
     Beta.Webhooks = Webhooks;
     Beta.UserProfiles = UserProfiles;
-    Beta.Dreams = Dreams;
-    Beta.Tunnels = Tunnels;
-    Beta.Organization = Organization;
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/completions.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/completions.mjs
 var Completions;
 var init_completions = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/completions.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/completions.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -14291,62 +10251,7 @@ var init_completions = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/files.mjs
-var Files2;
-var init_files2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/files.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_headers();
-    init_stainless_helper_header();
-    init_uploads();
-    init_path();
-    Files2 = class extends APIResource {
-      /**
-       * List Files
-       */
-      list(query = {}, options) {
-        return this._client.getAPIList("/v1/files", PageCursor, { query, ...options });
-      }
-      /**
-       * Delete File
-       */
-      delete(fileID, options) {
-        return this._client.delete(path8`/v1/files/${fileID}`, options);
-      }
-      /**
-       * Download File
-       */
-      download(fileID, options) {
-        return this._client.get(path8`/v1/files/${fileID}/content`, {
-          ...options,
-          headers: buildHeaders([{ Accept: "application/binary" }, options?.headers]),
-          __binaryResponse: true
-        });
-      }
-      /**
-       * Get File Metadata
-       */
-      retrieveMetadata(fileID, options) {
-        return this._client.get(path8`/v1/files/${fileID}`, options);
-      }
-      /**
-       * Upload File
-       */
-      upload(body, options) {
-        return this._client.post("/v1/files", multipartFormRequestOptions({
-          body,
-          ...options,
-          headers: buildHeaders([stainlessHelperHeaderFromFile(body.file), options?.headers])
-        }, this._client));
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/lib/parser.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/parser.mjs
 function getOutputFormat2(params) {
   return params?.output_config?.format;
 }
@@ -14407,26 +10312,27 @@ function parseOutputFormat(params, content) {
   }
 }
 var init_parser2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/parser.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/parser.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs
 function tracksToolInput2(content) {
   return content.type === "tool_use" || content.type === "server_tool_use";
 }
-var _MessageStream_instances, _MessageStream_currentMessageSnapshot, _MessageStream_params, _MessageStream_connectedPromise, _MessageStream_resolveConnectedPromise, _MessageStream_rejectConnectedPromise, _MessageStream_endPromise, _MessageStream_resolveEndPromise, _MessageStream_rejectEndPromise, _MessageStream_listeners, _MessageStream_ended, _MessageStream_errored, _MessageStream_aborted, _MessageStream_catchingPromiseCreated, _MessageStream_response, _MessageStream_request_id, _MessageStream_workspace_id, _MessageStream_logger, _MessageStream_getFinalMessage, _MessageStream_getFinalText, _MessageStream_handleError, _MessageStream_beginRequest, _MessageStream_addStreamEvent, _MessageStream_endRequest, _MessageStream_accumulateMessage, MessageStream;
+function checkNever2(x) {
+}
+var _MessageStream_instances, _MessageStream_currentMessageSnapshot, _MessageStream_params, _MessageStream_connectedPromise, _MessageStream_resolveConnectedPromise, _MessageStream_rejectConnectedPromise, _MessageStream_endPromise, _MessageStream_resolveEndPromise, _MessageStream_rejectEndPromise, _MessageStream_listeners, _MessageStream_ended, _MessageStream_errored, _MessageStream_aborted, _MessageStream_catchingPromiseCreated, _MessageStream_response, _MessageStream_request_id, _MessageStream_logger, _MessageStream_getFinalMessage, _MessageStream_getFinalText, _MessageStream_handleError, _MessageStream_beginRequest, _MessageStream_addStreamEvent, _MessageStream_endRequest, _MessageStream_accumulateMessage, MessageStream;
 var init_MessageStream = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
     init_stainless_helper_header();
     init_errors();
-    init_values();
     init_error2();
     init_streaming2();
     init_parser2();
@@ -14456,7 +10362,6 @@ var init_MessageStream = __esm({
         _MessageStream_catchingPromiseCreated.set(this, false);
         _MessageStream_response.set(this, void 0);
         _MessageStream_request_id.set(this, void 0);
-        _MessageStream_workspace_id.set(this, void 0);
         _MessageStream_logger.set(this, void 0);
         _MessageStream_handleError.set(this, (error) => {
           __classPrivateFieldSet(this, _MessageStream_errored, true, "f");
@@ -14477,12 +10382,12 @@ var init_MessageStream = __esm({
           }
           return this._emit("error", new AnthropicError(String(error)));
         });
-        __classPrivateFieldSet(this, _MessageStream_connectedPromise, new Promise((resolve5, reject) => {
-          __classPrivateFieldSet(this, _MessageStream_resolveConnectedPromise, resolve5, "f");
+        __classPrivateFieldSet(this, _MessageStream_connectedPromise, new Promise((resolve4, reject) => {
+          __classPrivateFieldSet(this, _MessageStream_resolveConnectedPromise, resolve4, "f");
           __classPrivateFieldSet(this, _MessageStream_rejectConnectedPromise, reject, "f");
         }), "f");
-        __classPrivateFieldSet(this, _MessageStream_endPromise, new Promise((resolve5, reject) => {
-          __classPrivateFieldSet(this, _MessageStream_resolveEndPromise, resolve5, "f");
+        __classPrivateFieldSet(this, _MessageStream_endPromise, new Promise((resolve4, reject) => {
+          __classPrivateFieldSet(this, _MessageStream_resolveEndPromise, resolve4, "f");
           __classPrivateFieldSet(this, _MessageStream_rejectEndPromise, reject, "f");
         }), "f");
         __classPrivateFieldGet(this, _MessageStream_connectedPromise, "f").catch(() => {
@@ -14497,9 +10402,6 @@ var init_MessageStream = __esm({
       }
       get request_id() {
         return __classPrivateFieldGet(this, _MessageStream_request_id, "f");
-      }
-      get workspace_id() {
-        return __classPrivateFieldGet(this, _MessageStream_workspace_id, "f");
       }
       /**
        * Returns the `MessageStream` data, the raw `Response` instance and the ID of the request,
@@ -14520,8 +10422,7 @@ var init_MessageStream = __esm({
         return {
           data: this,
           response,
-          request_id: response.headers.get("request-id"),
-          workspace_id: response.headers.get("anthropic-workspace-id")
+          request_id: response.headers.get("request-id")
         };
       }
       /**
@@ -14591,7 +10492,6 @@ var init_MessageStream = __esm({
           return;
         __classPrivateFieldSet(this, _MessageStream_response, response, "f");
         __classPrivateFieldSet(this, _MessageStream_request_id, response?.headers.get("request-id"), "f");
-        __classPrivateFieldSet(this, _MessageStream_workspace_id, response?.headers.get("anthropic-workspace-id"), "f");
         __classPrivateFieldGet(this, _MessageStream_resolveConnectedPromise, "f").call(this, response);
         this._emit("connect");
       }
@@ -14657,11 +10557,11 @@ var init_MessageStream = __esm({
        *   const message = await stream.emitted('message') // rejects if the stream errors
        */
       emitted(event) {
-        return new Promise((resolve5, reject) => {
+        return new Promise((resolve4, reject) => {
           __classPrivateFieldSet(this, _MessageStream_catchingPromiseCreated, true, "f");
           if (event !== "error")
             this.once("error", reject);
-          this.once(event, resolve5);
+          this.once(event, resolve4);
         });
       }
       async done() {
@@ -14753,7 +10653,7 @@ var init_MessageStream = __esm({
           }
         }
       }
-      [(_MessageStream_currentMessageSnapshot = /* @__PURE__ */ new WeakMap(), _MessageStream_params = /* @__PURE__ */ new WeakMap(), _MessageStream_connectedPromise = /* @__PURE__ */ new WeakMap(), _MessageStream_resolveConnectedPromise = /* @__PURE__ */ new WeakMap(), _MessageStream_rejectConnectedPromise = /* @__PURE__ */ new WeakMap(), _MessageStream_endPromise = /* @__PURE__ */ new WeakMap(), _MessageStream_resolveEndPromise = /* @__PURE__ */ new WeakMap(), _MessageStream_rejectEndPromise = /* @__PURE__ */ new WeakMap(), _MessageStream_listeners = /* @__PURE__ */ new WeakMap(), _MessageStream_ended = /* @__PURE__ */ new WeakMap(), _MessageStream_errored = /* @__PURE__ */ new WeakMap(), _MessageStream_aborted = /* @__PURE__ */ new WeakMap(), _MessageStream_catchingPromiseCreated = /* @__PURE__ */ new WeakMap(), _MessageStream_response = /* @__PURE__ */ new WeakMap(), _MessageStream_request_id = /* @__PURE__ */ new WeakMap(), _MessageStream_workspace_id = /* @__PURE__ */ new WeakMap(), _MessageStream_logger = /* @__PURE__ */ new WeakMap(), _MessageStream_handleError = /* @__PURE__ */ new WeakMap(), _MessageStream_instances = /* @__PURE__ */ new WeakSet(), _MessageStream_getFinalMessage = function _MessageStream_getFinalMessage2() {
+      [(_MessageStream_currentMessageSnapshot = /* @__PURE__ */ new WeakMap(), _MessageStream_params = /* @__PURE__ */ new WeakMap(), _MessageStream_connectedPromise = /* @__PURE__ */ new WeakMap(), _MessageStream_resolveConnectedPromise = /* @__PURE__ */ new WeakMap(), _MessageStream_rejectConnectedPromise = /* @__PURE__ */ new WeakMap(), _MessageStream_endPromise = /* @__PURE__ */ new WeakMap(), _MessageStream_resolveEndPromise = /* @__PURE__ */ new WeakMap(), _MessageStream_rejectEndPromise = /* @__PURE__ */ new WeakMap(), _MessageStream_listeners = /* @__PURE__ */ new WeakMap(), _MessageStream_ended = /* @__PURE__ */ new WeakMap(), _MessageStream_errored = /* @__PURE__ */ new WeakMap(), _MessageStream_aborted = /* @__PURE__ */ new WeakMap(), _MessageStream_catchingPromiseCreated = /* @__PURE__ */ new WeakMap(), _MessageStream_response = /* @__PURE__ */ new WeakMap(), _MessageStream_request_id = /* @__PURE__ */ new WeakMap(), _MessageStream_logger = /* @__PURE__ */ new WeakMap(), _MessageStream_handleError = /* @__PURE__ */ new WeakMap(), _MessageStream_instances = /* @__PURE__ */ new WeakSet(), _MessageStream_getFinalMessage = function _MessageStream_getFinalMessage2() {
         if (this.receivedMessages.length === 0) {
           throw new AnthropicError("stream ended without producing a Message with role=assistant");
         }
@@ -14811,7 +10711,7 @@ var init_MessageStream = __esm({
                 break;
               }
               default:
-                checkNever(event.delta);
+                checkNever2(event.delta);
             }
             break;
           }
@@ -14859,11 +10759,10 @@ var init_MessageStream = __esm({
           case "message_delta":
             snapshot.stop_reason = event.delta.stop_reason;
             snapshot.stop_sequence = event.delta.stop_sequence;
-            snapshot.stop_details = event.delta.stop_details;
-            snapshot.usage.output_tokens = event.usage.output_tokens;
-            if (event.delta.container != null) {
-              snapshot.container = event.delta.container;
+            if (event.delta.stop_details != null) {
+              snapshot.stop_details = event.delta.stop_details;
             }
+            snapshot.usage.output_tokens = event.usage.output_tokens;
             if (event.usage.input_tokens != null) {
               snapshot.usage.input_tokens = event.usage.input_tokens;
             }
@@ -14875,9 +10774,6 @@ var init_MessageStream = __esm({
             }
             if (event.usage.server_tool_use != null) {
               snapshot.usage.server_tool_use = event.usage.server_tool_use;
-            }
-            if (event.usage.output_tokens_details != null) {
-              snapshot.usage.output_tokens_details = event.usage.output_tokens_details;
             }
             return snapshot;
           case "content_block_start":
@@ -14930,7 +10826,7 @@ var init_MessageStream = __esm({
                 break;
               }
               default:
-                checkNever(event.delta);
+                checkNever2(event.delta);
             }
             return snapshot;
           }
@@ -14986,7 +10882,7 @@ var init_MessageStream = __esm({
               if (done) {
                 return { value: void 0, done: true };
               }
-              return new Promise((resolve5, reject) => readQueue.push({ resolve: resolve5, reject })).then((chunk2) => chunk2 ? { value: chunk2, done: false } : { value: void 0, done: true });
+              return new Promise((resolve4, reject) => readQueue.push({ resolve: resolve4, reject })).then((chunk2) => chunk2 ? { value: chunk2, done: false } : { value: void 0, done: true });
             }
             const chunk = pushQueue.shift();
             return { value: chunk, done: false };
@@ -15005,10 +10901,10 @@ var init_MessageStream = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/messages/batches.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/messages/batches.mjs
 var Batches2;
 var init_batches2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/messages/batches.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/messages/batches.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -15039,7 +10935,7 @@ var init_batches2 = __esm({
        *         messages: [
        *           { content: 'Hello, world', role: 'user' },
        *         ],
-       *         model: 'claude-opus-5',
+       *         model: 'claude-opus-4-6',
        *       },
        *     },
        *   ],
@@ -15167,10 +11063,10 @@ var init_batches2 = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/messages/messages.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/messages/messages.mjs
 var Messages2, DEPRECATED_MODELS2, MODELS_TO_WARN_WITH_THINKING_ENABLED2;
 var init_messages2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/messages/messages.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/messages/messages.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -15195,7 +11091,7 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
         if (MODELS_TO_WARN_WITH_THINKING_ENABLED2.includes(body.model) && body.thinking && body.thinking.type === "enabled") {
           console.warn(`Using Claude with ${body.model} and 'thinking.type=enabled' is deprecated. Use 'thinking.type=adaptive' instead which results in better model performance in our testing: https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking`);
         }
-        let timeout = options?.timeout ?? this._client._options.timeout;
+        let timeout = this._client._options.timeout;
         if (!body.stream && timeout == null) {
           const maxNonstreamingTokens = MODEL_NONSTREAMING_TOKENS[body.model] ?? void 0;
           timeout = this._client.calculateNonstreamingTimeout(body.max_tokens, maxNonstreamingTokens);
@@ -15272,7 +11168,7 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
        * const messageTokensCount =
        *   await client.messages.countTokens({
        *     messages: [{ content: 'Hello, world', role: 'user' }],
-       *     model: 'claude-opus-5',
+       *     model: 'claude-opus-4-6',
        *   });
        * ```
        */
@@ -15288,16 +11184,37 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
         });
       }
     };
-    DEPRECATED_MODELS2 = {};
+    DEPRECATED_MODELS2 = {
+      "claude-1.3": "November 6th, 2024",
+      "claude-1.3-100k": "November 6th, 2024",
+      "claude-instant-1.1": "November 6th, 2024",
+      "claude-instant-1.1-100k": "November 6th, 2024",
+      "claude-instant-1.2": "November 6th, 2024",
+      "claude-3-sonnet-20240229": "July 21st, 2025",
+      "claude-3-opus-20240229": "January 5th, 2026",
+      "claude-2.1": "July 21st, 2025",
+      "claude-2.0": "July 21st, 2025",
+      "claude-3-7-sonnet-latest": "February 19th, 2026",
+      "claude-3-7-sonnet-20250219": "February 19th, 2026",
+      "claude-3-5-haiku-latest": "February 19th, 2026",
+      "claude-3-5-haiku-20241022": "February 19th, 2026",
+      "claude-opus-4-0": "June 15th, 2026",
+      "claude-opus-4-20250514": "June 15th, 2026",
+      "claude-sonnet-4-0": "June 15th, 2026",
+      "claude-sonnet-4-20250514": "June 15th, 2026",
+      "claude-opus-4-1": "August 5th, 2026",
+      "claude-opus-4-1-20250805": "August 5th, 2026",
+      "claude-mythos-preview": "June 30th, 2026"
+    };
     MODELS_TO_WARN_WITH_THINKING_ENABLED2 = ["claude-mythos-preview", "claude-opus-4-6"];
     Messages2.Batches = Batches2;
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/models.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/models.mjs
 var Models2;
 var init_models2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/models.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/models.mjs"() {
     "use strict";
     init_esm_shims();
     init_resource();
@@ -15342,115 +11259,23 @@ var init_models2 = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/resources/skills/versions.mjs
-var Versions3;
-var init_versions3 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/skills/versions.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_pagination();
-    init_uploads();
-    init_path();
-    Versions3 = class extends APIResource {
-      /**
-       * Create Skill Version
-       */
-      create(skillID, body, options) {
-        return this._client.post(path8`/v1/skills/${skillID}/versions`, multipartFormRequestOptions({ body, ...options }, this._client, false));
-      }
-      /**
-       * Get Skill Version
-       */
-      retrieve(version2, params, options) {
-        const { skill_id } = params;
-        return this._client.get(path8`/v1/skills/${skill_id}/versions/${version2}`, options);
-      }
-      /**
-       * List Skill Versions
-       */
-      list(skillID, query = {}, options) {
-        return this._client.getAPIList(path8`/v1/skills/${skillID}/versions`, PageCursor, {
-          query,
-          ...options
-        });
-      }
-      /**
-       * Delete Skill Version
-       */
-      delete(version2, params, options) {
-        const { skill_id } = params;
-        return this._client.delete(path8`/v1/skills/${skill_id}/versions/${version2}`, options);
-      }
-    };
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/skills/skills.mjs
-var Skills2;
-var init_skills3 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/skills/skills.mjs"() {
-    "use strict";
-    init_esm_shims();
-    init_resource();
-    init_versions3();
-    init_versions3();
-    init_pagination();
-    init_uploads();
-    init_path();
-    Skills2 = class extends APIResource {
-      constructor() {
-        super(...arguments);
-        this.versions = new Versions3(this._client);
-      }
-      /**
-       * Create Skill
-       */
-      create(body, options) {
-        return this._client.post("/v1/skills", multipartFormRequestOptions({ body, ...options }, this._client, false));
-      }
-      /**
-       * Get Skill
-       */
-      retrieve(skillID, options) {
-        return this._client.get(path8`/v1/skills/${skillID}`, options);
-      }
-      /**
-       * List Skills
-       */
-      list(query = {}, options) {
-        return this._client.getAPIList("/v1/skills", PageCursor, { query, ...options });
-      }
-      /**
-       * Delete Skill
-       */
-      delete(skillID, options) {
-        return this._client.delete(path8`/v1/skills/${skillID}`, options);
-      }
-    };
-    Skills2.Versions = Versions3;
-  }
-});
-
-// ../core/node_modules/@anthropic-ai/sdk/resources/index.mjs
+// ../../node_modules/@anthropic-ai/sdk/resources/index.mjs
 var init_resources2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/resources/index.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/resources/index.mjs"() {
     "use strict";
     init_esm_shims();
     init_shared();
     init_beta();
     init_completions();
-    init_files2();
     init_messages2();
     init_models2();
-    init_skills3();
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/client.mjs
+// ../../node_modules/@anthropic-ai/sdk/client.mjs
 var _BaseAnthropic_instances, _a, _BaseAnthropic_encoder, _BaseAnthropic_baseURLOverridden, HUMAN_PROMPT, AI_PROMPT, BaseAnthropic, Anthropic;
 var init_client = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/client.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/client.mjs"() {
     "use strict";
     init_esm_shims();
     init_tslib();
@@ -15459,7 +11284,6 @@ var init_client = __esm({
     init_sleep();
     init_errors();
     init_detect_platform();
-    init_request_signal();
     init_shims();
     init_request_options();
     init_query();
@@ -15474,11 +11298,9 @@ var init_client = __esm({
     init_resources2();
     init_api_promise();
     init_completions();
-    init_files2();
     init_models2();
     init_beta();
     init_messages2();
-    init_skills3();
     init_detect_platform();
     init_headers();
     init_env();
@@ -15587,21 +11409,11 @@ var init_client = __esm({
               this._applyCredentialBaseURL(result.baseURL);
             } else if (options.profile != null) {
               this._authState.resolution = this._resolveDefaultCredentials(options.profile);
-            } else if (this._shouldResolveDefaultCredentials()) {
+            } else {
               this._authState.resolution = this._resolveDefaultCredentials();
             }
           }
         }
-      }
-      /**
-       * Whether to lazily resolve auth from the default credential chain when no
-       * explicit auth is configured. Called once from the constructor, so
-       * overrides must not depend on subclass instance state. Subclasses that
-       * bring their own auth scheme return false so unrelated local credentials
-       * are never resolved or allowed to supply a base URL.
-       */
-      _shouldResolveDefaultCredentials() {
-        return true;
       }
       /**
        * Stores a profile/config-supplied base URL on the shared auth state and, if
@@ -15790,7 +11602,7 @@ var init_client = __esm({
         return stringifyQuery(query);
       }
       getUserAgent() {
-        return `Anthropic/JS ${VERSION}`;
+        return `${this.constructor.name}/JS ${VERSION}`;
       }
       defaultIdempotencyKey() {
         return `stainless-node-retry-${uuid4()}`;
@@ -15798,9 +11610,9 @@ var init_client = __esm({
       makeStatusError(status2, error, message, headers) {
         return APIError.generate(status2, error, message, headers);
       }
-      buildURL(path14, query, defaultBaseURL) {
+      buildURL(path12, query, defaultBaseURL) {
         const baseURL = !__classPrivateFieldGet(this, _BaseAnthropic_instances, "m", _BaseAnthropic_baseURLOverridden).call(this) && defaultBaseURL || this.baseURL;
-        const url = isAbsoluteURL(path14) ? new URL(path14) : new URL(baseURL + (baseURL.endsWith("/") && path14.startsWith("/") ? path14.slice(1) : path14));
+        const url = isAbsoluteURL(path12) ? new URL(path12) : new URL(baseURL + (baseURL.endsWith("/") && path12.startsWith("/") ? path12.slice(1) : path12));
         const defaultQuery = this.defaultQuery();
         const pathQuery = Object.fromEntries(url.searchParams);
         if (!isEmptyObj(defaultQuery) || !isEmptyObj(pathQuery)) {
@@ -15872,24 +11684,24 @@ var init_client = __esm({
       backendMiddleware() {
         return [];
       }
-      get(path14, opts) {
-        return this.methodRequest("get", path14, opts);
+      get(path12, opts) {
+        return this.methodRequest("get", path12, opts);
       }
-      post(path14, opts) {
-        return this.methodRequest("post", path14, opts);
+      post(path12, opts) {
+        return this.methodRequest("post", path12, opts);
       }
-      patch(path14, opts) {
-        return this.methodRequest("patch", path14, opts);
+      patch(path12, opts) {
+        return this.methodRequest("patch", path12, opts);
       }
-      put(path14, opts) {
-        return this.methodRequest("put", path14, opts);
+      put(path12, opts) {
+        return this.methodRequest("put", path12, opts);
       }
-      delete(path14, opts) {
-        return this.methodRequest("delete", path14, opts);
+      delete(path12, opts) {
+        return this.methodRequest("delete", path12, opts);
       }
-      methodRequest(method, path14, opts) {
+      methodRequest(method, path12, opts) {
         return this.request(Promise.resolve(opts).then((opts2) => {
-          return { method, path: path14, ...opts2 };
+          return { method, path: path12, ...opts2 };
         }));
       }
       request(options, remainingRetries = null) {
@@ -15919,7 +11731,6 @@ var init_client = __esm({
         }).catch(castToError);
         const headersTime = Date.now();
         if (response instanceof globalThis.Error) {
-          releaseRequestSignal(controller);
           const retryMessage = `retrying, ${retriesRemaining} attempts remaining`;
           if (options.signal?.aborted) {
             throw new APIUserAbortError();
@@ -15961,14 +11772,13 @@ var init_client = __esm({
           }
           throw new APIConnectionError({ cause: response });
         }
-        const specialHeaders = [...response.headers.entries()].filter(([name]) => name === "request-id" || name === "anthropic-workspace-id").map(([name, value]) => ", " + name + ": " + JSON.stringify(value)).join("");
+        const specialHeaders = [...response.headers.entries()].filter(([name]) => name === "request-id").map(([name, value]) => ", " + name + ": " + JSON.stringify(value)).join("");
         const responseInfo = `[${requestLogID}${retryLogStr}${specialHeaders}] ${req.method} ${url} ${response.ok ? "succeeded" : "failed"} with status ${response.status} in ${headersTime - startTime}ms`;
         if (!response.ok) {
           const shouldRetry = await this.shouldRetry(response, options);
           if (retriesRemaining && shouldRetry) {
             const retryMessage2 = `retrying, ${retriesRemaining} attempts remaining`;
             await CancelReadableStream(response.body);
-            releaseRequestSignal(controller);
             loggerFor(this).info(`${responseInfo} - ${retryMessage2}`);
             loggerFor(this).debug(`[${requestLogID}] response error (${retryMessage2})`, formatRequestDetails({
               retryOfRequestLogID,
@@ -15992,7 +11802,6 @@ var init_client = __esm({
             message: errMessage,
             durationMs: Date.now() - startTime
           }));
-          releaseRequestSignal(controller);
           const err = this.makeStatusError(response.status, errJSON, errMessage, response.headers);
           throw err;
         }
@@ -16004,11 +11813,10 @@ var init_client = __esm({
           headers: response.headers,
           durationMs: headersTime - startTime
         }));
-        armAbandonmentBackstop(response.body ?? response, controller);
         return { response, options, controller, requestLogID, retryOfRequestLogID, startTime };
       }
-      getAPIList(path14, Page2, opts) {
-        return this.requestAPIList(Page2, opts && "then" in opts ? opts.then((opts2) => ({ method: "get", path: path14, ...opts2 })) : { method: "get", path: path14, ...opts });
+      getAPIList(path12, Page2, opts) {
+        return this.requestAPIList(Page2, opts && "then" in opts ? opts.then((opts2) => ({ method: "get", path: path12, ...opts2 })) : { method: "get", path: path12, ...opts });
       }
       requestAPIList(Page2, options) {
         const request = this.makeRequest(options, null, void 0);
@@ -16017,10 +11825,8 @@ var init_client = __esm({
       async fetchWithTimeout(url, init, ms, controller, requestOptions, logCtx) {
         const { signal, method, ...options } = init || {};
         const abort = this._makeAbort(controller);
-        if (signal) {
+        if (signal)
           signal.addEventListener("abort", abort, { once: true });
-          registerRequestSignalCleanup(controller, signal, abort);
-        }
         const isReadableBody = globalThis.ReadableStream && options.body instanceof globalThis.ReadableStream || typeof options.body === "object" && options.body !== null && Symbol.asyncIterator in options.body;
         const fetchOptions = {
           signal: controller.signal,
@@ -16126,14 +11932,14 @@ var init_client = __esm({
       }
       async buildRequest(inputOptions, { retryCount = 0 } = {}) {
         const options = { ...inputOptions };
-        const { method, path: path14, query, defaultBaseURL } = options;
+        const { method, path: path12, query, defaultBaseURL } = options;
         if (this._authState.resolution) {
           await this._authState.resolution;
         }
         if (!this._baseURLIsExplicit && this._authState.baseURL && this.baseURL !== this._authState.baseURL) {
           this.baseURL = this._authState.baseURL;
         }
-        const url = this.buildURL(path14, query, defaultBaseURL);
+        const url = this.buildURL(path12, query, defaultBaseURL);
         if ("timeout" in options)
           validatePositiveInteger("timeout", options.timeout);
         options.timeout = options.timeout ?? this.timeout;
@@ -16233,24 +12039,20 @@ var init_client = __esm({
         this.completions = new Completions(this);
         this.messages = new Messages2(this);
         this.models = new Models2(this);
-        this.files = new Files2(this);
-        this.skills = new Skills2(this);
         this.beta = new Beta(this);
       }
     };
     Anthropic.Completions = Completions;
     Anthropic.Messages = Messages2;
     Anthropic.Models = Models2;
-    Anthropic.Files = Files2;
-    Anthropic.Skills = Skills2;
     Anthropic.Beta = Beta;
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/lib/middleware.mjs
+// ../../node_modules/@anthropic-ai/sdk/lib/middleware.mjs
 var encoder;
 var init_middleware2 = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/lib/middleware.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/lib/middleware.mjs"() {
     "use strict";
     init_esm_shims();
     init_error();
@@ -16264,9 +12066,9 @@ var init_middleware2 = __esm({
   }
 });
 
-// ../core/node_modules/@anthropic-ai/sdk/index.mjs
+// ../../node_modules/@anthropic-ai/sdk/index.mjs
 var init_sdk = __esm({
-  "../core/node_modules/@anthropic-ai/sdk/index.mjs"() {
+  "../../node_modules/@anthropic-ai/sdk/index.mjs"() {
     "use strict";
     init_esm_shims();
     init_client();
@@ -16355,7 +12157,7 @@ var package_default = {
     node: ">=22.12.0"
   },
   dependencies: {
-    "@anthropic-ai/sdk": "^0.122.0"
+    "@anthropic-ai/sdk": "^0.127.0"
   }
 };
 
@@ -16629,7 +12431,7 @@ ${req.userMessage}` : req.userMessage;
     };
   }
   spawnCli(args, input) {
-    return new Promise((resolve5, reject) => {
+    return new Promise((resolve4, reject) => {
       const ownGroup = process.platform !== "win32";
       const child = spawn(this.binaryPath, args, {
         stdio: ["pipe", "pipe", "pipe"],
@@ -16700,7 +12502,7 @@ ${req.userMessage}` : req.userMessage;
           reject(new Error(this.exitErrorMessage(code, stdout, stderr)));
           return;
         }
-        resolve5(stdout);
+        resolve4(stdout);
       });
       child.on("error", (err) => {
         cleanup();
@@ -17467,7 +13269,7 @@ var AnthropicProvider = class {
     return false;
   }
   sleep(ms) {
-    return new Promise((resolve5) => setTimeout(resolve5, ms));
+    return new Promise((resolve4) => setTimeout(resolve4, ms));
   }
 };
 
