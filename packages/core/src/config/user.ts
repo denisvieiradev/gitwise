@@ -41,14 +41,11 @@ function migrateFlatModels(flat: ModelConfig, provider: unknown): ModelsByProvid
 }
 
 export function mergeWithDefaults(partial: Partial<UserConfig>): UserConfig {
-  return {
-    ...DEFAULT_USER_CONFIG,
-    ...partial,
-    models: {
-      ...DEFAULT_USER_CONFIG.models,
-      ...(partial.models ?? {}),
-    },
-  };
+  const models = {} as ModelsByProvider;
+  for (const kind of PROVIDER_KINDS) {
+    models[kind] = { ...DEFAULT_USER_CONFIG.models[kind], ...(partial.models?.[kind] ?? {}) };
+  }
+  return { ...DEFAULT_USER_CONFIG, ...partial, models };
 }
 
 export async function readUserConfig(homeDir?: string): Promise<UserConfig> {

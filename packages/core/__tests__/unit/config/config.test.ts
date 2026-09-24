@@ -314,6 +314,43 @@ describe("config (core)", () => {
     });
   });
 
+  describe("per-provider models merge", () => {
+    it("fills the tiers a partial provider block omits from that provider's defaults", async () => {
+      await mkdir(join(homeDir, ".gitwise"), { recursive: true });
+      await writeFile(
+        join(homeDir, ".gitwise", "config.json"),
+        JSON.stringify({ provider: "codex", models: { codex: { fast: "my-fast" } } }),
+        "utf-8",
+      );
+
+      const loaded = await readUserConfig(homeDir);
+
+      expect(loaded.models.codex).toEqual({
+        fast: "my-fast",
+        balanced: DEFAULT_USER_CONFIG.models.codex.balanced,
+        powerful: DEFAULT_USER_CONFIG.models.codex.powerful,
+      });
+      expect(loaded.models.kiro).toEqual(DEFAULT_USER_CONFIG.models.kiro);
+    });
+
+    it("never produces an undefined tier for any provider", async () => {
+      await mkdir(join(homeDir, ".gitwise"), { recursive: true });
+      await writeFile(
+        join(homeDir, ".gitwise", "config.json"),
+        JSON.stringify({ models: { api: {}, copilot: { balanced: "b" } } }),
+        "utf-8",
+      );
+
+      const loaded = await readUserConfig(homeDir);
+
+      for (const provider of ["api", "claude-code", "codex", "copilot", "kiro"] as const) {
+        for (const tier of ["fast", "balanced", "powerful"] as const) {
+          expect(typeof loaded.models[provider][tier]).toBe("string");
+        }
+      }
+    });
+  });
+
   describe("integration round-trip", () => {
     it("write user config, write repo config, read merged shape", async () => {
       await writeUserConfig(
