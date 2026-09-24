@@ -119,6 +119,7 @@ export class CliSubprocessProvider implements LLMProvider {
         }
       };
 
+      const timeoutMs = this.spec.timeoutMs ?? DEFAULT_TIMEOUT_MS;
       let timedOut = false;
       let escalation: NodeJS.Timeout | undefined;
       const timer = setTimeout(() => {
@@ -126,16 +127,30 @@ export class CliSubprocessProvider implements LLMProvider {
         killTree("SIGTERM");
         escalation = setTimeout(() => killTree("SIGKILL"), KILL_GRACE_MS);
         escalation.unref();
-      }, this.spec.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+      }, timeoutMs);
 
-      // A detached group no longer receives the terminal's Ctrl-C, so reap it on parent exit.
+      // A detached group no longer receives the terminal's Ctrl-C, so reap it on exit and on SIGINT/SIGTERM.
       const reapOnExit = (): void => killTree("SIGKILL");
+      let interruptedBy: NodeJS.Signals | undefined;
+      const onSignal = (sig: NodeJS.Signals): void => {
+        interruptedBy = sig;
+        killTree("SIGKILL");
+        reject(new Error(`${this.spec.toolName} was interrupted by ${sig}`));
+        cleanup();
+        if (process.listenerCount(sig) === 0) process.kill(process.pid, sig);
+      };
+      const onSigint = (): void => onSignal("SIGINT");
+      const onSigterm = (): void => onSignal("SIGTERM");
       process.once("exit", reapOnExit);
-      const cleanup = (): void => {
+      process.on("SIGINT", onSigint);
+      process.on("SIGTERM", onSigterm);
+      function cleanup(): void {
         clearTimeout(timer);
         clearTimeout(escalation);
         process.off("exit", reapOnExit);
-      };
+        process.off("SIGINT", onSigint);
+        process.off("SIGTERM", onSigterm);
+      }
 
       let stdout = "";
       let stderr = "";
@@ -156,8 +171,12 @@ export class CliSubprocessProvider implements LLMProvider {
         cleanup();
         stdout += outDecoder.end();
         stderr += errDecoder.end();
+        if (interruptedBy) return;
         if (code === null && signal) {
-          reject(new Error(`${this.spec.toolName} was terminated by signal ${signal}`));
+          const reason = timedOut
+            ? `${this.spec.toolName} timed out after ${Math.round(timeoutMs / 1000)}s`
+            : `${this.spec.toolName} was terminated by signal ${signal}`;
+          reject(new Error(reason));
           return;
         }
         if (code !== 0) {

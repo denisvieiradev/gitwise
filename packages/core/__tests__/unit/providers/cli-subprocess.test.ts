@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, jest } from "@jest/globals";
 import { EventEmitter } from "node:events";
-import { mkdtempSync, rmSync, writeFileSync, chmodSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, chmodSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as realTimers from "node:timers";
@@ -212,7 +212,7 @@ setInterval(() => {}, 1000);`);
     const provider = new CliSubprocessProvider(makeSpec({ timeoutMs: 1_000 }), MODELS, f.path);
 
     const err = (await provider.chat(req("x")).catch((e: unknown) => e)) as Error;
-    expect(err.message).toBe("Fake CLI was terminated by signal SIGTERM");
+    expect(err.message).toBe("Fake CLI timed out after 1s");
 
     const pid = Number(readFileSync(join(f.dir, "grandchild.pid"), "utf8"));
     let alive = true;
@@ -226,5 +226,61 @@ setInterval(() => {}, 1000);`);
     }
     if (alive) process.kill(pid, "SIGKILL");
     expect(alive).toBe(false);
+  });
+});
+
+describe("CliSubprocessProvider parent signals", () => {
+  posixIt("kills the CLI's process group and rejects when the parent receives SIGINT", async () => {
+    const f = script(`
+const fs = require("node:fs");
+fs.writeFileSync(__dirname + "/cli.pid", String(process.pid));
+setInterval(() => {}, 1000);`);
+    const provider = new CliSubprocessProvider(makeSpec({ timeoutMs: 30_000 }), MODELS, f.path);
+    // A listener stands in for clack's spinner handler, so the test process itself is not signalled.
+    const noop = (): void => undefined;
+    process.on("SIGINT", noop);
+    try {
+      const pending = provider.chat(req("x")).catch((e: unknown) => e);
+      for (let i = 0; i < 100 && !existsSync(join(f.dir, "cli.pid")); i++) await sleep(50);
+      process.emit("SIGINT");
+      const err = (await pending) as Error;
+      expect(err.message).toBe("Fake CLI was interrupted by SIGINT");
+    } finally {
+      process.off("SIGINT", noop);
+    }
+
+    const pid = Number(readFileSync(join(f.dir, "cli.pid"), "utf8"));
+    let alive = true;
+    for (let i = 0; i < 20 && alive; i++) {
+      try {
+        process.kill(pid, 0);
+        await sleep(50);
+      } catch {
+        alive = false;
+      }
+    }
+    if (alive) process.kill(pid, "SIGKILL");
+    expect(alive).toBe(false);
+  });
+
+  posixIt("removes its signal listeners once the CLI has finished", async () => {
+    const f = script(`process.stdin.resume(); process.stdin.on("end", () => process.stdout.write("ok"));`);
+    const provider = new CliSubprocessProvider(makeSpec(), MODELS, f.path);
+    const before = [process.listenerCount("SIGINT"), process.listenerCount("SIGTERM")];
+
+    await provider.chat(req("x"));
+
+    expect([process.listenerCount("SIGINT"), process.listenerCount("SIGTERM")]).toEqual(before);
+  });
+});
+
+describe("CliSubprocessProvider timeout message", () => {
+  posixIt("says the CLI timed out and how long the limit was, instead of naming a bare signal", async () => {
+    const f = script(`setInterval(() => {}, 1000);`);
+    const provider = new CliSubprocessProvider(makeSpec({ timeoutMs: 1_000 }), MODELS, f.path);
+
+    const err = (await provider.chat(req("x")).catch((e: unknown) => e)) as Error;
+
+    expect(err.message).toBe("Fake CLI timed out after 1s");
   });
 });
