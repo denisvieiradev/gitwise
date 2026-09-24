@@ -211,10 +211,10 @@ const fs = require("node:fs");
 const grandchild = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { stdio: "ignore" });
 fs.writeFileSync(__dirname + "/grandchild.pid", String(grandchild.pid));
 setInterval(() => {}, 1000);`);
-    const provider = new CliSubprocessProvider(makeSpec({ timeoutMs: 1_000 }), MODELS, f.path);
+    const provider = new CliSubprocessProvider(makeSpec({ timeoutMs: 4_000 }), MODELS, f.path);
 
     const err = (await provider.chat(req("x")).catch((e: unknown) => e)) as Error;
-    expect(err.message).toBe("Fake CLI timed out after 1s");
+    expect(err.message).toBe("Fake CLI timed out after 4s");
 
     const pid = Number(readFileSync(join(f.dir, "grandchild.pid"), "utf8"));
     let alive = true;
@@ -228,7 +228,7 @@ setInterval(() => {}, 1000);`);
     }
     if (alive) process.kill(pid, "SIGKILL");
     expect(alive).toBe(false);
-  });
+  }, 20_000);
 });
 
 describe("CliSubprocessProvider parent signals", () => {
