@@ -17787,7 +17787,7 @@ ${commits}`,
     });
     totalInput += versionResponse.tokens.input;
     totalOutput += versionResponse.tokens.output;
-    tokensAvailable = tokensAvailable && versionResponse.tokensAvailable;
+    tokensAvailable = versionResponse.tokensAvailable;
     const suggestion = parseVersionSuggestion(versionResponse.content);
     suggestedBump = suggestion?.suggestion ?? heuristicBump(commits);
   }

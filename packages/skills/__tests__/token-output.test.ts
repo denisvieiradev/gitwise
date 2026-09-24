@@ -12,6 +12,9 @@
 
 import { describe, it, expect, jest, afterEach } from "@jest/globals";
 
+// Never touched: core is mocked. Kept out of /tmp so static analysis does not treat it as a temp-file path.
+const UNUSED_CWD = "/nonexistent/gitwise-unused-cwd";
+
 const BASE_CORE_MOCK = {
   getMergedConfig: jest.fn(async () => ({ provider: "api", models: {}, claudeCliPath: "" })),
   getApiKey: jest.fn(async () => "fake-key"),
@@ -68,7 +71,7 @@ describe("skills scripts print '**Tokens used:** n/a' when the provider doesn't 
     const { runCommitSkill } = await import("../scripts/commit.js");
     const out = captureStdout();
 
-    await runCommitSkill([], "/tmp/does-not-matter");
+    await runCommitSkill([], UNUSED_CWD);
 
     out.restore();
     expect(out.calls.some((line) => line.includes("**Tokens used:** n/a"))).toBe(true);
@@ -91,7 +94,7 @@ describe("skills scripts print '**Tokens used:** n/a' when the provider doesn't 
     const { runReviewSkill } = await import("../scripts/review.js");
     const out = captureStdout();
 
-    await runReviewSkill([], "/tmp/does-not-matter");
+    await runReviewSkill([], UNUSED_CWD);
 
     out.restore();
     expect(out.calls.some((line) => line.includes("**Tokens used:** n/a"))).toBe(true);
@@ -113,7 +116,7 @@ describe("skills scripts print '**Tokens used:** n/a' when the provider doesn't 
     const { runPrSkill } = await import("../scripts/pr.js");
     const out = captureStdout();
 
-    await runPrSkill([], "/tmp/does-not-matter");
+    await runPrSkill([], UNUSED_CWD);
 
     out.restore();
     expect(out.calls.some((line) => line.includes("**Tokens used:** n/a"))).toBe(true);
@@ -144,7 +147,7 @@ describe("skills scripts print '**Tokens used:** n/a' when the provider doesn't 
     const { runReleaseSkill } = await import("../scripts/release.js");
     const out = captureStdout();
 
-    await runReleaseSkill({ phase: "prepare" }, "/tmp/does-not-matter");
+    await runReleaseSkill({ phase: "prepare" }, UNUSED_CWD);
 
     out.restore();
     expect(out.calls.some((line) => line.includes("**Tokens used:** n/a"))).toBe(true);
@@ -167,7 +170,7 @@ describe("skills scripts print '**Tokens used:** n/a' when the provider doesn't 
     const { runReleaseSkill } = await import("../scripts/release.js");
     const out = captureStdout();
 
-    await runReleaseSkill({ phase: undefined }, "/tmp/does-not-matter");
+    await runReleaseSkill({ phase: undefined }, UNUSED_CWD);
 
     out.restore();
     expect(out.calls.some((line) => line.includes("**Tokens used:** n/a"))).toBe(true);
