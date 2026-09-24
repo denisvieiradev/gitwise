@@ -10,5 +10,5 @@
 
 [[IgnoredVulns]]
 id = "GHSA-g7r4-m6w7-qqqr"
-ignoreUntil = 2026-10-20T00:00:00Z
-reason = "esbuild arbitrary file read affects its Windows dev-server only; tsup@8.5.1 (latest) pins esbuild to ^0.27.0, which excludes the 0.28.1 fix. Revisit when tsup bumps its esbuild range."
+ignoreUntil = 2026-11-20T00:00:00Z
+reason = "esbuild arbitrary file read affects its Windows dev server only, which tsup never starts. The whole 0.27.x line from 0.27.3 is affected and the fix ships in 0.28.1+, but tsup@8.5.1 (latest, rechecked 2026-09-24) still requires esbuild ^0.27.0. Revisit when tsup widens its esbuild range."
