@@ -29,8 +29,8 @@ export interface UserConfig {
 
 /** Loaded from <cwd>/.gitwise.json — all fields are optional */
 export interface RepoConfig {
-  /** Flat tier overrides apply to the active provider; a per-provider map targets each named provider. */
-  models?: Partial<ModelConfig> | Partial<Record<ProviderKind, Partial<ModelConfig>>>;
+  /** Flat tiers apply to the active provider; provider-keyed blocks target that provider and win over flat tiers. */
+  models?: Partial<ModelConfig> & Partial<Record<ProviderKind, Partial<ModelConfig>>>;
   language?: Language;
   defaultBaseBranch?: string;
   commitConvention?: CommitConvention;

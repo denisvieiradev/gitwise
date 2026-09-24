@@ -2,24 +2,29 @@ import os from "node:os";
 import { read as readEnvValue } from "../infra/env.js";
 import { readUserConfig } from "./user.js";
 import { readRepoConfig } from "./repo.js";
-import { PROVIDER_KINDS, type ProviderKind } from "../providers/types.js";
+import { PROVIDER_KINDS } from "../providers/types.js";
 import type { MergedConfig, ModelConfig, ModelsByProvider, RepoConfig, UserConfig } from "./types.js";
 
 function isPlainObject(value: unknown): value is object {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+const MODEL_TIERS: readonly (keyof ModelConfig)[] = ["fast", "balanced", "powerful"];
+
 function mergeRepoModels(base: UserConfig, override: RepoConfig["models"]): ModelsByProvider {
   if (!isPlainObject(override)) return base.models;
-  // MDL-06: flat overrides target the active provider; per-provider maps target each named provider.
-  const isPerProvider = PROVIDER_KINDS.some((kind) => kind in override);
-  const perProvider: Partial<Record<ProviderKind, Partial<ModelConfig>>> = isPerProvider
-    ? (override as Partial<Record<ProviderKind, Partial<ModelConfig>>>)
-    : { [base.provider]: override as Partial<ModelConfig> };
+  // MDL-06: flat tiers target the active provider; per-provider blocks target each named provider and win over flat tiers.
+  const source = override as Record<string, unknown>;
+  const flat: Partial<ModelConfig> = {};
+  for (const tier of MODEL_TIERS) {
+    const value = source[tier];
+    if (typeof value === "string") flat[tier] = value;
+  }
   const merged = { ...base.models };
+  merged[base.provider] = { ...base.models[base.provider], ...flat };
   for (const kind of PROVIDER_KINDS) {
-    const block = perProvider[kind];
-    if (isPlainObject(block)) merged[kind] = { ...base.models[kind], ...block };
+    const block = source[kind];
+    if (isPlainObject(block)) merged[kind] = { ...merged[kind], ...block };
   }
   return merged;
 }

@@ -356,6 +356,38 @@ describe("config (core)", () => {
     });
   });
 
+  describe("mixed flat and per-provider repo models override", () => {
+    it("applies flat tiers to the active provider and per-provider blocks on top, without leaking flat tiers elsewhere", async () => {
+      await writeUserConfig({ provider: "codex" }, homeDir);
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({
+          models: {
+            fast: "flat-fast",
+            balanced: "flat-balanced",
+            codex: { fast: "codex-fast" },
+            "claude-code": { fast: "cc-fast" },
+          },
+        }),
+        "utf-8",
+      );
+
+      const config = await getMergedConfig({ cwd, homeDir });
+
+      expect(config.models.codex).toEqual({
+        fast: "codex-fast",
+        balanced: "flat-balanced",
+        powerful: DEFAULT_USER_CONFIG.models.codex.powerful,
+      });
+      expect(config.models["claude-code"]).toEqual({
+        fast: "cc-fast",
+        balanced: DEFAULT_USER_CONFIG.models["claude-code"].balanced,
+        powerful: DEFAULT_USER_CONFIG.models["claude-code"].powerful,
+      });
+      expect(config.models.kiro).toEqual(DEFAULT_USER_CONFIG.models.kiro);
+    });
+  });
+
   describe("malformed repo models override", () => {
     it("ignores a non-object models value instead of crashing", async () => {
       await writeFile(join(cwd, ".gitwise.json"), JSON.stringify({ models: "gpt-6-sol" }), "utf-8");
