@@ -81,7 +81,13 @@ gw config models.codex.fast gpt-6-luna         # writes to Codex's block, whiche
 
 `gw provider` never touches `models`, so each provider keeps its saved values across switches. A config from an older release with a single flat `models` block is migrated into the configured provider's block on first read.
 
-A repo's `<repo>/.gitwise.json` `models` override applies to the active provider only:
+A repo's `<repo>/.gitwise.json` can override `models` in two forms. The per-provider form targets each named provider and is the one to use in a repo shared by people on different providers:
+
+```json
+{ "models": { "codex": { "balanced": "gpt-6-sol" }, "claude-code": { "fast": "claude-haiku-4-5-20251001" } } }
+```
+
+The flat form applies to whichever provider is active for the person running the command, so its model ID reaches every provider a teammate might use:
 
 ```json
 { "models": { "balanced": "my-team-model" } }

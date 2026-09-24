@@ -312,6 +312,48 @@ describe("config (core)", () => {
         ["api", "claude-code", "codex", "copilot", "kiro"].sort(),
       );
     });
+
+    it("applies a per-provider repo models block to the named provider even when another provider is active", async () => {
+      await writeUserConfig({ provider: "codex" }, homeDir);
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({ models: { "claude-code": { fast: "team-haiku" }, codex: { balanced: "team-sol" } } }),
+        "utf-8",
+      );
+
+      const config = await getMergedConfig({ cwd, homeDir });
+
+      expect(config.models.codex.balanced).toBe("team-sol");
+      expect(config.models.codex.fast).toBe(DEFAULT_USER_CONFIG.models.codex.fast);
+      expect(config.models["claude-code"].fast).toBe("team-haiku");
+      expect(config.models["claude-code"].balanced).toBe(DEFAULT_USER_CONFIG.models["claude-code"].balanced);
+      expect(config.models.kiro).toEqual(DEFAULT_USER_CONFIG.models.kiro);
+    });
+
+    it("does not send a per-provider override written for one provider to another", async () => {
+      await writeUserConfig({ provider: "kiro" }, homeDir);
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({ models: { api: { fast: "claude-haiku-4-5-20251001-custom" } } }),
+        "utf-8",
+      );
+
+      const config = await getMergedConfig({ cwd, homeDir });
+
+      expect(config.models.kiro).toEqual(DEFAULT_USER_CONFIG.models.kiro);
+    });
+
+    it("ignores unknown keys in a per-provider block and never adds stray top-level keys", async () => {
+      await writeFile(
+        join(cwd, ".gitwise.json"),
+        JSON.stringify({ models: { codex: { fast: "x" }, bogus: { fast: "y" } } }),
+        "utf-8",
+      );
+
+      const config = await getMergedConfig({ cwd, homeDir });
+
+      expect(Object.keys(config.models).sort()).toEqual(["api", "claude-code", "codex", "copilot", "kiro"]);
+    });
   });
 
   describe("per-provider models merge", () => {

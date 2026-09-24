@@ -166,7 +166,8 @@ All fields optional; only override what you need. Useful for repo-specific commi
 
 ```jsonc
 {
-  "models": { "balanced": "claude-sonnet-4-6" },   // applies to the active provider only
+  "models": { "codex": { "balanced": "gpt-6-sol" } },   // per-provider; safe to share across a team
+  // or: "models": { "balanced": "my-model" },            // flat; applies to whichever provider is active
   "language": "pt",
   "defaultBaseBranch": "develop",
   "commitConvention": "conventional",

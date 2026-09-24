@@ -2,7 +2,22 @@ import os from "node:os";
 import { read as readEnvValue } from "../infra/env.js";
 import { readUserConfig } from "./user.js";
 import { readRepoConfig } from "./repo.js";
-import type { MergedConfig, RepoConfig, UserConfig } from "./types.js";
+import { PROVIDER_KINDS, type ProviderKind } from "../providers/types.js";
+import type { MergedConfig, ModelConfig, ModelsByProvider, RepoConfig, UserConfig } from "./types.js";
+
+function mergeRepoModels(base: UserConfig, override: RepoConfig["models"]): ModelsByProvider {
+  if (!override) return base.models;
+  // MDL-06: flat overrides target the active provider; per-provider maps target each named provider.
+  const isPerProvider = PROVIDER_KINDS.some((kind) => kind in override);
+  const perProvider: Partial<Record<ProviderKind, Partial<ModelConfig>>> = isPerProvider
+    ? (override as Partial<Record<ProviderKind, Partial<ModelConfig>>>)
+    : { [base.provider]: override as Partial<ModelConfig> };
+  const merged = { ...base.models };
+  for (const kind of PROVIDER_KINDS) {
+    if (perProvider[kind]) merged[kind] = { ...base.models[kind], ...perProvider[kind] };
+  }
+  return merged;
+}
 
 export function deepMerge(base: UserConfig, override: RepoConfig): MergedConfig {
   return {
@@ -13,18 +28,7 @@ export function deepMerge(base: UserConfig, override: RepoConfig): MergedConfig 
     ...(override.templatesPath !== undefined && { templatesPath: override.templatesPath }),
     ...(override.releaseStrategy !== undefined && { releaseStrategy: override.releaseStrategy }),
     ...(override.developBranch !== undefined && { developBranch: override.developBranch }),
-    // MDL-06: `models` is now a per-provider map. A flat spread here would
-    // corrupt it by injecting the repo config's flat tier keys as fake
-    // provider names (design.md Risks & Concerns). The override applies only
-    // to the currently active provider's tier values — every other
-    // provider's block is left byte-for-byte untouched.
-    models: {
-      ...base.models,
-      [base.provider]: {
-        ...base.models[base.provider],
-        ...(override.models ?? {}),
-      },
-    },
+    models: mergeRepoModels(base, override.models),
   };
 }
 
