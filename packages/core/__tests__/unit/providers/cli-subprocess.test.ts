@@ -283,4 +283,27 @@ describe("CliSubprocessProvider timeout message", () => {
 
     expect(err.message).toBe("Fake CLI timed out after 1s");
   });
+
+  posixIt("reports a timeout, not success, when the CLI catches SIGTERM and exits 0 with partial output", async () => {
+    const f = script(`
+process.on("SIGTERM", () => { process.stdout.write("partial"); process.exit(0); });
+setInterval(() => {}, 1000);`);
+    const provider = new CliSubprocessProvider(makeSpec({ timeoutMs: 1_000 }), MODELS, f.path);
+
+    const err = (await provider.chat(req("x")).catch((e: unknown) => e)) as Error;
+
+    expect(err).toBeInstanceOf(Error);
+    expect(err.message).toBe("Fake CLI timed out after 1s");
+  });
+
+  posixIt("reports a timeout, not the exit code, when the CLI catches SIGTERM and exits non-zero", async () => {
+    const f = script(`
+process.on("SIGTERM", () => { process.stderr.write("shutting down"); process.exit(143); });
+setInterval(() => {}, 1000);`);
+    const provider = new CliSubprocessProvider(makeSpec({ timeoutMs: 1_000 }), MODELS, f.path);
+
+    const err = (await provider.chat(req("x")).catch((e: unknown) => e)) as Error;
+
+    expect(err.message).toBe("Fake CLI timed out after 1s");
+  });
 });

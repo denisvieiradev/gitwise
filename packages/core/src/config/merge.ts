@@ -5,8 +5,12 @@ import { readRepoConfig } from "./repo.js";
 import { PROVIDER_KINDS, type ProviderKind } from "../providers/types.js";
 import type { MergedConfig, ModelConfig, ModelsByProvider, RepoConfig, UserConfig } from "./types.js";
 
+function isPlainObject(value: unknown): value is object {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function mergeRepoModels(base: UserConfig, override: RepoConfig["models"]): ModelsByProvider {
-  if (!override) return base.models;
+  if (!isPlainObject(override)) return base.models;
   // MDL-06: flat overrides target the active provider; per-provider maps target each named provider.
   const isPerProvider = PROVIDER_KINDS.some((kind) => kind in override);
   const perProvider: Partial<Record<ProviderKind, Partial<ModelConfig>>> = isPerProvider
@@ -14,7 +18,8 @@ function mergeRepoModels(base: UserConfig, override: RepoConfig["models"]): Mode
     : { [base.provider]: override as Partial<ModelConfig> };
   const merged = { ...base.models };
   for (const kind of PROVIDER_KINDS) {
-    if (perProvider[kind]) merged[kind] = { ...base.models[kind], ...perProvider[kind] };
+    const block = perProvider[kind];
+    if (isPlainObject(block)) merged[kind] = { ...base.models[kind], ...block };
   }
   return merged;
 }

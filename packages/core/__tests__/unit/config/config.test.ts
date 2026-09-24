@@ -356,6 +356,24 @@ describe("config (core)", () => {
     });
   });
 
+  describe("malformed repo models override", () => {
+    it("ignores a non-object models value instead of crashing", async () => {
+      await writeFile(join(cwd, ".gitwise.json"), JSON.stringify({ models: "gpt-6-sol" }), "utf-8");
+
+      const config = await getMergedConfig({ cwd, homeDir });
+
+      expect(config.models).toEqual(DEFAULT_USER_CONFIG.models);
+    });
+
+    it("ignores a non-object per-provider value instead of spreading it into tier keys", async () => {
+      await writeFile(join(cwd, ".gitwise.json"), JSON.stringify({ models: { codex: "gpt-6-sol" } }), "utf-8");
+
+      const config = await getMergedConfig({ cwd, homeDir });
+
+      expect(config.models.codex).toEqual(DEFAULT_USER_CONFIG.models.codex);
+    });
+  });
+
   describe("per-provider models merge", () => {
     it("fills the tiers a partial provider block omits from that provider's defaults", async () => {
       await mkdir(join(homeDir, ".gitwise"), { recursive: true });

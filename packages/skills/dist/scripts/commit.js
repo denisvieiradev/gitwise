@@ -17136,9 +17136,12 @@ ${req.userMessage}` : req.userMessage;
         stdout += outDecoder.end();
         stderr += errDecoder.end();
         if (interruptedBy) return;
+        if (timedOut) {
+          reject(new Error(`${this.spec.toolName} timed out after ${Math.round(timeoutMs / 1e3)}s`));
+          return;
+        }
         if (code === null && signal) {
-          const reason = timedOut ? `${this.spec.toolName} timed out after ${Math.round(timeoutMs / 1e3)}s` : `${this.spec.toolName} was terminated by signal ${signal}`;
-          reject(new Error(reason));
+          reject(new Error(`${this.spec.toolName} was terminated by signal ${signal}`));
           return;
         }
         if (code !== 0) {
@@ -17515,13 +17518,17 @@ async function readRepoConfig(cwd) {
 }
 
 // ../core/src/config/merge.ts
+function isPlainObject(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 function mergeRepoModels(base, override) {
-  if (!override) return base.models;
+  if (!isPlainObject(override)) return base.models;
   const isPerProvider = PROVIDER_KINDS.some((kind) => kind in override);
   const perProvider = isPerProvider ? override : { [base.provider]: override };
   const merged = { ...base.models };
   for (const kind of PROVIDER_KINDS) {
-    if (perProvider[kind]) merged[kind] = { ...base.models[kind], ...perProvider[kind] };
+    const block = perProvider[kind];
+    if (isPlainObject(block)) merged[kind] = { ...base.models[kind], ...block };
   }
   return merged;
 }

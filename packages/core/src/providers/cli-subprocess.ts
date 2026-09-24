@@ -172,11 +172,12 @@ export class CliSubprocessProvider implements LLMProvider {
         stdout += outDecoder.end();
         stderr += errDecoder.end();
         if (interruptedBy) return;
+        if (timedOut) {
+          reject(new Error(`${this.spec.toolName} timed out after ${Math.round(timeoutMs / 1000)}s`));
+          return;
+        }
         if (code === null && signal) {
-          const reason = timedOut
-            ? `${this.spec.toolName} timed out after ${Math.round(timeoutMs / 1000)}s`
-            : `${this.spec.toolName} was terminated by signal ${signal}`;
-          reject(new Error(reason));
+          reject(new Error(`${this.spec.toolName} was terminated by signal ${signal}`));
           return;
         }
         if (code !== 0) {
