@@ -55,6 +55,20 @@ function parseEvents(stdout: string): CodexEvent[] {
   return events;
 }
 
+function buildCodexArgs(prompt: string, modelId: string | undefined, large: boolean): string[] {
+  const args = [
+    "exec",
+    "--json",
+    "--ephemeral",
+    "--skip-git-repo-check",
+    "--sandbox",
+    "read-only",
+  ];
+  if (modelId) args.push("--model", modelId);
+  args.push("--", large ? "-" : prompt);
+  return args;
+}
+
 export const codexSpec: CliProviderSpec = {
   toolName: "Codex CLI",
   installHint: "Install it (`npm install -g @openai/codex`) or re-run `gw provider` to choose another provider.",
@@ -65,18 +79,19 @@ export const codexSpec: CliProviderSpec = {
   resolveBinary: resolveCodexBinary,
 
   buildArgs({ prompt, modelId, large }) {
-    return [
-      "exec",
-      "--json",
-      "--ephemeral",
-      "--skip-git-repo-check",
-      "--sandbox",
-      "read-only",
-      "--model",
-      modelId,
-      "--",
-      large ? "-" : prompt,
-    ];
+    return buildCodexArgs(prompt, modelId, large);
+  },
+
+  defaultModelFallback: {
+    shouldRetry(error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return /model\b.*(?:is not supported when using Codex with a ChatGPT account|requires a newer version of Codex)/i.test(
+        message,
+      );
+    },
+    buildArgs({ prompt, large }) {
+      return buildCodexArgs(prompt, undefined, large);
+    },
   },
 
   parseOutput(stdout) {

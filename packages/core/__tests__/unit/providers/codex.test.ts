@@ -58,6 +58,34 @@ process.stdin.on("end", () => {
   return { path, recorded: () => JSON.parse(readFileSync(join(dir, "rec.json"), "utf8")) };
 }
 
+function fakeCodexRequiringDefaultModel() {
+  const dir = mkdtempSync(join(tmpdir(), "gitwise-codex-fallback-"));
+  dirs.push(dir);
+  const path = join(dir, "codex");
+  writeFileSync(
+    path,
+    [
+      "#!/usr/bin/env node",
+      'const fs = require("node:fs");',
+      'const callsPath = __dirname + "/calls.json";',
+      'const calls = fs.existsSync(callsPath) ? JSON.parse(fs.readFileSync(callsPath, "utf8")) : [];',
+      "const argv = process.argv.slice(2);",
+      "calls.push(argv);",
+      "fs.writeFileSync(callsPath, JSON.stringify(calls));",
+      "process.stdin.resume();",
+      'process.stdin.on("end", () => {',
+      '  if (argv.includes("--model")) {',
+      "    process.stdout.write(" + JSON.stringify(REAL_FAILURE_JSONL) + ");",
+      "    process.exit(1);",
+      "  }",
+      "  process.stdout.write(" + JSON.stringify(REAL_SUCCESS_JSONL) + ");",
+      "});",
+    ].join("\n"),
+  );
+  chmodSync(path, 0o755);
+  return { path, calls: () => JSON.parse(readFileSync(join(dir, "calls.json"), "utf8")) as string[][] };
+}
+
 const chat = (provider: CliSubprocessProvider, userMessage = "the diff", tier: "fast" | "powerful" = "fast") =>
   provider.chat({ systemPrompt: "You are gitwise.", userMessage, tier });
 
@@ -232,6 +260,16 @@ describe("Codex provider spec (PROV-01, PROV-02)", () => {
       (e: unknown) => e,
     )) as Error;
     expect(err.message).toBe(`Codex CLI exited with code 1: ${REAL_FAILURE_MESSAGE}`);
+  });
+
+  it("retries with Codex's configured default when the ChatGPT account rejects the selected model", async () => {
+    const cli = fakeCodexRequiringDefaultModel();
+    const res = await chat(new CliSubprocessProvider(codexSpec, MODELS, cli.path));
+
+    expect(res.content).toBe("PONG");
+    expect(cli.calls()).toHaveLength(2);
+    expect(cli.calls()[0]).toContain("--model");
+    expect(cli.calls()[1]).not.toContain("--model");
   });
 
   it("AC5: a non-zero exit with no JSONL error surfaces stderr verbatim", async () => {

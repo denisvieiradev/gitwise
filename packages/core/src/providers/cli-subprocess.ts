@@ -90,7 +90,19 @@ export class CliSubprocessProvider implements LLMProvider {
 
     // Small prompts travel via argv; stdin is still closed immediately so a
     // CLI that treats non-TTY stdin as piped input does not wait on it.
-    const stdout = await this.spawnCli(args, large ? prompt : "");
+    let stdout: string;
+    try {
+      stdout = await this.spawnCli(args, large ? prompt : "");
+    } catch (error) {
+      const fallback = this.spec.defaultModelFallback;
+      if (!fallback?.shouldRetry(error)) throw error;
+      debug("Retrying CLI provider with its configured default model", {
+        rejectedModel: modelId,
+        tier: req.tier,
+      });
+      const fallbackArgs = fallback.buildArgs({ prompt, systemPrompt: req.systemPrompt, large });
+      stdout = await this.spawnCli(fallbackArgs, large ? prompt : "");
+    }
     const parsed = this.spec.parseOutput(stdout);
     return {
       content: parsed.content,

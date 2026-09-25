@@ -17919,7 +17919,19 @@ var CliSubprocessProvider = class {
 ${req.userMessage}` : req.userMessage;
     const large = Buffer.byteLength(prompt, "utf8") > LARGE_PROMPT_THRESHOLD;
     const args = this.spec.buildArgs({ prompt, systemPrompt: req.systemPrompt, modelId, large });
-    const stdout = await this.spawnCli(args, large ? prompt : "");
+    let stdout;
+    try {
+      stdout = await this.spawnCli(args, large ? prompt : "");
+    } catch (error) {
+      const fallback = this.spec.defaultModelFallback;
+      if (!fallback?.shouldRetry(error)) throw error;
+      debug("Retrying CLI provider with its configured default model", {
+        rejectedModel: modelId,
+        tier: req.tier
+      });
+      const fallbackArgs = fallback.buildArgs({ prompt, systemPrompt: req.systemPrompt, large });
+      stdout = await this.spawnCli(fallbackArgs, large ? prompt : "");
+    }
     const parsed = this.spec.parseOutput(stdout);
     return {
       content: parsed.content,
@@ -18118,6 +18130,19 @@ function parseEvents(stdout) {
   }
   return events;
 }
+function buildCodexArgs(prompt, modelId, large) {
+  const args = [
+    "exec",
+    "--json",
+    "--ephemeral",
+    "--skip-git-repo-check",
+    "--sandbox",
+    "read-only"
+  ];
+  if (modelId) args.push("--model", modelId);
+  args.push("--", large ? "-" : prompt);
+  return args;
+}
 var codexSpec = {
   toolName: "Codex CLI",
   installHint: "Install it (`npm install -g @openai/codex`) or re-run `gw provider` to choose another provider.",
@@ -18127,18 +18152,18 @@ var codexSpec = {
   timeoutMs: 3e5,
   resolveBinary: resolveCodexBinary,
   buildArgs({ prompt, modelId, large }) {
-    return [
-      "exec",
-      "--json",
-      "--ephemeral",
-      "--skip-git-repo-check",
-      "--sandbox",
-      "read-only",
-      "--model",
-      modelId,
-      "--",
-      large ? "-" : prompt
-    ];
+    return buildCodexArgs(prompt, modelId, large);
+  },
+  defaultModelFallback: {
+    shouldRetry(error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return /model\b.*(?:is not supported when using Codex with a ChatGPT account|requires a newer version of Codex)/i.test(
+        message
+      );
+    },
+    buildArgs({ prompt, large }) {
+      return buildCodexArgs(prompt, void 0, large);
+    }
   },
   parseOutput(stdout) {
     let content;
