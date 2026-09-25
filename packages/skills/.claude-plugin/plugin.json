@@ -1,6 +1,6 @@
 {
   "name": "gitwise",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "AI-powered git toolbelt: intelligent commit, code review, PR drafting, and versioned releases.",
   "author": {
     "name": "Denis Vieira",
@@ -9,5 +9,13 @@
   "homepage": "https://github.com/denisvieiradev/gitwise#readme",
   "repository": "https://github.com/denisvieiradev/gitwise",
   "license": "MIT",
-  "keywords": ["git", "ai", "claude", "commit", "code-review", "pull-request", "release"]
+  "keywords": [
+    "git",
+    "ai",
+    "claude",
+    "commit",
+    "code-review",
+    "pull-request",
+    "release"
+  ]
 }

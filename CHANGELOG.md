@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-09-25
+
+### Added
+- Multi-provider support: Codex, Copilot, and Kiro CLI tools as alternatives to API and Claude Code
+- `gw provider` interactive command to switch between providers
+- `gw skills install` command for installing gitwise as a native Claude Code skill
+- Token availability tracking across commit, review, PR, and release operations
+- 300-second timeout for CLI-based provider operations
+- Automatic provider detection in first-run wizard
+- Build-time adapter generator for provider-specific Codex, Copilot, and Kiro variants
+
+### Changed
+- Provider architecture refactored to support multiple CLI-based tools via `CliSubprocessProvider`
+- User configuration models restructured to per-provider shape with backward-compatible migration
+- Repository-level model overrides now scoped per active provider
+- First-run wizard now detects and offers all available supported providers
+- Token reporting displays "tokens: n/a" when a provider doesn't report usage data
+- CLI process group management improved for signal handling and subprocess timeouts
+
+### Fixed
+- CodeQL security alerts
+- Subprocess I/O hardening in CLI provider implementations
+- Process group termination on SIGINT/SIGTERM and subprocess timeouts
+- Duplicate `tokensAvailable` key in release-plan schema defaults
+- Legacy models migration made best-effort with provider awareness
+- Model configuration tier merging per provider
+- Skills script symlink resolution in invoked-directly guard
+- Warning when installed skills' gitwise-skills package is unresolvable
+
+### Removed
+- Unused .gemini configuration file
+
 ## [1.2.0] - 2026-08-03
 
 ### Added
