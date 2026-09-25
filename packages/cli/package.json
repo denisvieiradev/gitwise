@@ -49,6 +49,15 @@
   ],
   "author": "Denis Vieira <denisvieira05@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/denisvieiradev/gitwise.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/denisvieiradev/gitwise/issues"
+  },
+  "homepage": "https://github.com/denisvieiradev/gitwise#readme",
   "engines": {
     "node": ">=22.12.0"
   }

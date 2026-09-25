@@ -25,3 +25,23 @@ describe("@denisvieiradev/gitwise package.json", () => {
     expect(pkg.dependencies["@denisvieiradev/gitwise-core"]).toBe(corePkg.version);
   });
 });
+
+// Regression guard: `npm publish --provenance` compares package.json's
+// repository.url against the GitHub repo that built the tarball and rejects the
+// publish with E422 when it is missing, which left v1.3.0 half-published.
+describe("published packages declare their repository", () => {
+  const skillsPkg = requireFromHere("../../skills/package.json") as {
+    name: string;
+    repository?: { url?: string; directory?: string };
+  };
+  const packages = [
+    { dir: "core", pkg: requireFromHere("../../core/package.json") as typeof skillsPkg },
+    { dir: "cli", pkg: pkg as unknown as typeof skillsPkg },
+    { dir: "skills", pkg: skillsPkg },
+  ];
+
+  it.each(packages)("$dir points repository at the GitHub repo and its own directory", ({ dir, pkg: p }) => {
+    expect(p.repository?.url).toBe("git+https://github.com/denisvieiradev/gitwise.git");
+    expect(p.repository?.directory).toBe(`packages/${dir}`);
+  });
+});
