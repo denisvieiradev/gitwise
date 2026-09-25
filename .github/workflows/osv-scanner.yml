@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       - name: Check osv-scanner.toml expiry dates
         shell: bash
@@ -47,7 +47,7 @@ jobs:
     name: OSV-Scanner (push / scheduled)
     if: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
     needs: check-ignore-expiry
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@6e4298ebc4db23e847df9b2e2de2939d6f066c67  # v2.5.1
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@a345acffa64b0eaede81a3d9aae6141214d9c8fc  # v2.6.0
     with:
       scan-args: |-
         --recursive
@@ -63,7 +63,7 @@ jobs:
     name: OSV-Scanner (pull request)
     if: ${{ github.event_name == 'pull_request' }}
     needs: check-ignore-expiry
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@9a498708959aeaef5ef730655706c5a1df1edbc2  # v2.3.8
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@a345acffa64b0eaede81a3d9aae6141214d9c8fc  # v2.6.0
     with:
       scan-args: |-
         --recursive
