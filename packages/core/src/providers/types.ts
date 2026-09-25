@@ -53,8 +53,8 @@ export interface CliProviderSpec {
   parseOutput(stdout: string): { content: string; tokens: { input: number; output: number } | null };
   /** Optional override for the non-zero-exit error message; default surfaces stderr verbatim. */
   formatExitError?(code: number | null, stdout: string, stderr: string): string;
-  /** Optional single retry using the CLI's own default model for model availability/version errors. */
-  defaultModelFallback?: {
+  /** Optional single retry with a compatibility model for model availability/version errors. */
+  modelCompatibilityFallback?: {
     shouldRetry(error: unknown): boolean;
     buildArgs(input: { prompt: string; systemPrompt: string; large: boolean }): string[];
   };

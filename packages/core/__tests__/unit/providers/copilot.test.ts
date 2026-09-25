@@ -40,6 +40,32 @@ process.stdin.on("end", () => {
   return { path, recorded: () => JSON.parse(readFileSync(join(dir, "rec.json"), "utf8")) };
 }
 
+function fakeCopilotRequiringAutoMode() {
+  const dir = mkdtempSync(join(tmpdir(), "gitwise-copilot-fallback-"));
+  dirs.push(dir);
+  const path = join(dir, "copilot");
+  const source = [
+    "#!/usr/bin/env node",
+    'const fs = require("node:fs");',
+    'const callsPath = __dirname + "/calls.json";',
+    'const calls = fs.existsSync(callsPath) ? JSON.parse(fs.readFileSync(callsPath, "utf8")) : [];',
+    "const argv = process.argv.slice(2);",
+    "calls.push(argv);",
+    "fs.writeFileSync(callsPath, JSON.stringify(calls));",
+    'process.stdin.on("end", () => {',
+    '  if (argv.includes("--model")) {',
+    '    process.stderr.write(\'Error: Model "unavailable" from --model flag is not available.\\n\');',
+    "    process.exit(1);",
+    "  }",
+    '  process.stdout.write("OK");',
+    "});",
+    "process.stdin.resume();",
+  ].join("\n");
+  writeFileSync(path, source);
+  chmodSync(path, 0o755);
+  return { path, calls: () => JSON.parse(readFileSync(join(dir, "calls.json"), "utf8")) as string[][] };
+}
+
 const chat = (provider: CliSubprocessProvider, userMessage = "the diff", tier: "fast" | "powerful" = "fast") =>
   provider.chat({ systemPrompt: "You are gitwise.", userMessage, tier });
 
@@ -176,6 +202,16 @@ describe("Copilot provider spec (PROV-03, PROV-04)", () => {
     expect(err.message).toContain("Copilot CLI");
     expect(err.message).toContain(missing);
     expect(err.message).toContain("gw provider");
+  });
+
+  it("retries with Copilot's automatic model when the selected model is unavailable", async () => {
+    const cli = fakeCopilotRequiringAutoMode();
+    const res = await chat(new CliSubprocessProvider(copilotSpec, MODELS, cli.path));
+
+    expect(res.content).toBe("OK");
+    expect(cli.calls()).toHaveLength(2);
+    expect(cli.calls()[0]).toContain("--model");
+    expect(cli.calls()[1]).not.toContain("--model");
   });
 
   it("AC4: a non-zero exit surfaces the CLI's own stderr verbatim", async () => {

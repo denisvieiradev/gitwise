@@ -81,6 +81,8 @@ gw config models.codex.fast gpt-6-sol          # writes to Codex's block, whiche
 
 `gw provider` never touches `models`, so each provider keeps its saved values across switches. A config from an older release with a single flat `models` block is migrated into the configured provider's block on first read (or into `api`'s block when no provider is set). The former default Codex fast model (`gpt-6-luna`) is updated to `gpt-6-sol` when reading user config because some ChatGPT accounts reject Luna.
 
+If Codex rejects a selected model for the current ChatGPT account or CLI version, Gitwise retries once with `gpt-5.6-sol`. If Copilot CLI rejects its selected model, Gitwise retries once with Copilot's automatic model selection.
+
 A repo's `<repo>/.gitwise.json` can override `models` in two forms. The per-provider form targets each named provider and is the one to use in a repo shared by people on different providers:
 
 ```json

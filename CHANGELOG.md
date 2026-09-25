@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Changed Codex's default fast model to `gpt-6-sol` and migrated the former `gpt-6-luna` default because some ChatGPT accounts reject Luna
+- Changed Codex's default fast model to `gpt-6-sol`, migrated the former `gpt-6-luna` default, and retry rejected models with `gpt-5.6-sol`
+- Added a Copilot retry using its automatic model selection when the configured model is unavailable
 
 ## [1.3.1] - 2026-09-25
 

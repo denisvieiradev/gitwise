@@ -17923,9 +17923,9 @@ ${req.userMessage}` : req.userMessage;
     try {
       stdout = await this.spawnCli(args, large ? prompt : "");
     } catch (error) {
-      const fallback = this.spec.defaultModelFallback;
+      const fallback = this.spec.modelCompatibilityFallback;
       if (!fallback?.shouldRetry(error)) throw error;
-      debug("Retrying CLI provider with its configured default model", {
+      debug("Retrying CLI provider with its compatibility model", {
         rejectedModel: modelId,
         tier: req.tier
       });
@@ -18118,6 +18118,7 @@ var COMMON_CODEX_PATHS = [
 function resolveCodexBinary(customPath) {
   return resolveCliBinary("codex", COMMON_CODEX_PATHS, customPath);
 }
+var CODEX_COMPATIBILITY_FALLBACK_MODEL = "gpt-5.6-sol";
 function parseEvents(stdout) {
   const events = [];
   for (const line of stdout.split("\n")) {
@@ -18154,7 +18155,7 @@ var codexSpec = {
   buildArgs({ prompt, modelId, large }) {
     return buildCodexArgs(prompt, modelId, large);
   },
-  defaultModelFallback: {
+  modelCompatibilityFallback: {
     shouldRetry(error) {
       const message = error instanceof Error ? error.message : String(error);
       return /model\b.*(?:is not supported when using Codex with a ChatGPT account|requires a newer version of Codex)/i.test(
@@ -18162,7 +18163,7 @@ var codexSpec = {
       );
     },
     buildArgs({ prompt, large }) {
-      return buildCodexArgs(prompt, void 0, large);
+      return buildCodexArgs(prompt, CODEX_COMPATIBILITY_FALLBACK_MODEL, large);
     }
   },
   parseOutput(stdout) {
@@ -18222,6 +18223,19 @@ var copilotSpec = {
   resolveBinary: resolveCopilotBinary,
   buildArgs({ prompt, modelId, large }) {
     return [...large ? [] : [`--prompt=${prompt}`], "--no-ask-user", "--silent", "--model", modelId];
+  },
+  modelCompatibilityFallback: {
+    shouldRetry(error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return /Model ".+" from --model flag is not available/i.test(message);
+    },
+    buildArgs({ prompt, large }) {
+      return [
+        ...large ? [] : ["--prompt=" + prompt],
+        "--no-ask-user",
+        "--silent"
+      ];
+    }
   },
   parseOutput(stdout) {
     const content = stdout.trim();

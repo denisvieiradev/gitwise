@@ -41,6 +41,11 @@ interface CodexEvent {
   error?: { message?: string };
 }
 
+// GPT-6 model availability can differ across ChatGPT accounts; Codex's own
+// default may point back to a rejected model, so retry with the account-tested
+// GPT-5.6 Sol model instead of omitting --model.
+const CODEX_COMPATIBILITY_FALLBACK_MODEL = "gpt-5.6-sol";
+
 function parseEvents(stdout: string): CodexEvent[] {
   const events: CodexEvent[] = [];
   for (const line of stdout.split("\n")) {
@@ -82,7 +87,7 @@ export const codexSpec: CliProviderSpec = {
     return buildCodexArgs(prompt, modelId, large);
   },
 
-  defaultModelFallback: {
+  modelCompatibilityFallback: {
     shouldRetry(error) {
       const message = error instanceof Error ? error.message : String(error);
       return /model\b.*(?:is not supported when using Codex with a ChatGPT account|requires a newer version of Codex)/i.test(
@@ -90,7 +95,7 @@ export const codexSpec: CliProviderSpec = {
       );
     },
     buildArgs({ prompt, large }) {
-      return buildCodexArgs(prompt, undefined, large);
+      return buildCodexArgs(prompt, CODEX_COMPATIBILITY_FALLBACK_MODEL, large);
     },
   },
 

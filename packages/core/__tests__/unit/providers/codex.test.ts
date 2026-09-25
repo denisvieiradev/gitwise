@@ -74,7 +74,8 @@ function fakeCodexRequiringDefaultModel() {
       "fs.writeFileSync(callsPath, JSON.stringify(calls));",
       "process.stdin.resume();",
       'process.stdin.on("end", () => {',
-      '  if (argv.includes("--model")) {',
+      '  const modelIndex = argv.indexOf("--model");',
+      '  if (modelIndex >= 0 && argv[modelIndex + 1] !== "gpt-5.6-sol") {',
       "    process.stdout.write(" + JSON.stringify(REAL_FAILURE_JSONL) + ");",
       "    process.exit(1);",
       "  }",
@@ -262,14 +263,15 @@ describe("Codex provider spec (PROV-01, PROV-02)", () => {
     expect(err.message).toBe(`Codex CLI exited with code 1: ${REAL_FAILURE_MESSAGE}`);
   });
 
-  it("retries with Codex's configured default when the ChatGPT account rejects the selected model", async () => {
+  it("retries with a compatible Codex model when the ChatGPT account rejects the selected model", async () => {
     const cli = fakeCodexRequiringDefaultModel();
     const res = await chat(new CliSubprocessProvider(codexSpec, MODELS, cli.path));
 
     expect(res.content).toBe("PONG");
     expect(cli.calls()).toHaveLength(2);
     expect(cli.calls()[0]).toContain("--model");
-    expect(cli.calls()[1]).not.toContain("--model");
+    expect(cli.calls()[1]).toContain("--model");
+    expect(cli.calls()[1]).toContain("gpt-5.6-sol");
   });
 
   it("AC5: a non-zero exit with no JSONL error surfaces stderr verbatim", async () => {

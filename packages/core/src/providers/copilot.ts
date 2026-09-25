@@ -51,6 +51,20 @@ export const copilotSpec: CliProviderSpec = {
     return [...(large ? [] : [`--prompt=${prompt}`]), "--no-ask-user", "--silent", "--model", modelId];
   },
 
+  modelCompatibilityFallback: {
+    shouldRetry(error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return /Model ".+" from --model flag is not available/i.test(message);
+    },
+    buildArgs({ prompt, large }) {
+      return [
+        ...(large ? [] : ["--prompt=" + prompt]),
+        "--no-ask-user",
+        "--silent",
+      ];
+    },
+  },
+
   parseOutput(stdout) {
     const content = stdout.trim();
     if (!content) throw new Error("Copilot CLI returned an empty response");

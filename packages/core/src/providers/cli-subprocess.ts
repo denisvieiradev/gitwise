@@ -94,9 +94,9 @@ export class CliSubprocessProvider implements LLMProvider {
     try {
       stdout = await this.spawnCli(args, large ? prompt : "");
     } catch (error) {
-      const fallback = this.spec.defaultModelFallback;
+      const fallback = this.spec.modelCompatibilityFallback;
       if (!fallback?.shouldRetry(error)) throw error;
-      debug("Retrying CLI provider with its configured default model", {
+      debug("Retrying CLI provider with its compatibility model", {
         rejectedModel: modelId,
         tier: req.tier,
       });
