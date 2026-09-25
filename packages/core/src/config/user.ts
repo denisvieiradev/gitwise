@@ -8,6 +8,28 @@ import { PROVIDER_KINDS, type ProviderKind } from "../providers/types.js";
 
 const GITWISE_DIR = ".gitwise";
 const USER_CONFIG_FILE = "config.json";
+const PREVIOUS_CODEX_FAST_DEFAULT = "gpt-6-luna";
+
+function migrateCodexFastDefault(config: UserConfig): UserConfig {
+  // This was gitwise's shipped default; migrate it while preserving other
+  // Codex model choices users may have configured themselves.
+  if (config.models.codex.fast !== PREVIOUS_CODEX_FAST_DEFAULT) return config;
+  return {
+    ...config,
+    models: {
+      ...config.models,
+      codex: { ...config.models.codex, fast: DEFAULT_USER_CONFIG.models.codex.fast },
+    },
+  };
+}
+
+async function persistConfigMigration(configPath: string, config: UserConfig): Promise<void> {
+  try {
+    await writeJSON(configPath, config);
+  } catch (err) {
+    debug("Could not persist migrated config; using it in memory", { path: configPath, error: String(err) });
+  }
+}
 
 function getUserConfigPath(homeDir?: string): string {
   return join(homeDir ?? os.homedir(), GITWISE_DIR, USER_CONFIG_FILE);
@@ -60,17 +82,19 @@ export async function readUserConfig(homeDir?: string): Promise<UserConfig> {
 
   if (isLegacyFlatModels(raw.models)) {
     const migratedModels = migrateFlatModels(raw.models, raw.provider);
-    const merged = mergeWithDefaults({ ...raw, models: migratedModels });
+    const merged = migrateCodexFastDefault(mergeWithDefaults({ ...raw, models: migratedModels }));
     debug("Migrated legacy flat models config to per-provider shape", { path: configPath });
-    try {
-      await writeJSON(configPath, merged);
-    } catch (err) {
-      debug("Could not persist migrated config; using it in memory", { path: configPath, error: String(err) });
-    }
+    await persistConfigMigration(configPath, merged);
     return merged;
   }
 
-  return mergeWithDefaults(raw);
+  const merged = mergeWithDefaults(raw);
+  const migrated = migrateCodexFastDefault(merged);
+  if (migrated !== merged) {
+    debug("Updated unsupported Codex fast default model", { path: configPath });
+    await persistConfigMigration(configPath, migrated);
+  }
+  return migrated;
 }
 
 export async function writeUserConfig(

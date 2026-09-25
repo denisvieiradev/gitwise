@@ -17153,7 +17153,7 @@ init_esm_shims();
 // ../core/package.json
 var package_default = {
   name: "@denisvieiradev/gitwise-core",
-  version: "1.3.0",
+  version: "1.3.1",
   description: "Shared logic for gitwise: non-interactive commit/review/pr/release commands, LLM providers, git/github primitives, prompt templates.",
   type: "module",
   main: "./dist/index.js",
@@ -17818,7 +17818,7 @@ var DEFAULT_USER_CONFIG = {
     api: { ...CLAUDE_MODELS },
     "claude-code": { ...CLAUDE_MODELS },
     codex: {
-      fast: "gpt-6-luna",
+      fast: "gpt-6-sol",
       balanced: "gpt-6-sol",
       powerful: "gpt-6-astra"
     },
@@ -17853,6 +17853,24 @@ var PROVIDER_KINDS = ["api", "claude-code", "codex", "copilot", "kiro"];
 // ../core/src/config/user.ts
 var GITWISE_DIR = ".gitwise";
 var USER_CONFIG_FILE = "config.json";
+var PREVIOUS_CODEX_FAST_DEFAULT = "gpt-6-luna";
+function migrateCodexFastDefault(config) {
+  if (config.models.codex.fast !== PREVIOUS_CODEX_FAST_DEFAULT) return config;
+  return {
+    ...config,
+    models: {
+      ...config.models,
+      codex: { ...config.models.codex, fast: DEFAULT_USER_CONFIG.models.codex.fast }
+    }
+  };
+}
+async function persistConfigMigration(configPath, config) {
+  try {
+    await writeJSON(configPath, config);
+  } catch (err) {
+    debug("Could not persist migrated config; using it in memory", { path: configPath, error: String(err) });
+  }
+}
 function getUserConfigPath(homeDir) {
   return join2(homeDir ?? os6.homedir(), GITWISE_DIR, USER_CONFIG_FILE);
 }
@@ -17885,16 +17903,18 @@ async function readUserConfig(homeDir) {
   const raw = await readJSON(configPath);
   if (isLegacyFlatModels(raw.models)) {
     const migratedModels = migrateFlatModels(raw.models, raw.provider);
-    const merged = mergeWithDefaults({ ...raw, models: migratedModels });
+    const merged2 = migrateCodexFastDefault(mergeWithDefaults({ ...raw, models: migratedModels }));
     debug("Migrated legacy flat models config to per-provider shape", { path: configPath });
-    try {
-      await writeJSON(configPath, merged);
-    } catch (err) {
-      debug("Could not persist migrated config; using it in memory", { path: configPath, error: String(err) });
-    }
-    return merged;
+    await persistConfigMigration(configPath, merged2);
+    return merged2;
   }
-  return mergeWithDefaults(raw);
+  const merged = mergeWithDefaults(raw);
+  const migrated = migrateCodexFastDefault(merged);
+  if (migrated !== merged) {
+    debug("Updated unsupported Codex fast default model", { path: configPath });
+    await persistConfigMigration(configPath, migrated);
+  }
+  return migrated;
 }
 
 // ../core/src/config/repo.ts

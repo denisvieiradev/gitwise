@@ -5,10 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.1] - 2026-09-25
+## [Unreleased]
 
 ### Fixed
 
+- Changed Codex's default fast model to `gpt-6-sol` and migrated the former `gpt-6-luna` default because some ChatGPT accounts reject Luna
+
+## [1.3.1] - 2026-09-25
+
+### Fixed
 - Fixed npm provenance publishing by declaring the `repository` field in the cli and skills packages
 - v1.3.0 reached npm only for `@denisvieiradev/gitwise-core`; 1.3.1 ships the complete 1.3.0 feature set for all three packages
 

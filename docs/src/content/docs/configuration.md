@@ -19,7 +19,7 @@ gitwise reads configuration from two layered locations:
   "models": {
     "api": { "fast": "claude-haiku-4-5-20251001", "balanced": "claude-sonnet-4-6", "powerful": "claude-opus-4-7" },
     "claude-code": { "fast": "claude-haiku-4-5-20251001", "balanced": "claude-sonnet-4-6", "powerful": "claude-opus-4-7" },
-    "codex": { "fast": "gpt-6-luna", "balanced": "gpt-6-sol", "powerful": "gpt-6-astra" },
+    "codex": { "fast": "gpt-6-sol", "balanced": "gpt-6-sol", "powerful": "gpt-6-astra" },
     "copilot": { "fast": "claude-haiku-4.5", "balanced": "claude-sonnet-4.6", "powerful": "claude-opus-4.7" },
     "kiro": { "fast": "claude-haiku-4.5", "balanced": "claude-sonnet-4.5", "powerful": "claude-sonnet-4.5" }
   },
@@ -76,10 +76,10 @@ Read or write them with `gw config`:
 
 ```bash
 gw config models.balanced my-model            # writes to the active provider's block
-gw config models.codex.fast gpt-6-luna         # writes to Codex's block, whichever provider is active
+gw config models.codex.fast gpt-6-sol          # writes to Codex's block, whichever provider is active
 ```
 
-`gw provider` never touches `models`, so each provider keeps its saved values across switches. A config from an older release with a single flat `models` block is migrated into the configured provider's block on first read (or into `api`'s block when no provider is set).
+`gw provider` never touches `models`, so each provider keeps its saved values across switches. A config from an older release with a single flat `models` block is migrated into the configured provider's block on first read (or into `api`'s block when no provider is set). The former default Codex fast model (`gpt-6-luna`) is updated to `gpt-6-sol` when reading user config because some ChatGPT accounts reject Luna.
 
 A repo's `<repo>/.gitwise.json` can override `models` in two forms. The per-provider form targets each named provider and is the one to use in a repo shared by people on different providers:
 

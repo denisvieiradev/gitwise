@@ -33,7 +33,7 @@ describe("config (core)", () => {
 
     it("defaults codex to the model IDs in the codex CLI model catalog", () => {
       expect(DEFAULT_USER_CONFIG.models.codex).toEqual({
-        fast: "gpt-6-luna",
+        fast: "gpt-6-sol",
         balanced: "gpt-6-sol",
         powerful: "gpt-6-astra",
       });

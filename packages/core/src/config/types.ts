@@ -55,11 +55,9 @@ export interface MergedConfig extends UserConfig {
 // only, no model calls). Every value is user-overridable via
 // `gw config models.<provider>.<tier>`.
 // - api / claude-code: gitwise's pre-existing Claude defaults, unchanged.
-// - codex: the model catalog of codex-cli 0.156.1 (`codex debug models`,
-//   cached in ~/.codex/models_cache.json) lists gpt-6-luna ("fast and
-//   affordable"), gpt-6-sol ("workhorse model for coding") and gpt-6-astra
-//   ("frontier intelligence"). The old gpt-5.1-codex* IDs are not in it.
-//   The catalog is fetched per account, so another plan may list more models.
+// - codex: the model catalog is fetched per account, and a listed model may
+//   still be rejected for a ChatGPT account. Use gpt-6-sol for fast and
+//   balanced tiers; gpt-6-astra remains the powerful tier.
 // - copilot: the `model` values listed by `copilot help config` in GitHub
 //   Copilot CLI 1.0.88. The tiers mirror gitwise's Claude defaults
 //   (haiku-4.5 / sonnet-4.6 / opus-4.7); claude-sonnet-4.5 and
@@ -84,7 +82,7 @@ export const DEFAULT_USER_CONFIG: UserConfig = {
     api: { ...CLAUDE_MODELS },
     "claude-code": { ...CLAUDE_MODELS },
     codex: {
-      fast: "gpt-6-luna",
+      fast: "gpt-6-sol",
       balanced: "gpt-6-sol",
       powerful: "gpt-6-astra",
     },
