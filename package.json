@@ -47,7 +47,7 @@
     "jest": "^30.5.0",
     "ts-jest": "^29.4.15",
     "ts-node": "^10.9.2",
-    "tsup": "^8.4.0",
+    "tsup": "^9.0.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1"
   }
